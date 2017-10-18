@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <string.h>
 #include "f2c.h"
 
 /* Common Block Declarations */
@@ -93,7 +94,7 @@ static integer c__25 = 25;
 static integer c__12 = 12;
 static integer c__0 = 0;
 
-int MAIN__(void)
+int MAIN__(int argc, char *argv[])
 {
 	/* Format strings */
 	static char fmt_1[] = "(\002  Entry file (no extension) ??\002,$)";
@@ -1202,7 +1203,7 @@ int MAIN__(void)
 	e_wsle();
 	procs = (real) iprocs;
 	if (procs < 2.f) {
-	procs = 1.f;
+		procs = 1.f;
 	}
 
 	cal_1.pi = 114.59156f;
@@ -1215,29 +1216,39 @@ int MAIN__(void)
 /* The OPEN statements may need to be changed for some computers. */
 /* Subroutine SXNM gets the generic filename from the command line. */
 /* If nothing is found, then the user is prompted for the filename. */
-	mcmnam_(&ln, nam, (ftnlen)80);
-/* 	PRINT *,LN,NAM */
+	//mcmnam_(&ln, nam, (ftnlen)80)
+/*
 	i__1 = ln - 4;
 	if (s_cmp(nam + i__1, ".exe", ln - i__1, (ftnlen)4) == 0) {
-	goto L334;
+		goto L334;
 	}
-	s_copy(file, nam, (ftnlen)80, ln);
-	printf("jshsosflkmklsf\n");
+*/
+	if (argc < 2)
+	{
+		goto L334;
+	}
+	//nam = argv[1]
+	ln = i_len(argv[1], (ftnlen)80);
+	s_copy(file, argv[1], (ftnlen)80, ln);
 	lfile = ln;
 	goto L335;
 
 L334:
-	s_wsfe(&io___13);
-	e_wsfe();
-	s_rsfe(&io___14);
+	printf("  Entry file (no extension) ??");
+	scanf("%s", file);
+
+	/*s_wsle(&io___13);
+	e_wsle();
+	/*s_rsfe(&io___14);
 	do_fio(&c__1, file, (ftnlen)80);
-	e_rsfe();
+	e_rsfe();*
+	scanf("%s", file);
 	s_wsle(&io___15);
 	do_lio(&c__9, &c__1, file, (ftnlen)80);
-	e_wsle();
+	e_wsle();*/
 	lfile = i_len(file, (ftnlen)80);
 	while(*(unsigned char *)&file[lfile - 1] == ' ') {
-	--lfile;
+		--lfile;
 	}
 
 L335:
@@ -1265,13 +1276,15 @@ L335:
 	ioin__1.inrecl = 0;
 	ioin__1.innrec = 0;
 	ioin__1.inblank = 0;
-	f_inqu(&ioin__1);
+/*	f_inqu(&ioin__1);
 	if (! qex) {
-	goto L3;
+		goto L3;
 	}
 	filedel_(&c__21, tempo, (ftnlen)80);
-L3:
-	open_write1__(&c__21, tempo, (ftnlen)80);
+L3:*/
+	printf("%d\n", argc);
+	FILE *tempo_file = fopen(tempo, "w+");
+	// open_write1__(&c__21, tempo, (ftnlen)80);
 /* Writing concatenation */
 	i__2[0] = lfile, a__1[0] = file;
 	i__2[1] = 4, a__1[1] = ".dat";
@@ -1295,7 +1308,7 @@ L3:
 	ioin__1.inblank = 0;
 	f_inqu(&ioin__1);
 	if (qex) {
-	goto L333;
+		goto L333;
 	}
 	s_wsle(&io___20);
 	do_lio(&c__9, &c__1, "That file does not exist, try again...", (ftnlen)38)
@@ -15317,4 +15330,7 @@ L2:
 	return 0;
 } /* mcmnam_ */
 
-int main () { MAIN__ (); return 0; }
+int main (int argc, char *argv[]) { 
+	MAIN__ (argc, argv); 
+	return 0; 
+}
