@@ -15,6 +15,7 @@
 #include <time.h>
 #include <string.h>
 #include "f2c.h"
+#include <unistd.h>
 
 /* Common Block Declarations */
 
@@ -185,7 +186,7 @@ int MAIN__(int argc, char *argv[])
 	int s_copy(char *, char *, ftnlen, ftnlen);
 	integer s_wsfe(cilist *), e_wsfe(void), s_rsfe(cilist *), do_fio(integer *
 		, char *, ftnlen), e_rsfe(void), i_len(char *, ftnlen);
-	int s_cat(char *, char **, integer *, integer *, ftnlen);
+	// int s_cat(char *, char **, integer *, integer *, ftnlen);
 	integer f_inqu(inlist *), f_clos(cllist *), s_wsli(icilist *), e_wsli(
 		void), s_rsle(cilist *), e_rsle(void);
 	int s_stop(char *, ftnlen);
@@ -1257,8 +1258,9 @@ L335:
 /* Writing concatenation */
 	i__2[0] = lfile, a__1[0] = file;
 	i__2[1] = 4, a__1[1] = ".inp";
-	s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
-	// snprintf(tempo, 80, "%s%s", file, ".inp");
+	// s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	snprintf(tempo, 80, "%s%s", file, a__1[1]);
+	printf("%s\n", tempo);
 	ioin__1.inerr = 0;
 	ioin__1.infilen = 80;
 	ioin__1.infile = tempo;
@@ -1282,13 +1284,13 @@ L335:
 	}
 	filedel_(&c__21, tempo, (ftnlen)80);
 L3:*/
-	printf("%d\n", argc);
-	FILE *tempo_file = fopen(tempo, "w+");
-	// open_write1__(&c__21, tempo, (ftnlen)80);
+	FILE *inp_file = fopen(tempo, "w+");
+	// FILE *inp_file = open_write1__(&c__21, tempo, (ftnlen)80);
 /* Writing concatenation */
 	i__2[0] = lfile, a__1[0] = file;
 	i__2[1] = 4, a__1[1] = ".dat";
-	s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	// s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	snprintf(tempo, 80, "%s%s", file, a__1[1]);
 	ioin__1.inerr = 0;
 	ioin__1.infilen = 80;
 	ioin__1.infile = tempo;
@@ -1306,55 +1308,72 @@ L3:*/
 	ioin__1.inrecl = 0;
 	ioin__1.innrec = 0;
 	ioin__1.inblank = 0;
-	f_inqu(&ioin__1);
+	/*f_inqu(&ioin__1);
 	if (qex) {
+		goto L333;
+	}*/
+	if (access(tempo, F_OK) != -1)
+	{
 		goto L333;
 	}
 	s_wsle(&io___20);
-	do_lio(&c__9, &c__1, "That file does not exist, try again...", (ftnlen)38)
-		;
+	do_lio(&c__9, &c__1, "That file does not exist, try again...", (ftnlen)38);
 	e_wsle();
 	goto L334;
 L333:
-	open_read1__(&c__19, tempo, (ftnlen)80);
+	; //a label can only be part of a statement and a declaration is not a statement
+	FILE *dat_file = fopen(tempo, "r");
 L4:
-	i__1 = s_rsfe(&io___21);
+	printf("%s\n", tempo);
+	/*i__1 = s_rsfe(&io___21);
 	if (i__1 != 0) {
-	goto L6;
+		goto L6;
 	}
 	i__1 = do_fio(&c__1, select1, (ftnlen)80);
 	if (i__1 != 0) {
-	goto L6;
+		goto L6;
 	}
 	i__1 = e_rsfe();
 	if (i__1 != 0) {
-	goto L6;
+		goto L6;
 	}
 	if (*(unsigned char *)select1 != '!') {
-	s_wsfe(&io___23);
-	do_fio(&c__1, select1, (ftnlen)80);
-	e_wsfe();
+		s_wsfe(&io___23);
+		do_fio(&c__1, select1, (ftnlen)80);
+		e_wsfe();
+	}*/
+	char *buffer_dat_file = NULL;
+	size_t buffsize_dat_file = 0;
+	ssize_t nread;
+	while ((nread = getline(&buffer_dat_file, &buffsize_dat_file, dat_file)) != -1)
+	{
+		if (buffer_dat_file[0] != '!')
+		{
+			fwrite(buffer_dat_file, nread, 1, inp_file);
+		}
 	}
-	goto L4;
+	// goto L4;
 L6:
 	cl__1.cerr = 0;
 	cl__1.cunit = lc0;
 	cl__1.csta = 0;
-	f_clos(&cl__1);
+	fclose(dat_file);
 	cl__1.cerr = 0;
 	cl__1.cunit = lca;
 	cl__1.csta = 0;
-	f_clos(&cl__1);
+	fclose(inp_file);
 /* Writing concatenation */
 	i__2[0] = lfile, a__1[0] = file;
 	i__2[1] = 4, a__1[1] = ".inp";
-	s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	// s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	snprintf(tempo, 80, "%s%s", file, a__1[1]);
 	open_read1__(&c__21, tempo, (ftnlen)80);
 	lpr = 20;
 /* Writing concatenation */
 	i__2[0] = lfile, a__1[0] = file;
 	i__2[1] = 4, a__1[1] = ".imp";
-	s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	// s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	snprintf(tempo, 80, "%s%s", file, a__1[1]);
 	ioin__1.inerr = 0;
 	ioin__1.infilen = 80;
 	ioin__1.infile = tempo;
@@ -1502,7 +1521,8 @@ L7:
 /* Writing concatenation */
 	i__2[0] = lfile, a__1[0] = file;
 	i__2[1] = 8, a__1[1] = "-new.dat";
-	s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	// s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	snprintf(tempo, 80, "%s%s", file, a__1[1]);
 	ioin__1.inerr = 0;
 	ioin__1.infilen = 80;
 	ioin__1.infile = tempo;
@@ -9546,7 +9566,8 @@ L5000:
 /* Writing concatenation */
 	i__2[0] = lfile, a__1[0] = file;
 	i__2[1] = 4, a__1[1] = ".ckm";
-	s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	// s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	snprintf(tempo, 80, "%s%s", file, a__1[1]);
 	ioin__1.inerr = 0;
 	ioin__1.infilen = 80;
 	ioin__1.infile = tempo;
@@ -9574,7 +9595,8 @@ L1998:
 /* Writing concatenation */
 	i__2[0] = lfile, a__1[0] = file;
 	i__2[1] = 4, a__1[1] = ".mcm";
-	s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	// s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	snprintf(tempo, 80, "%s%s", file, a__1[1]);
 	ioin__1.inerr = 0;
 	ioin__1.infilen = 80;
 	ioin__1.infile = tempo;
@@ -10050,7 +10072,8 @@ L2021:
 /* Writing concatenation */
 	i__2[0] = lfile, a__1[0] = file;
 	i__2[1] = 8, a__1[1] = "_cub.ckm";
-	s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	// s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	snprintf(tempo, 80, "%s%s", file, a__1[1]);
 	ioin__1.inerr = 0;
 	ioin__1.infilen = 80;
 	ioin__1.infile = tempo;
@@ -10083,7 +10106,8 @@ L2022:
 /* Writing concatenation */
 	i__2[0] = lfile, a__1[0] = file;
 	i__2[1] = 8, a__1[1] = "_hex.ckm";
-	s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	// s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	snprintf(tempo, 80, "%s%s", file, a__1[1]);
 	ioin__1.inerr = 0;
 	ioin__1.infilen = 80;
 	ioin__1.infile = tempo;
@@ -10116,7 +10140,8 @@ L2023:
 /* Writing concatenation */
 	i__2[0] = lfile, a__1[0] = file;
 	i__2[1] = 8, a__1[1] = "_tet.ckm";
-	s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	// s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	snprintf(tempo, 80, "%s%s", file, a__1[1]);
 	ioin__1.inerr = 0;
 	ioin__1.infilen = 80;
 	ioin__1.infile = tempo;
@@ -10149,7 +10174,8 @@ L2024:
 /* Writing concatenation */
 	i__2[0] = lfile, a__1[0] = file;
 	i__2[1] = 8, a__1[1] = "_ort.ckm";
-	s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	// s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	snprintf(tempo, 80, "%s%s", file, a__1[1]);
 	ioin__1.inerr = 0;
 	ioin__1.infilen = 80;
 	ioin__1.infile = tempo;
@@ -10182,7 +10208,8 @@ L2025:
 /* Writing concatenation */
 	i__2[0] = lfile, a__1[0] = file;
 	i__2[1] = 8, a__1[1] = "_mon.ckm";
-	s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	// s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	snprintf(tempo, 80, "%s%s", file, a__1[1]);
 	ioin__1.inerr = 0;
 	ioin__1.infilen = 80;
 	ioin__1.infile = tempo;
@@ -10215,7 +10242,8 @@ L2026:
 /* Writing concatenation */
 	i__2[0] = lfile, a__1[0] = file;
 	i__2[1] = 8, a__1[1] = "_tri.ckm";
-	s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	// s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	snprintf(tempo, 80, "%s%s", file, a__1[1]);
 	ioin__1.inerr = 0;
 	ioin__1.infilen = 80;
 	ioin__1.infile = tempo;
@@ -10248,7 +10276,8 @@ L2027:
 /* Writing concatenation */
 	i__2[0] = lfile, a__1[0] = file;
 	i__2[1] = 8, a__1[1] = "_rho.ckm";
-	s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	// s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	snprintf(tempo, 80, "%s%s", file, a__1[1]);
 	ioin__1.inerr = 0;
 	ioin__1.infilen = 80;
 	ioin__1.infile = tempo;
@@ -11039,7 +11068,8 @@ L1824:
 /* Writing concatenation */
 	i__2[0] = lfile, a__1[0] = file;
 	i__2[1] = 4, a__1[1] = ".prf";
-	s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	// s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	snprintf(tempo, 80, "%s%s", file, a__1[1]);
 	ioin__1.inerr = 0;
 	ioin__1.infilen = 80;
 	ioin__1.infile = tempo;
@@ -11773,7 +11803,8 @@ L2011:
 /* Writing concatenation */
 	i__2[0] = lfile, a__1[0] = file;
 	i__2[1] = 8, a__1[1] = "_two.ckm";
-	s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	// s_cat(tempo, a__1, i__2, &c__2, (ftnlen)80);
+	snprintf(tempo, 80, "%s%s", file, a__1[1]);
 	ioin__1.inerr = 0;
 	ioin__1.infilen = 80;
 	ioin__1.infile = tempo;
@@ -12429,13 +12460,13 @@ int datn_(char *datenow, char *timenow, ftnlen datenow_len,
 	return 0;
 } /* datn_ */
 
-int open_read1__(integer *unit, char *file, ftnlen file_len)
-{
+// FILE* open_read1__(integer *unit, char *file, ftnlen file_len)
+// {
 	/* System generated locals */
-	olist o__1;
+	// olist o__1;
 
 	/* Builtin functions */
-	integer f_open(olist *);
+	/*integer f_open(olist *);
 
 	o__1.oerr = 0;
 	o__1.ounit = *unit;
@@ -12446,18 +12477,18 @@ int open_read1__(integer *unit, char *file, ftnlen file_len)
 	o__1.oacc = 0;
 	o__1.ofm = 0;
 	o__1.oblnk = 0;
-	f_open(&o__1);
-	return 0;
-} /* open_read1__ */
+	f_open(&o__1);*/
+	// return fopen(file, "r");;
+// }  open_read1__
 
 
-int open_write1__(integer *unit, char *file, ftnlen file_len)
-{
+// FILE* open_write1__(integer *unit, char *file, ftnlen file_len)
+// {
 	/* System generated locals */
-	olist o__1;
+	// olist o__1;
 
 	/* Builtin functions */
-	integer f_open(olist *);
+	/*integer f_open(olist *);
 
 	o__1.oerr = 0;
 	o__1.ounit = *unit;
@@ -12468,9 +12499,10 @@ int open_write1__(integer *unit, char *file, ftnlen file_len)
 	o__1.oacc = 0;
 	o__1.ofm = 0;
 	o__1.oblnk = 0;
-	f_open(&o__1);
-	return 0;
-} /* open_write1__ */
+	f_open(&o__1);*/
+	// fopen(file, "w+");
+	// return fopen(file, "w+");
+// }  open_write1__
 
 
 int filedel_(integer *unit, char *file, ftnlen file_len)
@@ -12518,7 +12550,7 @@ int open_write__(integer *unit, char *file, char *extension,
 	/* Builtin functions */
 	int s_copy(char *, char *, ftnlen, ftnlen);
 	integer i_indx(char *, char *, ftnlen, ftnlen), i_len(char *, ftnlen);
-	int s_cat(char *, char **, integer *, integer *, ftnlen);
+	// int s_cat(char *, char **, integer *, integer *, ftnlen);
 	integer f_open(olist *), f_clos(cllist *);
 
 	/* Local variables */
@@ -12535,7 +12567,8 @@ int open_write__(integer *unit, char *file, char *extension,
 /* Writing concatenation */
 	i__1[0] = l, a__1[0] = file;
 	i__1[1] = extension_len, a__1[1] = extension;
-	s_cat(temp, a__1, i__1, &c__2, (ftnlen)80);
+	// s_cat(temp, a__1, i__1, &c__2, (ftnlen)80);
+	snprintf(temp, 80, "%s%s", file, a__1[1]);
 	}
 	o__1.oerr = 1;
 	o__1.ounit = *unit;
