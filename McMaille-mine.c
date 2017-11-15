@@ -12,7 +12,7 @@
 *
 *     For more details see the documentation at
 *                   http://www.cristal.org/McMaille/
-*             or    http://sdpd.univ-lemans.fr/McMaille/
+*             or    http://sdpd.univ-lemans.0r/McMaille/
 *
 *              by A. Le Bail - September 2002 for version 0.9
 *                              as well as for versions 1.0, 2.0 and 3.0
@@ -80,11 +80,18 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <math.h>
+#include <stdarg.h>
 
 #define VERSION "4.00"
 #define FILENAME_SIZE 20
 #define FILE_WITH_EXTENSION_SIZE FILENAME_SIZE + 4
 #define N_HKL 10000
+
+typedef struct Parameters {
+	char *system_name;
+	int n_par;
+	char *params[6];
+} Parameters;
 
 int nhkl0, lhkl, ndat;
 double dmin, slabda2;
@@ -105,6 +112,11 @@ double afi[10];
 int nr, indic;
 double pds[200];
 int npaf2;
+
+
+//troc
+int iwr, irid;
+
 
 /* ... Here is the program heart... */
 
@@ -128,7 +140,7 @@ int calcul1(double *diff, double *diff2)
 	jh = 0;
 	i1 = nhkl0;
 	for (i = 1; i <= i1; ++i) {
-	x = 0.f;
+	x = 0.0;
 	for (j = 1; j <= 3; ++j) {
 		for (k = j; k <= 3; ++k) {
 			x = al[j + k * 3 - 4] * ihh[j + i * 3 - 4] *
@@ -148,7 +160,7 @@ int calcul1(double *diff, double *diff2)
 	sinth = slabda2 * x;
 	sinth = sqrt(sinth);
 	theta[jh - 1] = asin(sinth) * pi;
-	cr[jh - 1] = 0.f;
+	cr[jh - 1] = 0.0;
 L109:
 	;
 	}
@@ -162,12 +174,12 @@ L109:
 	lhkl = 0;
 	i1 = ndat;
 	for (j = 1; j <= i1; ++j) {
-	cri[j - 1] = 0.f;
-	perc[j - 1] = 0.f;
+	cri[j - 1] = 0.0;
+	perc[j - 1] = 0.0;
 	demax = w2[j - 1];
 	i2 = nhkl;
 	for (k = 1; k <= i2; ++k) {
-		if (cr[k - 1] == 1.f) {
+		if (cr[k - 1] == 1.0) {
 			goto L111;
 		}
 		if (theta[k - 1] <= difp[j - 1] && theta[k - 1] >= difm[j - 1]) {
@@ -175,7 +187,7 @@ L109:
 			if (de[k - 1] <= demax) {
 				l = k;
 				demax = de[k - 1];
-				cri[j - 1] = 1.f;
+				cri[j - 1] = 1.0;
 			}
 		}
 L111:
@@ -188,26 +200,26 @@ L111:
 /*  overlapping the most closely with the column is */
 /*  included (if CRI =1)... */
 
-	if (cri[j - 1] == 1.f) {
-		perc[j - 1] = 1.f - de[l - 1] / w2[j - 1];
+	if (cri[j - 1] == 1.0) {
+		perc[j - 1] = 1.0 - de[l - 1] / w2[j - 1];
 		++lhkl;
-		cr[l - 1] = 1.f;
+		cr[l - 1] = 1.0;
 	}
 /* L113: */
 	}
 
 /* ...  Calculate "R" */
 
-	diff1 = 0.f;
-	sum_f2 = 0.f;
+	diff1 = 0.0;
+	sum_f2 = 0.0;
 	i1 = ndat;
 	for (k = 1; k <= i1; ++k) {
 	sum_f2 += fobs[k - 1] * cri[k - 1];
 /* L1122: */
 	diff1 += cri[k - 1] * fobs[k - 1] * perc[k - 1];
 	}
-	*diff = 1.f - diff1 / sum_f;
-	*diff2 = 1.f - diff1 / sum_f2;
+	*diff = 1.0 - diff1 / sum_f;
+	*diff2 = 1.0 - diff1 / sum_f2;
 	return 0;
 } /* calcul1_ */
 
@@ -241,7 +253,7 @@ int calcul2(double *diff, int *ihkl, double *th3, int *ncalc, int *igc)
 	jh = 0;
 	i1 = nhkl0;
 	for (i = 1; i <= i1; ++i) {
-	x = 0.f;
+	x = 0.0;
 	for (j = 1; j <= 3; ++j) {
 		for (k = j; k <= 3; ++k) {
 /* L107: */
@@ -266,7 +278,7 @@ int calcul2(double *diff, int *ihkl, double *th3, int *ncalc, int *igc)
 	sinth = slabda2 * x;
 	sinth = sqrt(sinth);
 	theta[jh - 1] = asin(sinth) * pi;
-	cr[jh - 1] = 0.f;
+	cr[jh - 1] = 0.0;
 L109:
 	;
 	}
@@ -279,8 +291,8 @@ L109:
 	jj = 0;
 	i1 = ndat;
 	for (j = 1; j <= i1; ++j) {
-	cri[j - 1] = 0.f;
-	perc[j - 1] = 0.f;
+	cri[j - 1] = 0.0;
+	perc[j - 1] = 0.0;
 /* CC */
 /* CC  Eliminating too spurious peaks here ??? */
 /* CC    tolerance on width decreased by a factor 3 */
@@ -289,7 +301,7 @@ L109:
 /* CC */
 	i2 = nhkl;
 	for (k = 1; k <= i2; ++k) {
-		if (cr[k - 1] == 1.f) {
+		if (cr[k - 1] == 1.0) {
 		goto L111;
 		}
 		if (theta[k - 1] <= difp[j - 1] && theta[k - 1] >=
@@ -299,7 +311,7 @@ L109:
 		if (de[k - 1] <= demax) {
 			l = k;
 			demax = de[k - 1];
-			cri[j - 1] = 1.f;
+			cri[j - 1] = 1.0;
 		}
 		}
 L111:
@@ -312,10 +324,10 @@ L111:
 /*  overlapping the most closely with the column is */
 /*  included (if CRI =1)... */
 
-	if (cri[j - 1] == 1.f) {
-		perc[j - 1] = 1.f - de[l - 1] / (w2[j - 1] * .33333f);
+	if (cri[j - 1] == 1.0) {
+		perc[j - 1] = 1.0 - de[l - 1] / (w2[j - 1] * .33333f);
 		++lhkl;
-		cr[l - 1] = 1.f;
+		cr[l - 1] = 1.0;
 		for (l2 = 1; l2 <= 3; ++l2) {
 /* L112: */
 			ihkl[l2 + lhkl * 3] = jhkl[l2 + l * 3 - 4];
@@ -339,11 +351,11 @@ L111:
 
 /* ...  Calculate "R" */
 
-	*diff = 0.f;
+	*diff = 0.0;
 
 /*  Change here with SUM_F2 being only on explained reflections... */
 
-	sum_f2 = 0.f;
+	sum_f2 = 0.0;
 	i1 = ndat;
 	for (k = 1; k <= i1; ++k) {
 	ind[k + *igc * 100 - 101] = cri[k - 1];
@@ -351,7 +363,7 @@ L111:
 /* L1122: */
 	*diff += cri[k - 1] * fobs[k - 1] * perc[k - 1];
 	}
-	*diff = 1.f - *diff / sum_f2;
+	*diff = 1.0 - *diff / sum_f2;
 	return 0;
 } /* calcul2_ */
 
@@ -500,7 +512,7 @@ int sigma(double *d, double *db, double *r)
 	--d;
 
 	/* Function Body */
-	*r = 0.f;
+	*r = 0.0;
 	for (i = 1; i <= 6; ++i) {
 /* L10: */
 /* Computing 2nd power */
@@ -533,7 +545,7 @@ int inver(double *b, double *db, double *volum, int *iv)
 	--b;
 
 	/* Function Body */
-	cabc2 = 0.f;
+	cabc2 = 0.0;
 	for (i = 1; i <= 3; ++i) {
 	ad[i - 1] = b[i + 2];
 	cosp[i - 1] = cos(b[i + 5]);
@@ -550,7 +562,7 @@ int inver(double *b, double *db, double *volum, int *iv)
 /* L15: */
 	}
 
-	q2 = 1.f - cabc2 + cosp[0] * 2.f * cosp[1] * cosp[2];
+	q2 = 1.0 - cabc2 + cosp[0] * 2.0 * cosp[1] * cosp[2];
 	q = sqrt(q2);
 	*volum = ad[0] * ad[1] * ad[2] * q;
 
@@ -570,8 +582,8 @@ int inver(double *b, double *db, double *volum, int *iv)
 	j = i % 3 + 1;
 	k = (i + 1) % 3 + 1;
 	d[i - 1] = -sinp[i - 1] / ad[i - 1];
-	d[j - 1] = 0.f;
-	d[k - 1] = 0.f;
+	d[j - 1] = 0.0;
+	d[k - 1] = 0.0;
 	d[i + 2] = cosp[i - 1] - sinp[i - 1] * sinp[i - 1] * dqd[
 		i - 1] / (q * q);
 	d[j + 2] = -ss[k - 1] * dqd[j - 1] / q2;
@@ -585,7 +597,7 @@ int inver(double *b, double *db, double *volum, int *iv)
 	for (i = 1; i <= 3; ++i) {
 	for (jj = 1; jj <= 3; ++jj) {
 /* L40: */
-		d[jj - 1] = 0.f;
+		d[jj - 1] = 0.0;
 	}
 	j = i % 3 + 1;
 	k = (i + 1) % 3 + 1;
@@ -639,7 +651,7 @@ L8:
 	*nfail = k;
 	goto L210;
 L10:
-	am[1] = 1.f / am[1];
+	am[1] = 1.0 / am[1];
 	goto L200;
 /*     ***** LOOP M OF A(L,M) ***** */
 L20:
@@ -649,7 +661,7 @@ L20:
 /*     ***** LOOP L OF A(L,M) ***** */
 	i2 = *n;
 	for (l = m; l <= i2; ++l) {
-		suma = 0.f;
+		suma = 0.0;
 		kli = l;
 		kmi = m;
 		if (imax <= 0) {
@@ -676,7 +688,7 @@ L50:
 		goto L90;
 		}
 L60:
-		if (term <= 0.f) {
+		if (term <= 0.0) {
 		goto L80;
 		} else {
 		goto L70;
@@ -700,14 +712,14 @@ L100:
 /*     ********** SEGMENT 2 OF CHOLESKI INVERSION ********** */
 /*     *****INVERSION OF TRIANGULAR MATRIX***** */
 /* L120: */
-	am[1] = 1.f / am[1];
+	am[1] = 1.0 / am[1];
 	kdm = 1;
 /*     ***** STEP L OF B(L,M) ***** */
 	i1 = *n;
 	for (l = 2; l <= i1; ++l) {
 	kdm = kdm + *n - l + 2;
 /*     ***** RECIPROCAL OF DIAGONAL TERM ***** */
-	term = 1.f / am[kdm];
+	term = 1.0 / am[kdm];
 	am[kdm] = term;
 	kmi = 0;
 	kli = l;
@@ -717,7 +729,7 @@ L100:
 	for (m = 1; m <= i2; ++m) {
 		k = kli;
 /*     ***** SUM TERMS ***** */
-		suma = 0.f;
+		suma = 0.0;
 		i3 = imax;
 		for (i = m; i <= i3; ++i) {
 		ii = kmi + i;
@@ -745,7 +757,7 @@ L100:
 	for (l = m; l <= i2; ++l) {
 		kmi = k;
 		imax = *n - l + 1;
-		suma = 0.f;
+		suma = 0.0;
 		i3 = imax;
 		for (i = 1; i <= i3; ++i) {
 		suma += am[kli] * am[kmi];
@@ -784,7 +796,7 @@ int calc(void)
 /* $OMP THREADPRIVATE(/TROC/,/TRUC/) */
 	j = 0;
 	for (i = 1; i <= 8; ++i) {
-	if (afi[i - 1] == 0.f) {
+	if (afi[i - 1] == 0.0) {
 		goto L1;
 	}
 	++j;
@@ -815,14 +827,14 @@ L1:
 	dd = r1 * r1 + r2 * r2 + r3 * r3 + (h[i - 1] *
 		k[i - 1] * ae * be * cce + k[i - 1] *
 		l[i - 1] * be * ce * cae + l[i - 1] *
-		h[i - 1] * ce * ae * cbe) * 2.f;
-	d = 1.f / sqrt(dd);
+		h[i - 1] * ce * ae * cbe) * 2.0;
+	d = 1.0 / sqrt(dd);
 /* Computing 2nd power */
 	r1 = b[1];
-	rad = sqrt(1.f - r1 * r1 * dd);
+	rad = sqrt(1.0 - r1 * r1 * dd);
 	f = b[1] * d / rad;
-	q[i - 1] = 1.f;
-	q[i + 199] = 1.f / (d * rad);
+	q[i - 1] = 1.0;
+	q[i + 199] = 1.0 / (d * rad);
 	q[i + 399] = f * h[i - 1] * (h[i - 1] * ae +
 		k[i - 1] * be * cce + l[i - 1] * ce * cbe);
 	q[i + 599] = f * k[i - 1] * (k[i - 1] * be +
@@ -845,7 +857,7 @@ L1:
 	for (ir = 1; ir <= i1; ++ir) {
 	j = 0;
 	for (i = 1; i <= 8; ++i) {
-		if (afi[i - 1] == 0.f) {
+		if (afi[i - 1] == 0.0) {
 		goto L3;
 		}
 		++j;
@@ -904,7 +916,7 @@ L10:
 /* -----LES Y CALCULES SONT DANS LA COLONNE M+2 */
 	i1 = *m;
 	for (j = 1; j <= i1; ++j) {
-	r = 0.f;
+	r = 0.0;
 	i2 = *n;
 	for (i = 1; i <= i2; ++i) {
 /* L20: */
@@ -922,7 +934,7 @@ L10:
 	i2 = *m;
 	for (il = iq; il <= i2; ++il) {
 		++no;
-		r = 0.f;
+		r = 0.0;
 		i3 = *n;
 		for (i = 1; i <= i3; ++i) {
 /* L40: */
@@ -945,7 +957,7 @@ L10:
 L60:
 	i2 = *m;
 	for (i = 1; i <= i2; ++i) {
-	r = 0.f;
+	r = 0.0;
 	imm = (i - 1) * (mm - i) / 2;
 	i1 = *m;
 	for (j = 1; j <= i1; ++j) {
@@ -997,8 +1009,8 @@ int fonc(double *theta, double *r, double *rr)
 	--theta;
 
 	/* Function Body */
-	r1 = 0.f;
-	r2 = 0.f;
+	r1 = 0.0;
+	r2 = 0.0;
 	ae = b[2];
 	be = b[3];
 	ce = b[4];
@@ -1016,8 +1028,8 @@ int fonc(double *theta, double *r, double *rr)
 	dd = r1l * r1l + r2l * r2l + r3l * r3l + (h[i - 1] *
 		k[i - 1] * ae * be * cce + k[i - 1] *
 		l[i - 1] * be * ce * cae + l[i - 1] *
-		h[i - 1] * ce * ae * cbe) * 2.f;
-	d = 1.f / sqrt(dd);
+		h[i - 1] * ce * ae * cbe) * 2.0;
+	d = 1.0 / sqrt(dd);
 	yc = b[0] + asin(b[1] / d);
 /* Computing 2nd power */
 	r1l = yc - theta[i];
@@ -1035,12 +1047,440 @@ int fonc(double *theta, double *r, double *rr)
 
 //==============================================================================
 
+int celref(int *indi, double *bbb, double *afin, int *nhkl, double *theta, int *jhkl, double *ddt, double *ddq, FILE *imp_file)
+{
+	/* Initialized data */
+
+	/* Format strings */
+	/*static char fmt_60[] = "(\002 \002,/\002 OBSERVABLE NUMBER    : \002,i5"
+		"/\002 ITERATION NUMBER : \002,i5/\002 REFINEMENT CONSTRAINTS :"
+		" \002,a5)";
+	
+	static char fmt_80[] = "(\002 INITIAL VALUES :\002)";
+	static char fmt_90[] = "(\002 FINAL VALUES   : (STANDARD DEVIATIONS : 2n"
+		"d LINE)\002)";
+	static char fmt_100[] = "(4x,\002ZERO\002,4x,\002LAMBDA\002,6x,\002A\002"
+		",8x,\002B\002,8x,\002C\002,6x,\002ALPHA\002,5x,\002BETA\002,4x"
+		",\002GAMMA\002)";
+	static char fmt_110[] = "(2x,f6.3,3x,f7.4,3(2x,f7.4),3(2x,f7.3))";
+	static char fmt_120[] = "(\002 RECIPROCAL CELL : \002,3(2x,f7.5),3(2x,f7"
+		".3)/\002 VOLUME (A**3)  : \002,f12.3/)";
+	static char fmt_130[] = "(6x,f2.0,7(7x,f2.0))";
+	static char fmt_140[] = "(\002 \002,3x,\002H\002,5x,\002K\002,5x,\002"
+		"L\002,2x,\002TH(OBS)\002,4x,\002TH-ZERO\002,4x,\002TH(CALC)\002,"
+		"5x,\002DIFF.\002/)";
+	static char fmt_150[] = "(2x,3(i3,3x),4(f7.3,4x))";
+	static char fmt_170[] = "(\002 ##### ERROR REFLEXION : \002,3i4,f8.3)";
+	static char fmt_180[] = "(\002 ##### DATA NUMBER GREATER THAN \002,i4"
+		",\002 #####\002)";
+	static char fmt_190[] = "(\002 ##### IMPOSSIBLE TO REFINE ALL PARAMETERS"
+		" TOGETHER##### THINK, PLEASE ! #####\002)";
+	static char fmt_366[] = "(\002 \002,3x,\002H\002,5x,\002K\002,5x,\002"
+		"L\002,5x,\002D(OBS)\002,4x,\002D(CALC)\002/)";
+	static char fmt_368[] = "(2x,3(i3,3x),2(f7.4,5x))";
+*/
+
+
+/* .....****************************************************************** */
+/* ..... */
+/* .....     PROGRAMME *** CELREF ***                         7/10/78 */
+/* ..... */
+/* .....     AUTEURS : JEAN LAUGIER & ALAIN FILHOL    20/10/78 */
+/* ..... */
+/* .....     AFFINEMENT LES PARAMETRES DE MAILLE */
+/* .....                DU DECALAGE DE ZERO */
+/* .....                DE LA LONGUEUR D'ONDE */
+/* .....     A PARTIR DES ANGLES THETA DE BRAGG OBSERVES */
+/* ..... */
+/* .....     METHODE : MOINDRES CARRES NON LINEAIRES */
+/* ..... */
+/* .....     DONNEES : */
+/* .....        1- CARTE COMMENTAIRE          FORMAT(16A5) */
+/* .....        2- INDIC,IFIN                 FORMAT(2I) */
+/* .....           INDIC  : CONTRAINTE D'AFFINEMENT */
+/* .....                    0/1/2 POUR (A,B,C INDEPENDANTS)/(A=B=C)/(A=B) */
+/* .....           IFIN   : NOMBRE MAXIMUM DE CYCLES D'AFFINEMENT */
+/* ..... */
+/* .....        3- B(2),B(1)                       FORMAT(2F) */
+/* .....           B(2)   : LONGUEUR D'ONDE */
+/* .....           B(1)   : DECALAGE SYSTEMATIQUE DE ZERO */
+/* ..... */
+/* .....        4- AFI(2),AFI(1)                   FORMAT(2F) */
+/* .....           AFI(2) : 0/1 AFFINER (NON)/(OUI) LA LONGUEUR D'ONDE */
+/* .....           AFI(1) :  "    "         "       LE DECALAGE DE ZERO */
+/* ..... */
+/* .....        5- B(3 A 8)                        FORMAT(6F) */
+/* .....           B(3)   : PARAMETRE A */
+/* .....           B(4)   : PARAMETRE B */
+/* .....           B(5)   : PARAMETRE C */
+/* .....           B(6)   : ANGLE ALPHA */
+/* .....           B(7)   : ANGLE BETA */
+/* .....           B(8)   : ANGLE GAMMA */
+/* ..... */
+/* .....        6- AFI(3 A 8)                      FORMAT(6F) */
+/* .....           AFI(3 A 8) : 0/1 POUR AFFINER (NON)/(OUI) */
+/* .....                        LES PARAMETRES DE MAILLE */
+/* ..... */
+/* .....        7 A 7+NR- H,K,L,THETA              FORMAT(3I,F) */
+/* .....          ("NR" NOMBRE D'OBSERVATIONS) */
+/* .....          (DERNIERE CARTE : H,K,L=0 0 0) */
+/* .....           H,K,L  : INDICES DE MILLER */
+/* .....           THETA  : ANGLE DE BRAGG OBSERVE */
+/* ..... */
+/* .....***************************************************************** */
+
+	static double sig[8] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+	static int i, j;
+	static double r, y0, y1, y2, y3, y4;
+	static int ik, jj;
+	static double rd, qc, qo, rr, dum[3];
+	static char icle[3][5] = { "A=B=C", "A=B  ", "NO   "};
+	static int iffi, ifin, ihkl;
+	static int nrep, ndmax;
+	static double volum;
+	static int npour;
+
+	char *cur, *end;
+
+
+/* $OMP THREADPRIVATE(/TROC/,/TRUC/) */
+/*      DATA IWR/20/,ICLE/'A=B=C','A=B  ','NO   '/ */
+
+	iwr = 20;
+
+	/* Parameter adjustments */
+	jhkl -= 4;
+	--theta;
+	--afin;
+	--bbb;
+
+	/* Function Body */
+
+/* ----- A MODIFIER EN CAS DE CHANGEMENT DES DIMENSIONS */
+	ndmax = 200;
+/* ----- */
+	rd = 180.0 / acos(-1.0);
+/* ..... */
+/* .....ENTREE DES DONNEES */
+
+	static char temp_10[] = " PROGRAM *** CELREF ***  (J.LAUGIER & A.0ILHOL 10/78)\n\n";
+	fwrite(temp_10, strlen(temp_10), 1, imp_file);
+
+/*      READ(IRID,20)ITITR */
+/*      READ(IRID,*)INDIC,IFIN */
+	indic = *indi;
+	*ddt = 0.0;
+	*ddq = 0.0;
+	ifin = 10;
+	if (indic == 0 || indic > 3) {
+		indic = 3;
+	}
+/*      READ(IRID,*)B(2),B(1) */
+	b[0] = 0.0;
+/*      READ(IRID,*)AFI(2),AFI(1) */
+	for (int i = 1; i <= 8; ++i) {
+		afi[i - 1] = afin[i];
+		b[i - 1] = bbb[i];
+	}
+/*      READ(IRID,*)(B(I),I=3,8),(AFI(I),I=3,8) */
+	iffi = (int) (afi[2] + afi[3] + afi[4] + .1f);
+	if (iffi == 0 || indic == 3) {
+		goto L230;
+	}
+	ik = 3 - indic;
+	for (i = 1; i <= ik; ++i) {
+		if (indic - 2 >= 0) {
+			goto L210;
+		} else {
+			goto L200;
+		}
+	L200:
+		afi[indic + 2 + i - 1] = 0.0;
+		goto L220;
+	L210:
+		afi[indic + 1 + i - 1] = 0.0;
+	L220:
+		;
+	}
+	afi[2] = 1.0;
+
+L230:
+	nr = 0;
+	for (nr = 1; nr <= *nhkl; ++nr) {
+		if (nr > ndmax) {
+			goto L380;
+		}
+		h[nr - 1] = jhkl[nr * 3 + 1];
+		k[nr - 1] = jhkl[nr * 3 + 2];
+		l[nr - 1] = jhkl[nr * 3 + 3];
+		ihkl = abs(h[nr - 1]) + abs(k[nr - 1]) + abs(l[nr - 1]);
+		if (ihkl == 0) {
+			goto L260;
+		}
+		if (theta[nr] <= 0.0) {
+			goto L370;
+		}
+		pds[nr - 1] = 1.0;
+		theta[nr] = theta[nr] / rd / 2.0;
+	}
+/* ..... */
+/* !!!! 2*THETA EN THETA */
+L260:
+	nr = *nhkl;
+
+	static char temp_100[] = "    ZERO    LAMBDA      A        B        C      ALPHA     BETA    GAMMA\n";
+
+	char temp_60[350] = "";
+	cur = temp_60, end = temp_60 - sizeof(temp_60);
+	cur += snprintf(cur, end - cur, " OBSERVABLE NUMBER    : %d ITERATION NUMBER : %d REFINEMENT CONSTRAINTS : %s\n INITIAL VALUES :\n%s      ", nr, ifin, icle[indic - 1], temp_100);
+
+	//130
+	for (int i = 0; i < 8; ++i) {
+		cur += snprintf(cur, end - cur, "%.0lf       ", afi[i]);
+	}
+	//110
+	cur += snprintf(cur, end - cur, "\n  ");
+	for (int i = 0; i < 8; ++i) {
+		cur += snprintf(cur, end - cur, "%.4lf    ", b[i]);
+	}
+	cur += snprintf(cur, end - cur, "\n");
+	fwrite(temp_60, strlen(temp_60), 1, imp_file);
+
+	b[0] /= rd;
+	b[1] *= 0.5;
+	for (int i = 6; i <= 8; ++i) {
+		b[i - 1] /= rd;
+	}
+/*   ...... CALCUL DES PARAMETRES MAILLE RECIPROQUE */
+	int c0 = 0;
+	inver(b, dum, &volum, &c0);
+/*   ...... */
+	for (int i = 1; i <= 3; ++i) {
+		dum[i - 1] = b[i + 4] * rd;
+	}
+
+	char temp_120[90] = "";
+	cur = temp_120;
+	end = temp_120 - sizeof(temp_120);
+	cur += snprintf(cur, end-cur, " RECIPROCAL CELL : ");
+	for (int i = 2; i < 5; ++i) {
+		cur += snprintf(cur, end-cur, "  %.5lf", b[i]);
+	}
+	for (int i = 0; i < 3; ++i) {
+		cur += snprintf(cur, end-cur, "  %.5lf", dum[0]);
+	}
+	cur += snprintf(cur, end-cur, "\n VOLUME (A**3)   : %.3lf\n", volum);
+	fwrite(temp_120, strlen(temp_120), 1, imp_file);
+
+/* ....."NPAF" : NOMBRE DE PARAMETRES A AFFINER */
+/* ....."BB()" : TABLEAU DES PARAMETRES A AFFINER */
+	j = 0;
+	for (int i = 1; i <= 8; ++i) {
+		if (afi[i - 1] == 0.0) {
+			goto L290;
+		}
+		++j;
+		bb[j - 1] = b[i - 1];
+	L290:
+		;
+	}
+	npaf = j;
+	char temp_70[39] = "";
+	snprintf(temp_70, sizeof(temp_70), " NUMBER OF INDEPENDENT PARAMETERS : %d\n", npaf);
+	fwrite(temp_70, strlen(temp_70), 1, imp_file);
+
+	if (npaf == 8) {
+		goto L390;
+	}
+	npaf2 = npaf + 2;
+/*   ......AFFINEMENT   (PDS() : POIDS (NON-UTILISE POUR CETTE VERSION)) */
+	mcrnl(qq, &ndmax, &theta[1], bb, &npaf, &nr, pds, &ifin);
+/*   ...... */
+
+/* .....NOUVELLES VALEURS DES PARAMETRES */
+	j = 0;
+	for (i = 1; i <= 8; ++i) {
+		if (afi[i - 1] == 0.0) {
+			goto L300;
+		}
+		++j;
+		b[i - 1] = bb[j - 1];
+	L300:
+		;
+	}
+/*   ......VALEURS DES ANGLES THETA CALCULES */
+	fonc(&theta[1], &r, &rr);
+/*   ...... */
+
+/* .....CALCUL DES ECARTS TYPE */
+/* ....."SIG()" LES ECARTS TYPE DES PARAMETRES DE MAILLE QU'IL */
+/* .....        CONTIENT SONT CEUX DES PARAMETRES RECIPROQUES. */
+	jj = 0;
+	for (i = 1; i <= 8; ++i) {
+		if (afi[i - 1] != 0.0) {
+			goto L320;
+		} else {
+			goto L310;
+		}
+	L310:
+		sig[i - 1] = 0.0;
+		goto L330;
+	L320:
+		++jj;
+		sig[i - 1] = sqrt(qq[jj + jj * 200 - 201] * r);
+	L330:
+		;
+	}
+	if (indic == 1 || indic == 2) {
+		sig[3] = sig[2];
+	}
+	if (indic == 1) {
+		sig[4] = sig[2];
+	}
+	for (i = 1; i <= 3; ++i) {
+		bb[i - 1] = b[i + 1];
+		bb[i + 2] = b[i + 4] * rd;
+	}
+
+/*   ......RETOUR A LA MAILLE DIRECTE (ET ECARTS TYPE CORRESPONDANTS) */
+	int c1 = 1;
+	inver(b, sig, &volum, &c1);
+/*   ...... */
+	sig[0] *= rd;
+	sig[1] *= 2.0;
+
+/* .....SORTIE DES RESULTATS */
+	volum = 1.0 / volum;
+
+/*  Zeropoint in 2-theta to be added (same sense as TREOR, ITO, etc) */
+
+	b[0] = -b[0] * rd * 2.0;
+	sig[0] *= 2.0;
+
+	b[1] *= 2.0;
+	for (i = 6; i <= 8; ++i) {
+		sig[i - 1] *= rd;
+		b[i - 1] *= rd;
+	}
+
+	char temp_90[350];
+	cur = temp_90;
+	end = temp_90 - sizeof(temp_90);
+	cur += snprintf(cur, end-cur, " FINAL VALUES   : (STANDARD DEVIATIONS : 2nd LINE)\n\n%s", temp_100);
+	//110
+	for (int i = 0; i < 8; ++i) {
+		cur += snprintf(cur, end - cur, "%.4lf    ", b[i]);
+	}
+	cur += snprintf(cur, end - cur, "\n  ");
+	//110
+	for (int i = 0; i < 8; ++i) {
+		cur += snprintf(cur, end - cur, "%.4lf    ", sig[i]);
+	}
+	//120
+	cur += snprintf(cur, end - cur, "\n   RECIPROCAL CELL : ");
+	for (int i = 0; i < 5; ++i) {
+		cur += snprintf(cur, end-cur, "  %.5lf", bb[i]);
+	}
+	cur += snprintf(cur, end - cur, "  %.5lf\n    H     K     L  TH(OBS)    TH-ZERO    TH(CALC)     DIFF.\n", volum);
+	fwrite(temp_90, strlen(temp_90), 1, imp_file);
+
+	for (i = 1; i <= 8; ++i) {
+		bbb[i] = b[i - 1];
+	}
+	npour = 0;
+	for (int i = 0; i <= nr; ++i) {
+		y1 = theta[i] * rd;
+		y2 = y1 + b[0] / 2.0;
+		y3 = qq[i + npaf2 * 200 - 201] * rd + b[0] / 2.0;
+		y4 = y2 - y3;
+		y1 *= 2.0;
+		y2 *= 2.0;
+		y3 *= 2.0;
+		y4 *= 2.0;
+		if (i <= 20) {
+			*ddt += fabs(y4);
+	/* Computing 2nd power */
+			double r1 = sin(y2 / 2.0 * 3.141593f / 180.0) * 2.0 / bbb[2];
+			qo = r1 * r1;
+	/* Computing 2nd power */
+			r1 = sin(y3 / 2.0 * 3.141593f / 180.0) * 2.0 / bbb[2];
+			qc = r1 * r1;
+			*ddq += (r1 = qo - qc, fabs(r1));
+		}
+
+		char temp_150[61];
+		snprintf(temp_150, sizeof(temp_150), "    %d     %d     %d     %.3lf      %.3lf      %.3lf     %.3lf\n", h[i-1], k[i-1], l[i-1], y1, y2, y3, y4);
+		fwrite(temp_150, strlen(temp_150), 1, imp_file);
+	}
+	static char temp_enter[] = "\n";
+	fwrite(temp_enter, strlen(temp_enter), 1, imp_file);
+
+	*ddt /= 20.0;
+	*ddq /= 20.0;
+	r = sqrt(r) * 1e3f;
+/*      WRITE(IWR,160)R,RR */
+	if (npour > 0) {
+		goto L400;
+	}
+/*      print 365 */
+/* L365: */
+/*      READ(5,*)NREP */
+	nrep = 1;
+	if (nrep == 1) {
+		goto L400;
+	}
+
+	static char temp_366[] = "   H     K     L     D(OBS)    (D(CALC)\n\n";
+	fwrite(temp_366, strlen(temp_366), 1, imp_file);
+
+	for (int i = 1; i <= nr; ++i) {
+		y0 = b[1] / 2.0;
+		y1 = y0 / sin(theta[i] - b[0] / rd);
+		y2 = y0 / sin(qq[i + npaf2 * 200 - 201] - b[0]	/ rd);
+
+		char temp[33];
+		snprintf(temp, sizeof(temp), "  %d   %d   %d   %.4lf     %.4lf\n", h[i - 1], k[i - 1], l[i - 1], y1, y2);
+		fwrite(temp, strlen(temp), 1, imp_file);
+	}
+/*      print 369 */
+	goto L400;
+
+/* .....MESSAGES D'ERREUR */
+	/*170 FORMAT(' ##### ERROR REFLEXION : ',3I4,F8.3)
+  180 FORMAT(' ##### DATA NUMBER GREATER THAN ',I4,' #####')
+  190 FORMAT(' ##### IMPOSSIBLE TO REFINE ALL PARAMETERS TOGETHER'
+     1 '##### THINK, PLEASE ! #####')*/
+L370:
+	;
+	char temp_170[38];
+	snprintf(temp_170, sizeof(temp_170), " ##### ERROR REFLEXION : %d %d %d %.3lf\n", h[nr - 1], k[nr - 1], l[nr - 1], theta[nr]);
+	fwrite(temp_170, strlen(temp_170), 1, imp_file);
+	--nr;
+/*      GOTO 240 */
+L380:
+	;
+	char temp_180[41];
+	snprintf(temp_180, sizeof(temp_180), " ##### DATA NUMBER GREATER THAN %d #####\n", ndmax);
+	fwrite(temp_180, strlen(temp_180), 1, imp_file);
+	goto L400;
+L390:
+	;
+	char temp_190[] = " ##### IMPOSSIBLE TO REFINE ALL PARAMETERS TOGETHER##### THINK, PLEASE ! #####\n";
+	fwrite(temp_190, strlen(temp_190), 1, imp_file);
+L400:
+	return 0;
+} /* celref_ */
+
+
+//==============================================================================
+
 int celref2(int *indi, double *bbb, double *afin, int *
 	nhkl, double *theta, int *jhkl, double *ddt, double *ddq)
 {
 	/* Initialized data */
 
-	static double sig[8] = { 0.f,0.f,0.f,0.f,0.f,0.f,0.f,0.f };
+	static double sig[8] = { 0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0 };
 
 	/* System generated locals */
 	int i1, i2, i3, i4;
@@ -1066,16 +1506,16 @@ int celref2(int *indi, double *bbb, double *afin, int *
 
 	/* Function Body */
 	ndmax = 200;
-	rd = 180.f / acos(-1.f);
+	rd = 180.0 / acos(-1.0);
 	pip = .0087266472222222221f;
 	indic = *indi;
-	*ddt = 0.f;
-	*ddq = 0.f;
+	*ddt = 0.0;
+	*ddq = 0.0;
 	ifin = 10;
 	if (indic == 0 || indic > 3) {
 	indic = 3;
 	}
-	b[0] = 0.f;
+	b[0] = 0.0;
 	for (i = 1; i <= 8; ++i) {
 	afi[i - 1] = afin[i];
 /* L5500: */
@@ -1094,14 +1534,14 @@ int celref2(int *indi, double *bbb, double *afin, int *
 		goto L200;
 	}
 L200:
-	afi[indic + 2 + i - 1] = 0.f;
+	afi[indic + 2 + i - 1] = 0.0;
 	goto L220;
 L210:
-	afi[indic + 1 + i - 1] = 0.f;
+	afi[indic + 1 + i - 1] = 0.0;
 L220:
 	;
 	}
-	afi[2] = 1.f;
+	afi[2] = 1.0;
 
 L230:
 	nr = 0;
@@ -1119,13 +1559,13 @@ L230:
 	if (ihkl == 0) {
 		goto L260;
 	}
-	if (theta[nr] <= 0.f) {
+	if (theta[nr] <= 0.0) {
 		goto L400;
 	}
 /* L250: */
-	pds[nr - 1] = 1.f;
+	pds[nr - 1] = 1.0;
 /* L240: */
-	theta[nr] = theta[nr] / rd / 2.f;
+	theta[nr] = theta[nr] / rd / 2.0;
 	}
 /* ..... */
 L260:
@@ -1144,7 +1584,7 @@ L260:
 	}
 	j = 0;
 	for (i = 1; i <= 8; ++i) {
-	if (afi[i - 1] == 0.f) {
+	if (afi[i - 1] == 0.0) {
 		goto L290;
 	}
 	++j;
@@ -1161,7 +1601,7 @@ L290:
 		pds, &ifin);
 	j = 0;
 	for (i = 1; i <= 8; ++i) {
-	if (afi[i - 1] == 0.f) {
+	if (afi[i - 1] == 0.0) {
 		goto L300;
 	}
 	++j;
@@ -1172,13 +1612,13 @@ L300:
 	fonc(&theta[1], &r, &rr);
 	jj = 0;
 	for (i = 1; i <= 8; ++i) {
-	if (afi[i - 1] != 0.f) {
+	if (afi[i - 1] != 0.0) {
 		goto L320;
 	} else {
 		goto L310;
 	}
 L310:
-	sig[i - 1] = 0.f;
+	sig[i - 1] = 0.0;
 	goto L330;
 L320:
 	++jj;
@@ -1198,10 +1638,10 @@ L330:
 	bb[i + 2] = b[i + 4] * rd;
 	}
 	sig[0] *= rd;
-	sig[1] *= 2.f;
-	b[0] = -b[0] * rd * 2.f;
-	sig[0] *= 2.f;
-	b[1] *= 2.f;
+	sig[1] *= 2.0;
+	b[0] = -b[0] * rd * 2.0;
+	sig[0] *= 2.0;
+	b[1] *= 2.0;
 	for (i = 6; i <= 8; ++i) {
 	sig[i - 1] *= rd;
 /* L350: */
@@ -1215,28 +1655,28 @@ L330:
 	i1 = nr;
 	for (i = 1; i <= i1; ++i) {
 	y1 = theta[i] * rd;
-	y2 = y1 + b[0] / 2.f;
+	y2 = y1 + b[0] / 2.0;
 	y3 = qq[i + npaf2 * 200 - 201] * rd + b[0] /
-		2.f;
+		2.0;
 	y4 = y2 - y3;
-	y1 *= 2.f;
-	y2 *= 2.f;
-	y3 *= 2.f;
-	y4 *= 2.f;
+	y1 *= 2.0;
+	y2 *= 2.0;
+	y3 *= 2.0;
+	y4 *= 2.0;
 	if (i <= 20) {
 		*ddt += abs(y4);
 /* Computing 2nd power */
-		r1 = sin(y2 * pip) * 2.f / bbb[2];
+		r1 = sin(y2 * pip) * 2.0 / bbb[2];
 		qo = r1 * r1;
 /* Computing 2nd power */
-		r1 = sin(y3 * pip) * 2.f / bbb[2];
+		r1 = sin(y3 * pip) * 2.0 / bbb[2];
 		qc = r1 * r1;
 		*ddq += (r1 = qo - qc, abs(r1));
 	}
 /* L360: */
 	}
-	*ddt /= 20.f;
-	*ddq /= 20.f;
+	*ddt /= 20.0;
+	*ddq /= 20.0;
 L400:
 	return 0;
 } /* celref2_ */
@@ -1248,7 +1688,7 @@ int perm(int *i, int *j, int *k)
 	/* System generated locals */
 	int i1;
 
-/*     PERMS USEFUL COMBINATIONS OF INTEGERS IN THE RANGE 1 TO 3 */
+/*     PERMS USEFUL COMBINATIONS OF intS IN THE RANGE 1 TO 3 */
 	if ((i1 = *i - 2) < 0) {
 	goto L10;
 	} else if (i1 == 0) {
@@ -1282,21 +1722,21 @@ int trcl(double *celln, double *rcelln, double *v)
 	static double abc, sina[3];
 	static double prod;
 
-/*     TRANSFORMS REAL CELL TO RECIPROCAL OR VICE VERSA */
+/*     TRANSFORMS double CELL TO RECIPROCAL OR VICE VERSA */
 /*     INPUT CELL IS IN ARRAY CELL AS LENGTHS AND COSINES */
 	/* Parameter adjustments */
 	--rcelln;
 	--celln;
 
 	/* Function Body */
-	abc = 1.f;
-	prod = 2.f;
-	*v = -2.f;
+	abc = 1.0;
+	prod = 2.0;
+	*v = -2.0;
 	for (i = 1; i <= 3; ++i) {
 	l = i + 3;
 /* Computing 2nd power */
 	r1 = celln[l];
-	sina[i - 1] = 1.f - r1 * r1;
+	sina[i - 1] = 1.0 - r1 * r1;
 	*v += sina[i - 1];
 	sina[i - 1] = sqrt(sina[i - 1]);
 	prod *= celln[l];
@@ -1543,27 +1983,27 @@ L10:
 		id2[j - 1] = 0;
 	}
 	if (id2[j - 1] == 1 && ihmax[j - 1] >= 2 && iab2 == 1) {
-		xx = 2.f;
+		xx = 2.0;
 		cel[j + *l * 6] /= xx;
 		vgc[*l] /= xx;
 	}
 	if (id3[j - 1] == 1 && ihmax[j - 1] >= 3 && iab3 == 1) {
-		xx = 3.f;
+		xx = 3.0;
 		cel[j + *l * 6] /= xx;
 		vgc[*l] /= xx;
 	}
 	if (id4[j - 1] == 1 && ihmax[j - 1] >= 4 && iab4 == 1) {
-		xx = 4.f;
+		xx = 4.0;
 		cel[j + *l * 6] /= xx;
 		vgc[*l] /= xx;
 	}
 	if (id5[j - 1] == 1 && ihmax[j - 1] >= 5 && iab5 == 1) {
-		xx = 5.f;
+		xx = 5.0;
 		cel[j + *l * 6] /= xx;
 		vgc[*l] /= xx;
 	}
 	if (id6[j - 1] == 1 && ihmax[j - 1] >= 6 && iab6 == 1) {
-		xx = 6.f;
+		xx = 6.0;
 		cel[j + *l * 6] /= xx;
 		vgc[*l] /= xx;
 	}
@@ -1578,27 +2018,27 @@ L10:
 	id2[j - 1] = 0;
 	}
 	if (id2[j - 1] == 1 && ihmax[j - 1] >= 2) {
-	xx = 2.f;
+	xx = 2.0;
 	cel[j + *l * 6] /= xx;
 	vgc[*l] /= xx;
 	}
 	if (id3[j - 1] == 1 && ihmax[j - 1] >= 3) {
-	xx = 3.f;
+	xx = 3.0;
 	cel[j + *l * 6] /= xx;
 	vgc[*l] /= xx;
 	}
 	if (id4[j - 1] == 1 && ihmax[j - 1] >= 4) {
-	xx = 4.f;
+	xx = 4.0;
 	cel[j + *l * 6] /= xx;
 	vgc[*l] /= xx;
 	}
 	if (id5[j - 1] == 1 && ihmax[j - 1] >= 5) {
-	xx = 5.f;
+	xx = 5.0;
 	cel[j + *l * 6] /= xx;
 	vgc[*l] /= xx;
 	}
 	if (id6[j - 1] == 1 && ihmax[j - 1] >= 6) {
-	xx = 6.f;
+	xx = 6.0;
 	cel[j + *l * 6] /= xx;
 	vgc[*l] /= xx;
 	}
@@ -1628,13 +2068,13 @@ int dcell(double *celln, double *al, double *v)
 	}
 	for (i = 1; i <= 3; ++i) {
 	l = i + 3;
-	if (cell[l - 1] - 90.f != 0.f) {
+	if (cell[l - 1] - 90.0 != 0.0) {
 		goto L32;
 	} else {
 		goto L33;
 	}
 L33:
-	cell[l - 1] = 0.f;
+	cell[l - 1] = 0.0;
 	goto L31;
 L32:
 	cell[l - 1] = cos(degrad * cell[l - 1]);
@@ -1652,10 +2092,10 @@ L31:
 		goto L35;
 	}
 L35:
-	al[j + k * 3] = rcelln[j - 1] * 2.f * rcelln[k - 1] * rcelln[i + 2];
+	al[j + k * 3] = rcelln[j - 1] * 2.0 * rcelln[k - 1] * rcelln[i + 2];
 	goto L34;
 L36:
-	al[k + j * 3] = rcelln[j - 1] * 2.f * rcelln[k - 1] * rcelln[i + 2];
+	al[k + j * 3] = rcelln[j - 1] * 2.0 * rcelln[k - 1] * rcelln[i + 2];
 L34:
 	;
 	}
@@ -1709,8 +2149,8 @@ double randi(int *ix)
 
 /*     In this form fairly portable as does not require knowledge */
 /*     of data storage, but does not adhere to the standard in two respects: */
-/*     1) Assumes an integer word length of at least 32 bits */
-/*     2) Assumes that a positive integer less than 2**16 may be */
+/*     1) Assumes an int word length of at least 32 bits */
+/*     2) Assumes that a positive int less than 2**16 may be */
 /*        floated without loss of digits. */
 
 /*     This code is based on code published by Linus Schrage in */
@@ -1864,7 +2304,7 @@ void writeTotalTime(FILE *file, const time_t *begin, time_t *end)
 	time(end);
 	double total_time = difftime(*end, *begin);
 	char buffer[50];
-	snprintf(buffer, sizeof(buffer), "\n\n Total CPU time elapsed in seconds : %.f", total_time);
+	snprintf(buffer, sizeof(buffer), "\n\n Total CPU time elapsed in seconds : %lf", total_time);
 	fwrite(buffer, strlen(buffer), 1, file);
 	printf("\n\nType any character to continue : \n");
 	getchar();
@@ -1955,11 +2395,173 @@ void err(FILE *file, char *msg)
 
 //==============================================================================
 
-void deleteFile(char *file_name, char *ext)
+void deleteFile(const char *file_name, const char *ext)
 {
 	char temp[FILE_WITH_EXTENSION_SIZE];
 	snprintf(temp, sizeof(temp), "%s%s", file_name, ext);
 	remove(temp);
+}
+
+//==============================================================================
+
+void readHklFile(const char *name, const int mult_ndat, const int max_nhkl0, int *ihh)
+{
+	char *buffer = NULL;
+	size_t buffsize = 0;
+
+	FILE *hkl_file = openFile(name, ".hkl", "r");
+	getline(&buffer, &buffsize, hkl_file);
+	sscanf(buffer, "%d", &nhkl0);
+	nhkl0 = ndat * mult_ndat;
+	if (nhkl0 > max_nhkl0) nhkl0 = max_nhkl0;
+	for (int i = 1; i <= nhkl0; ++i)
+	{
+		getline(&buffer, &buffsize, hkl_file);
+		sscanf(buffer, "%d %d %d", &ihh[1 + i * 3 - 4], &ihh[2 + i * 3 - 4], &ihh[3 + i * 3 - 4]);
+	}
+	fclose(hkl_file);
+}
+
+//==============================================================================
+
+const char *getParametersString(const Parameters params)
+{
+	static char temp[50] = "";
+	char *cur = temp, *const end = temp - sizeof(temp);
+
+	for (int i = 0; i < params.n_par; ++i)
+	{
+		cur += snprintf(cur, end-cur, "%s    ", params.params[i]);
+	}
+	cur += snprintf(cur, end-cur, "V");
+	return temp;
+}
+
+//==============================================================================
+
+void saveMonteCarloSearchString(const Parameters params, const double pmax, const double vmax, const int iverb, const int nrun, const int ntimelim, FILE *imp_file)
+{
+	char temp[300] = "";
+	char *cur = temp, *const end = temp - sizeof(temp);
+	cur += snprintf(cur, end-cur, "\n%s Monte Carlo search :\n Max ", params.system_name);
+
+	for (int i = 0; i < params.n_par; ++i)
+	{
+		cur += snprintf(cur, end-cur, "%s, ", params.params[i]);
+	}
+	cur += snprintf(cur, end-cur, " V %lf %lf\n\n", pmax, vmax);
+
+	if (iverb == 1)
+	{
+		cur += snprintf(cur, end-cur, "  Results in %s, run, tests : %d %d\n===============================================================================\n Rp  Trial number   %s    Nind Icod\n\n", params.system_name, nrun, ntimelim, getParametersString(params));
+	}
+	fwrite(temp, strlen(temp), 1, imp_file);
+	// printf("%s\n", temp);
+}
+
+//==============================================================================
+
+void printStopString(FILE *imp_file)
+{
+	char temp[37];
+	snprintf(temp, sizeof(temp), "   More than 10000 good cells = STOP");
+	fwrite(temp, strlen(temp), 1, imp_file);
+	printf("%s\n", temp);
+}
+
+//==============================================================================
+
+void printRmaxReducedString(const double rmax0, FILE *imp_file)
+{
+	char temp[42];
+	snprintf(temp, sizeof(temp), "  Rmax reduced by 5%%, now Rmax = %lf", rmax0);
+	fwrite(temp, strlen(temp), 1, imp_file);
+	printf("%s\n", temp);
+}
+
+//==============================================================================
+
+void printIsee(const double rmax, const double v2, const int ipen, const int num, ...)
+{
+	va_list valist;
+
+	va_start(valist, num);
+
+	printf("%.3lf ", rmax);
+
+	for (int i = 0; i < num; i++) {
+		printf("%.4lf ", va_arg(valist, double));
+	}
+
+	printf("%.1lf %d\n", v2, ipen);
+
+	va_end(valist);
+}
+
+//==============================================================================
+
+void saveIverb(const double rmax, const double ntried, const double v2, const int ipen, const int icode, FILE *imp_file, const int num, ...)
+{
+	va_list valist;
+	char temp[40] = "";
+	char *cur = temp, *const end = temp - sizeof(temp);
+
+	va_start(valist, num);
+
+	cur += snprintf(cur, end-cur, "%.3lf %.0lf ", rmax, ntried);
+
+	for (int i = 0; i < num; i++) {
+		cur += snprintf(cur, end-cur, "%.4lf ", va_arg(valist, double));
+	}
+
+	cur += snprintf(cur, end-cur, "%.1lf %d %d\n", v2, ipen, icode);
+	fwrite(temp, strlen(temp), 1, imp_file);
+	va_end(valist);
+}
+
+//==============================================================================
+
+const char *saveInterestingResultString(FILE *imp_file)
+{
+	char temp[83];
+	static char *temp2 = "\n YOU HAVE FOUND AN INTERESTING RESULT : Rp < Rmin !\n\n";
+	snprintf(temp, sizeof(temp), "\n===============================================================================\n\n");
+	fwrite(temp, strlen(temp), 1, imp_file);
+	fwrite(temp2, strlen(temp2), 1, imp_file);
+	return temp2;
+}
+
+//==============================================================================
+
+void printSaveInterstResString(FILE *imp_file, const double rmax, const double v2, const int ipen, const int num, ...)
+{
+	va_list valist;
+	va_start(valist, num);
+
+	const char *temp2 = saveInterestingResultString(imp_file);
+	printIsee(rmax, v2, ipen, 1, valist);
+	printf("%s\n", temp2);
+
+	va_end(valist);
+}
+
+//==============================================================================
+
+void saveFMFF20(const double fm20, const double ff20, const double ddt, const int ncalc, FILE *imp_file)
+{
+	char temp[46];
+	snprintf(temp, sizeof(temp), "   M(20) = %.2lf\n   F(20) = %.2lf (%.4lf, %d)\n\n", fm20, ff20, ddt, ncalc);
+	fwrite(temp, strlen(temp), 1, imp_file);
+	printf("%s\n", temp);
+}
+
+//==============================================================================
+
+void saveGridResultsInString(const char *str, FILE *imp_file)
+{
+	char temp[200];
+	snprintf(temp, sizeof(temp), "\n===============================================================================\nGrid search :\n   Results in %s :\n===============================================================================\n", str);
+	fwrite(temp, strlen(temp), 1, imp_file);
 }
 
 //==============================================================================
@@ -1988,16 +2590,19 @@ int main(int argc, char *argv[])
     int pressedk = 0;
     double pndat, ddq, ddt, isee, v3, v2, a, rmax2, llhkl;
     double diff2, diff, v1, del, rmin, interest, tmax, ttmax, ncells, iiseed, ntried, ntriedt;
-    double nout, ntriedb;
+    double nout, ntriedb, vorth;
     int ipen, icode, iseed, ncel, ncalc, c3, ibr;
 
-    double am, ap, adelt, vm, vp, vdelt, nglob, rglob, c;
-    int c2, ip;
+    double am, ap, adelt, vm, vp, vdelt, nglob, rglob, c, b, bdelt, bp, bm, nb, cdelt, cp, cm;
+    double betp, deld, vmon, na, nc, bet, betdelt, betm, ang, alp, gam, vtric;
+    int c2, ip, c4, c1, ip2;
+
+    // const Parameters cubic_params = {"Cubic", 1, {"a"}};
 
 	//TODO #OMP THREADPRIVATE(/cal/,/cal2/)
 
 	//Search for the number of processors available
-	//OMP_GET_NUM_PROCS()
+	//OMP_GET_NUM_PROCSg()
 	printf("\nNumber of used processors : \t\t%d\n", procs);
 
 	int n1 = 1;
@@ -2047,16 +2652,16 @@ int main(int argc, char *argv[])
 	if (nread == -1 || sread == EOF) err(imp_file, "  Error reading lambda, etc, line 2\n");
 
 	iverb = 0;
-	if (slabda < 0.f) {
+	if (slabda < 0.0) {
 		iverb = 1;
 		slabda = -slabda;
 	}
 	bb[1] = slabda;
-	bb[0] = 0.f;
+	bb[0] = 0.0;
 /* zeropoint after correction... = 0. */
-	afi[1] = 0.f;
+	afi[1] = 0.0;
 /* code for wavelength refinement */
-	afi[0] = 1.f;
+	afi[0] = 1.0;
 /* code for zeropoint refinement */
 	notric = 0;
 	if (ngrid == -3) {
@@ -2364,7 +2969,7 @@ C*/
 		{
 			sscanf(buffer, "%lf %lf %lf", &th2[ndat], &fobs[ndat], &w1[ndat]);
 		}
-		if (th2[ndat] >= 180.f) {
+		if (th2[ndat] >= 180.0) {
 			err(imp_file, "  Error reading data angle > 180\n");
 		}
 		++ndat;
@@ -2385,12 +2990,12 @@ C*/
 		fwrite(temp, strlen(temp), 1, imp_file);
 		printf("%s\n", temp);
 		for (int nda = 1; nda <= ndat; ++nda) {
-			th2[nda - 1] = asin(slabda / (th2[nda - 1] * 2.f)) * pi;
+			th2[nda - 1] = asin(slabda / (th2[nda - 1] * 2.0)) * pi;
 		}
 	}
 
 	for (int nda = 1; nda <= ndat; ++nda) {
-		if (w > 0.f) {
+		if (w > 0.0) {
 			w1[nda - 1] = w;
 			if (ngrid == 3) {
 				char temp[20];
@@ -2400,14 +3005,14 @@ C*/
 		} else {
 			w1[nda - 1] *= -w;
 		}
-		if (th2[ndat - 1] >= 180.f) {
+		if (th2[ndat - 1] >= 180.0) {
 			err(imp_file, "  Error reading data angle > 180\n");
 		}
 
 /*     Addition of the Zeropoint */
 
 		th2[nda - 1] += zero;
-		d[nda - 1] = slabda / (sin(th2[nda - 1] / pi) * 2.f);
+		d[nda - 1] = slabda / (sin(th2[nda - 1] / pi) * 2.0);
 	/* Computing 2nd power */
 		double r1 = d[nda - 1];
 		qo[nda - 1] = 1 / (r1 * r1);
@@ -2456,32 +3061,32 @@ C
 /* ...  Various starting values initialized */
 
 	double deltc, astart, deltab;
-	slabda2 = slabda * slabda / 4.f;
-	if (pmin > 0.f) {
+	slabda2 = slabda * slabda / 4.0;
+	if (pmin > 0.0) {
 		for (int i = 1; i <= 3; ++i) {
-			deltct[i - 1] = 30.f;
-			astartt[i - 1] = 60.f;
-			delta[i - 1] = (pmax - pmin) / 2.f;
+			deltct[i - 1] = 30.0;
+			astartt[i - 1] = 60.0;
+			delta[i - 1] = (pmax - pmin) / 2.0;
 			pstart[i - 1] = pmin;
 		}
-		deltc = 15.f;
-		astart = 90.f;
+		deltc = 15.0;
+		astart = 90.0;
 	} else {
 		for (int i = 1; i <= 3; ++i) {
 			int j = i + 3;
-			deltct[i - 1] = (pma[j - 1] - pmi[j - 1]) / 2.f;
+			deltct[i - 1] = (pma[j - 1] - pmi[j - 1]) / 2.0;
 			astartt[i - 1] = pmi[j - 1];
-			delta[i - 1] = (pma[i - 1] - pmi[i - 1]) / 2.f;
+			delta[i - 1] = (pma[i - 1] - pmi[i - 1]) / 2.0;
 			pstart[i - 1] = pmi[i - 1];
 		}
-		deltc = (pma[4] - pmi[4]) / 2.f;
+		deltc = (pma[4] - pmi[4]) / 2.0;
 		astart = pmi[4];
 	}
 	for (int i = 1; i <= 6; ++i) {
 		rmax0[i - 1] = rmax;
 	}
 	for (int j = 1; j <= ndat; ++j) {
-		w2[j - 1] = w1[j - 1] / 2.f;
+		w2[j - 1] = w1[j - 1] / 2.0;
 		difp[j - 1] = th2[j - 1] + w2[j - 1];
 		difm[j - 1] = th2[j - 1] - w2[j - 1];
 	}
@@ -2492,9 +3097,9 @@ C
 	dmin = d[nhkl - 1] - deltab;
 /*  Dmax values will help to determine max cell parameters */
 /*    in black box mode */
-	double dmax1 = d[0] + deltab * 2.f;
-	double dmax2 = d[1] + deltab * 2.f;
-	double dmax3 = d[2] + deltab * 2.f;
+	double dmax1 = d[0] + deltab * 2.0;
+	double dmax2 = d[1] + deltab * 2.0;
+	double dmax3 = d[2] + deltab * 2.0;
 
 /*C
 C  Warning on the wavelength...
@@ -2571,11 +3176,11 @@ C*/
 // C
 
 	int ifile = 1;
-	double ncycles = 200.f;
+	double ncycles = 200.0;
 	double cy = ncycles * 1.1f;
-	celpre[3] = 90.f;
-	celpre[4] = 90.f;
-	celpre[5] = 90.f;
+	celpre[3] = 90.0;
+	celpre[4] = 90.0;
+	celpre[5] = 90.0;
 
 	if (ngrid == 3) {
 		nruns = 1;
@@ -2587,7 +3192,7 @@ C*/
 		if (ntimelim[0] > 1e4f) {
 			ntimelim[0] = 1e4f;
 		}
-		delta[0] = (pmax - pmin) / 2.f;
+		delta[0] = (pmax - pmin) / 2.0;
 		pstart[0] = pmin;
 	}
 
@@ -2601,12 +3206,15 @@ C*/
 		}
 		fwrite(temp, strlen(temp), 1, imp_file);
 	}
+	// saveMonteCarloSearchString(cubic_params, pmax, vmax, iverb, nrun, ntimelim[0], imp_file);
 
 /*C
 C     READ hkl Miller indices in cub.hkl
 C*/
 
-	FILE *cub_hkl_file = openFile("cub", ".hkl", "r");
+	readHklFile("cub", 6, 400, ihh);
+
+	/*FILE *cub_hkl_file = openFile("cub", ".hkl", "r");
 	nread = getline(&buffer, &buffsize, cub_hkl_file);
 	sread = sscanf(buffer, "%d", &nhkl0);
 	nhkl0 = ndat * 6;
@@ -2616,9 +3224,9 @@ C*/
 		getline(&buffer, &buffsize, cub_hkl_file);
 		sscanf(buffer, "%d %d %d", &ihh[1 + i * 3 - 4], &ihh[2 + i * 3 - 4], &ihh[3 + i * 3 - 4]);
 	}
-	fclose(cub_hkl_file);
+	fclose(cub_hkl_file);*/
 
-	for (nrun = 1; nrun <= nruns; ++nrun) {
+	for (int nrun = 1; nrun <= nruns; ++nrun) {
 	/* ------------------------------------------------------------------------- */
 	/*     Initialisation */
 
@@ -2632,11 +3240,11 @@ C*/
 
 		interest = 0;
 		tmax = ntimelim[0] / procs;
-		ttmax = ntimelim[0] * 10.f;
+		ttmax = ntimelim[0] * 10.0;
 		ncells = (int) ntimelim[0];
 		iiseed = 0;
-		ntried = 0.f;
-		ntriedt = 0.f;
+		ntried = 0.0;
+		ntriedt = 0.0;
 		nout = 0;
 
 	/* $OMP PARALLEL DEFAULT(SHARED) COPYIN(/CAL/,/CAL2/) */
@@ -2661,21 +3269,21 @@ C*/
 
 	L102:
 
-			ntriedb = 0.f;
-			celpre[0] = pstart[0] + delta[0] * 2.f * randi(&iseed);
-			ntried += 1.f;
+			ntriedb = 0.0;
+			celpre[0] = pstart[0] + delta[0] * 2.0 * randi(&iseed);
+			ntried += 1.0;
 			goto L104;
 	L103:
-			del = deltab * (1.f - ntriedb / cy);
-			celpre[0] = pstartb[0] + del * (randi(&iseed) - .5f) * 2.f;
-			ntriedb += 1.f;
+			del = deltab * (1.0 - ntriedb / cy);
+			celpre[0] = pstartb[0] + del * (randi(&iseed) - .5f) * 2.0;
+			ntriedb += 1.0;
 	L104:
 			celpre[1] = celpre[0];
 			celpre[2] = celpre[0];
 			for (int i = 1; i <= 3; ++i) {
 				for (int j = 1; j <= 3; ++j) {
 		/* L105: */
-					al[i + j * 3 - 4] = 0.f;
+					al[i + j * 3 - 4] = 0.0;
 				}
 			}
 			dcell(celpre, al, &v1);
@@ -2683,12 +3291,12 @@ C*/
 				++nout;
 				goto L196;
 			}
-			if (ntriedb != 0.f) {
+			if (ntriedb != 0.0) {
 				goto L106;
 			}
 			if (v1 > vmax || v1 < vmin) {
-				ntried += -1.f;
-				ntriedt += 1.f;
+				ntried += -1.0;
+				ntriedt += 1.0;
 				if (ntriedt > ttmax) {
 					++nout;
 					goto L196;
@@ -2702,7 +3310,7 @@ C*/
 				ntried += -1;
 				goto L102;
 			}
-			if (ntriedb != 0.f) {
+			if (ntriedb != 0.0) {
 				goto L114;
 			}
 
@@ -2745,7 +3353,7 @@ C*/
 			if (ntriedb <= ncycles) {
 				goto L103;
 			}
-			ntriedb = 0.f;
+			ntriedb = 0.0;
 			if (rmax >= rmax0[0]) {
 				goto L117;
 			}
@@ -2763,35 +3371,29 @@ C*/
 
 	/*  Test if too much proposals, if yes decrease Rmax by 5% */
 
-			igt += 1.f;
+			igt += 1.0;
 			if (nr == 1) {
-				if (igt > 50.f) {
-					if (ntried / igt < 100.f) {
+				if (igt > 50.0) {
+					if (ntried / igt < 100.0) {
 						if (rmax0[0] > .2f) {
 							rmax0[0] -= rmax0[0] * .05f;
-							char temp[50];
-							snprintf(temp, sizeof(temp), "  Rmax reduced by 5%%, now Rmax = %lf", rmax0[0]);
-							fwrite(temp, strlen(temp), 1, imp_file);
-							printf("%s\n", temp);
+							printRmaxReducedString(rmax0[0], imp_file);
 						}
 					}
 				}
 			}
 
 			if (igc > 10000) {
-				char temp[40];
-				snprintf(temp, sizeof(temp), "   More than 10000 good cells = STOP");
-				fwrite(temp, strlen(temp), 1, imp_file);
-				printf("%s\n", temp);
+				printStopString(imp_file);
 				--igc;
 				++interest;
 			}
 			cel[igc * 6 - 6] = a;
 			cel[igc * 6 - 5] = a;
 			cel[igc * 6 - 4] = a;
-			cel[igc * 6 - 3] = 90.f;
-			cel[igc * 6 - 2] = 90.f;
-			cel[igc * 6 - 1] = 90.f;
+			cel[igc * 6 - 3] = 90.0;
+			cel[igc * 6 - 2] = 90.0;
+			cel[igc * 6 - 1] = 90.0;
 
 	/* $OMP END CRITICAL(STORE1) */
 
@@ -2803,7 +3405,7 @@ C*/
 			for (int i = 1; i <= 3; ++i) {
 				for (int j = 1; j <= 3; ++j) {
 		/* L140: */
-					al[i + j * 3 - 4] = 0.f;
+					al[i + j * 3 - 4] = 0.0;
 				}
 			}
 			dcell(celpre, al, &v1);
@@ -2841,22 +3443,22 @@ C*/
 			bb[2] = a;
 			bb[3] = a;
 			bb[4] = a;
-			bb[5] = 90.f;
-			bb[6] = 90.f;
-			bb[7] = 90.f;
-			afi[2] = 1.f;
-			afi[3] = 1.f;
-			afi[4] = 1.f;
-			afi[5] = 0.f;
-			afi[6] = 0.f;
-			afi[7] = 0.f;
+			bb[5] = 90.0;
+			bb[6] = 90.0;
+			bb[7] = 90.0;
+			afi[2] = 1.0;
+			afi[3] = 1.0;
+			afi[4] = 1.0;
+			afi[5] = 0.0;
+			afi[6] = 0.0;
+			afi[7] = 0.0;
 			celpre[0] = a;
 			celpre[1] = a;
 			celpre[2] = a;
 			for (int i = 1; i <= 3; ++i) {
 				for (int j = 1; j <= 3; ++j) {
 		/* L110: */
-					al[i + j * 3 - 4] = 0.f;
+					al[i + j * 3 - 4] = 0.0;
 				}
 			}
 
@@ -2864,13 +3466,11 @@ C*/
 
 			if (rp[igc - 1] < rmi) {
 				++interest;
-				char temp[90];
-				char *temp2 = "\n YOU HAVE FOUND AN INTERESTING RESULT : Rp < Rmin !\n\n";
-				snprintf(temp, sizeof(temp), "\n===============================================================================\n\n");
-				fwrite(temp, strlen(temp), 1, imp_file);
-				fwrite(temp2, strlen(temp2), 1, imp_file);
+				printSaveInterstResString(imp_file, rmax, v2, ipen, 1, a);
+				/*const char *temp2 = saveInterestingResultString(imp_file);
 				//1115  FORMAT(14X,F5.3,F8.4,F9.1,I3)
-				printf("%.3lf %.4lf %.1lf %d\n%s\n", rmax, a, v2, ipen, temp2);
+				printIsee(rmax, v2, ipen, 1, a);
+				printf("%s\n", temp2);*/
 
 		/* ... Refine that cell */
 
@@ -2879,12 +3479,12 @@ C*/
 				celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
 				cncalc[igc - 1] = (double) ncalc;
 				if (ndat >= 20) {
-					fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.f * ddq);
-					ff20[igc - 1] = 20.f / (cncalc[igc - 1] * ddt);
+					fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
+					ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
 				} else {
 					pndat = (double) ndat;
 					fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1] *
-						2.f * ddq);
+						2.0 * ddq);
 					ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
 				}
 				iref = 1;
@@ -2898,12 +3498,12 @@ C*/
 				celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
 				cncalc[igc - 1] = (double) ncalc;
 				if (ndat >= 20) {
-					fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.f * ddq);
-					ff20[igc - 1] = 20.f / (cncalc[igc - 1] * ddt);
+					fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
+					ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
 				} else {
 					pndat = (double) ndat;
 					fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1] *
-						2.f * ddq);
+						2.0 * ddq);
 					ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
 				}
 			}
@@ -2916,7 +3516,7 @@ C*/
 					if (ifi[i - 1] != ifile) {
 						goto L118;
 					}
-					double vdelt = vgc[igc - 1] / 300.f;
+					double vdelt = vgc[igc - 1] / 300.0;
 					double vp = vgc[igc - 1] + vdelt;
 					double vm = vgc[igc - 1] - vdelt;
 					if (vgc[i - 1] > vp || vgc[i - 1] < vm) {
@@ -2926,7 +3526,8 @@ C*/
 					if (rp[igc - 1] < rp[i - 1]) {
 						if (isee == 1) {
 							//1115
-							printf("%.3lf %.4lf %.1lf %d\n", rmax, a, v2, ipen);
+							printIsee(rmax, v2, ipen, 1, a);
+							// printf("%.3lf %.4lf %.1lf %d\n", rmax, a, v2, ipen);
 						}
 						km[i - 1] = km[igc - 1];
 						vgc[i - 1] = vgc[igc - 1];
@@ -2937,7 +3538,7 @@ C*/
 					}
 					--igc;
 					if (nsol[i - 1] > 5) {
-						ntried = tmax + 1.f;
+						ntried = tmax + 1.0;
 						++nout;
 					}
 					goto L119;
@@ -2945,23 +3546,27 @@ C*/
 					;
 				}
 				if (iverb == 1) {
-					char temp[30];
-					snprintf(temp, sizeof(temp), "%.3lf %.0lf %.4lf %.1lf %d %d\n", rmax, ntried, a, v2, ipen, icode);
-					fwrite(temp, strlen(temp), 1, imp_file);
+					saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 1, a);
+					// char temp[30];
+					// snprintf(temp, sizeof(temp), "%.3lf %.0lf %.4lf %.1lf %d %d\n", rmax, ntried, a, v2, ipen, icode);
+					// fwrite(temp, strlen(temp), 1, imp_file);
 				}
 				if (isee == 1) {
-					printf("%.3lf %.4lf %.1lf %d\n", rmax, a, v2, ipen);
+					printIsee(rmax, v2, ipen, 1, a);
+					// printf("%.3lf %.4lf %.1lf %d\n", rmax, a, v2, ipen);
 				}
 		L119:
 				;
 			} else {
 				if (iverb == 1) {
-					char temp[30];
-					snprintf(temp, sizeof(temp), "%.3lf %.0lf %.4lf %.1lf %d %d\n", rmax, ntried, a, v2, ipen, icode);
-					fwrite(temp, strlen(temp), 1, imp_file);
+					saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 1, a);
+					// char temp[30];
+					// snprintf(temp, sizeof(temp), "%.3lf %.0lf %.4lf %.1lf %d %d\n", rmax, ntried, a, v2, ipen, icode);
+					// fwrite(temp, strlen(temp), 1, imp_file);
 				}
 				if (isee == 1) {
-					printf("%.3lf %.4lf %.1lf %d\n", rmax, a, v2, ipen);
+					printIsee(rmax, v2, ipen, 1, a);
+					// printf("%.3lf %.4lf %.1lf %d\n", rmax, a, v2, ipen);
 				}
 			}
 	L197:
@@ -3021,25 +3626,25 @@ L290:
 	}
 	if (nsys[1] == 1) {
 		printf("Hexagonal:    Rp     a       c        V     Nind\n");
-		rpsmall = 1.f;
+		rpsmall = 1.0;
 	} else {
 		printf("Rhombohedral: Rp     a       c        V     Nind\n");
-		rpsmall = 1.f;
+		rpsmall = 1.0;
 	}
 
 	ifile = 2;
-	ncycles = 500.f;
+	ncycles = 500.0;
 	cy = ncycles * 1.1f;
-	celpre[3] = 90.f;
-	celpre[4] = 90.f;
-	celpre[5] = 120.f;
+	celpre[3] = 90.0;
+	celpre[4] = 90.0;
+	celpre[5] = 120.0;
 
 	if (ngrid == 3) {
 		nruns = 10;
-		pmin = 2.f;
-		pmax = 30.f;
+		pmin = 2.0;
+		pmax = 30.0;
 		if (nsys[1] == 2) {
-			pmax = 60.f;
+			pmax = 60.0;
 		}
 		pma[2] = dmax1 * 3.1f;
 		if (nsys[1] == 2) {
@@ -3053,10 +3658,10 @@ L290:
 			pma[0] = pmax;
 		}
 		pma[1] = pma[0];
-		vmin = 8.f;
+		vmin = 8.0;
 		for (int i = 1; i <= 3; ++i) {
 			pmi[i - 1] = pmin;
-			delta[i - 1] = (pma[i - 1] - pmi[i - 1]) / 2.f;
+			delta[i - 1] = (pma[i - 1] - pmi[i - 1]) / 2.0;
 	/* L223: */
 			pstart[i - 1] = pmi[i - 1];
 		}
@@ -3064,7 +3669,7 @@ L290:
 		if (vmax > 4e3f) {
 			vmax = 4e3f;
 		}
-		ntimelim[1] = vmax * 5.f;
+		ntimelim[1] = vmax * 5.0;
 	}
 
 	{
@@ -3072,7 +3677,7 @@ L290:
 		snprintf(temp, sizeof(temp), "\nHexagonal/Trigonal/Rhomboedral Monte Carlo search :\n Max(a,c), V  %lf %lf %lf\n\n", pma[0], pma[2], vmax);
 		fwrite(temp, strlen(temp), 1, imp_file);
 	}
-
+// saveMonteCarloSearchString(cubic_params, pmax, vmax, iverb, nrun, ntimelim[0], imp_file);
 	if (iverb == 1) {
 		char temp[250] = "";
 		char *cur = temp, *const end = temp - sizeof(temp);
@@ -3086,7 +3691,16 @@ L290:
 		fwrite(temp, strlen(temp), 1, imp_file);
 	}
 
-	FILE *hex_rho_hkl_file;
+	if (nsys[1] == 2)
+	{
+		readHklFile("rho", 12, 600, ihh);
+	}
+	else
+	{
+		readHklFile("hex", 12, 800, ihh);
+	}
+
+	/*FILE *hex_rho_hkl_file;
 	if (nsys[1] == 2)
 	{
 		hex_rho_hkl_file = openFile("rho", ".hkl", "r");
@@ -3096,6 +3710,7 @@ L290:
 		hex_rho_hkl_file = openFile("hex", ".hkl", "r");
 		ifile = 7;
 	}
+
 	nread = getline(&buffer, &buffsize, hex_rho_hkl_file);
 	sread = sscanf(buffer, "%d", &nhkl0);
 	nhkl0 = ndat * 12;
@@ -3114,9 +3729,9 @@ L290:
 		sscanf(buffer, "%d %d %d", &ihh[1 + i * 3 - 4], &ihh[2 + i * 3 - 4], &ihh[3 + i * 3 - 4]);
 	}
 	fclose(hex_rho_hkl_file);
+*/
 
-
-	for (nrun = 1; nrun <= nruns; ++nrun) {
+	for (int nrun = 1; nrun <= nruns; ++nrun) {
 	/* ------------------------------------------------------------------------- */
 	/*     Initialisation */
 
@@ -3130,18 +3745,18 @@ L290:
 
 		interest = 0;
 		tmax = ntimelim[1] / procs;
-		ttmax = ntimelim[1] * 10.f;
+		ttmax = ntimelim[1] * 10.0;
 		ncells = (int) ntimelim[1];
 		iiseed = 0;
 		ntried = 0.;
 		ntriedt = 0.;
 		nout = 0;
-		celpre[0] = pstart[0] + delta[0] * 2.f * randi(&iseed);
+		celpre[0] = pstart[0] + delta[0] * 2.0 * randi(&iseed);
 		celpre[1] = celpre[0];
-		celpre[2] = pstart[2] + delta[2] * 2.f * randi(&iseed);
+		celpre[2] = pstart[2] + delta[2] * 2.0 * randi(&iseed);
 		celold[0] = celpre[0];
 		celold[2] = celpre[2];
-		rglob = 1.f;
+		rglob = 1.0;
 		nglob = 0;
 
 	/* $OMP PARALLEL DEFAULT(SHARED) COPYIN(/CAL/,/CAL2/) */
@@ -3168,28 +3783,28 @@ L290:
 
 	/*     Which parameter to vary ? a or c ? */
 
-			ntriedb = 0.f;
+			ntriedb = 0.0;
 			ip = 3;
 			if (randi(&iseed) > .5f) {
 				ip = 1;
 			}
-			celpre[ip - 1] = pstart[ip - 1] + delta[ip - 1] * 2.f * randi(&iseed);
-			ntried += 1.f;
+			celpre[ip - 1] = pstart[ip - 1] + delta[ip - 1] * 2.0 * randi(&iseed);
+			ntried += 1.0;
 			goto L204;
 	L203:
-			del = deltab * (1.f - ntriedb / cy);
+			del = deltab * (1.0 - ntriedb / cy);
 			int i = 3;
 			if (randi(&iseed) > .5f) {
 				i = 1;
 			}
-			celpre[i - 1] = pstartb[i - 1] + del * (randi(&iseed) - .5f) * 2.f;
-			ntriedb += 1.f;
+			celpre[i - 1] = pstartb[i - 1] + del * (randi(&iseed) - .5f) * 2.0;
+			ntriedb += 1.0;
 	L204:
 			celpre[1] = celpre[0];
 			for (int i = 1; i <= 3; ++i) {
 				for (int j = 1; j <= 3; ++j) {
 		/* L205: */
-					al[i + j * 3 - 4] = 0.f;
+					al[i + j * 3 - 4] = 0.0;
 				}
 			}
 			dcell(celpre, al, &v1);
@@ -3197,12 +3812,12 @@ L290:
 				++nout;
 				goto L296;
 			}
-			if (ntriedb != 0.f) {
+			if (ntriedb != 0.0) {
 				goto L206;
 			}
 			if (v1 > vmax || v1 < vmin) {
-				ntried += -1.f;
-				ntriedt += 1.f;
+				ntried += -1.0;
+				ntriedt += 1.0;
 				if (ntriedt > ttmax) {
 					++nout;
 					goto L296;
@@ -3216,7 +3831,7 @@ L290:
 				ntried += -1;
 				goto L202;
 			}
-			if (ntriedb != 0.f) {
+			if (ntriedb != 0.0) {
 				goto L214;
 			}
 
@@ -3273,7 +3888,7 @@ L290:
 			if (ip == 3) {
 				celold[ip - 1] = c;
 			}
-			ntriedb = 0.f;
+			ntriedb = 0.0;
 			if (rmax >= rmax0[1]) {
 				goto L217;
 			}
@@ -3291,26 +3906,20 @@ L290:
 
 	/*  Test if too much proposals, if yes decrease Rmax by 5% */
 
-			igt += 1.f;
+			igt += 1.0;
 			if (nr == 1) {
-				if (igt > 50.f) {
+				if (igt > 50.0) {
 					if (ntried / igt < 1e3f) {
 						if (rmax0[1] > .2f) {
 							rmax0[1] -= rmax0[1] * .05f;
-							char temp[50];
-							snprintf(temp, sizeof(temp), "  Rmax reduced by 5%%, now Rmax = %lf", rmax0[1]);
-							fwrite(temp, strlen(temp), 1, imp_file);
-							printf("%s\n", temp);
+							printRmaxReducedString(rmax0[1], imp_file);
 						}
 					}
 				}
 			}
 
 			if (igc > 10000) {
-				char temp[37];
-				snprintf(temp, sizeof(temp), "   More than 10000 good cells = STOP");
-				fwrite(temp, strlen(temp), 1, imp_file);
-				printf("%s\n", temp);
+				printStopString(imp_file);
 				--igc;
 				++interest;
 	/*      GO TO 5000 */
@@ -3318,9 +3927,9 @@ L290:
 			cel[igc * 6 - 6] = a;
 			cel[igc * 6 - 5] = a;
 			cel[igc * 6 - 4] = c;
-			cel[igc * 6 - 3] = 90.f;
-			cel[igc * 6 - 2] = 90.f;
-			cel[igc * 6 - 1] = 120.f;
+			cel[igc * 6 - 3] = 90.0;
+			cel[igc * 6 - 2] = 90.0;
+			cel[igc * 6 - 1] = 120.0;
 
 	/* $OMP END CRITICAL(STORE1) */
 
@@ -3332,7 +3941,7 @@ L290:
 			for (int i = 1; i <= 3; ++i) {
 				for (int j = 1; j <= 3; ++j) {
 		/* L240: */
-					al[i + j * 3 - 4] = 0.f;
+					al[i + j * 3 - 4] = 0.0;
 				}
 			}
 			dcell(celpre, al, &v1);
@@ -3370,22 +3979,22 @@ L290:
 			bb[2] = a;
 			bb[3] = a;
 			bb[4] = c;
-			bb[5] = 90.f;
-			bb[6] = 90.f;
-			bb[7] = 120.f;
-			afi[2] = 1.f;
-			afi[3] = 1.f;
-			afi[4] = 1.f;
-			afi[5] = 0.f;
-			afi[6] = 0.f;
-			afi[7] = 0.f;
+			bb[5] = 90.0;
+			bb[6] = 90.0;
+			bb[7] = 120.0;
+			afi[2] = 1.0;
+			afi[3] = 1.0;
+			afi[4] = 1.0;
+			afi[5] = 0.0;
+			afi[6] = 0.0;
+			afi[7] = 0.0;
 			celpre[0] = a;
 			celpre[1] = a;
 			celpre[2] = c;
 			for (int i = 1; i <= 3; ++i) {
 				for (int j = 1; j <= 3; ++j) {
 		/* L210: */
-					al[i + j * 3 - 4] = 0.f;
+					al[i + j * 3 - 4] = 0.0;
 				}
 			}
 
@@ -3393,13 +4002,11 @@ L290:
 
 			if (rp[igc - 1] < rmi) {
 				++interest;
-				char temp[90];
-				char *temp2 = "\n YOU HAVE FOUND AN INTERESTING RESULT : Rp < Rmin !\n\n";
-				snprintf(temp, sizeof(temp), "\n===============================================================================\n\n");
-				fwrite(temp, strlen(temp), 1, imp_file);
-				fwrite(temp2, strlen(temp2), 1, imp_file);
+				printSaveInterstResString(imp_file, rmax, v2, ipen, 2, a, c);
+				/*const char *temp2 = saveInterestingResultString(imp_file);
 				//1115  FORMAT(14X,F5.3,F8.4,F9.1,I3)
-				printf("%.3lf %.4lf %.4lf %.1lf %d\n%s\n", rmax, a, c, v2, ipen, temp2);
+				printIsee(rmax, v2, ipen, 2, a, c);
+				printf("%s\n", temp2);*/
 
 		/* ... Refine that cell */
 
@@ -3408,12 +4015,12 @@ L290:
 				celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
 				cncalc[igc - 1] = (double) ncalc;
 				if (ndat >= 20) {
-					fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.f * ddq);
-					ff20[igc - 1] = 20.f / (cncalc[igc - 1] * ddt);
+					fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
+					ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
 				} else {
 					pndat = (double) ndat;
 					fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1] *
-						2.f * ddq);
+						2.0 * ddq);
 					ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
 				}
 		/*      WRITE(20,7000)FM20(IGC) */
@@ -3433,12 +4040,12 @@ L290:
 				celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
 				cncalc[igc - 1] = (double) ncalc;
 				if (ndat >= 20) {
-					fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.f * ddq);
-					ff20[igc - 1] = 20.f / (cncalc[igc - 1] * ddt);
+					fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
+					ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
 				} else {
 					pndat = (double) ndat;
 					fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1] *
-						2.f * ddq);
+						2.0 * ddq);
 					ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
 				}
 			}
@@ -3451,13 +4058,13 @@ L290:
 					if (ifi[i - 1] != ifile) {
 						goto L218;
 					}
-					vdelt = vgc[igc - 1] / 300.f;
+					vdelt = vgc[igc - 1] / 300.0;
 					vp = vgc[igc - 1] + vdelt;
 					vm = vgc[igc - 1] - vdelt;
 					if (vgc[i - 1] > vp || vgc[i - 1] < vm) {
 						goto L218;
 					}
-					adelt = cel[igc * 6 - 6] / 500.f;
+					adelt = cel[igc * 6 - 6] / 500.0;
 					ap = cel[igc * 6 - 6] + adelt;
 					am = cel[igc * 6 - 6] - adelt;
 					if (cel[i * 6 - 6] > ap || cel[i * 6 - 6] < am) {
@@ -3466,7 +4073,8 @@ L290:
 					++nsol[i - 1];
 					if (rp[igc - 1] < rp[i - 1]) {
 						if (isee == 1) {
-							printf("%.3lf %.4lf %.4lf %.1lf %d\n", rmax, a, c, v2, ipen);
+							printIsee(rmax, v2, ipen, 2, a, c);
+							// printf("%.3lf %.4lf %.4lf %.1lf %d\n", rmax, a, c, v2, ipen);
 						}
 						km[i - 1] = km[igc - 1];
 						vgc[i - 1] = vgc[igc - 1];
@@ -3477,7 +4085,7 @@ L290:
 					}
 					--igc;
 					if (nsol[i - 1] > 5) {
-						ntried = tmax + 1.f;
+						ntried = tmax + 1.0;
 						++nout;
 					}
 					goto L219;
@@ -3485,23 +4093,27 @@ L290:
 					;
 				}
 				if (iverb == 1) {
-					char temp[40];
-					snprintf(temp, sizeof(temp), "%.3lf %.0lf %.4lf %.4lf %.1lf %d %d\n", rmax, ntried, a, c, v2, ipen, icode);
-					fwrite(temp, strlen(temp), 1, imp_file);
+					saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 2, a, c);
+					// char temp[40];
+					// snprintf(temp, sizeof(temp), "%.3lf %.0lf %.4lf %.4lf %.1lf %d %d\n", rmax, ntried, a, c, v2, ipen, icode);
+					// fwrite(temp, strlen(temp), 1, imp_file);
 				}
 				if (isee == 1) {
-					printf("%.3lf %.4lf %.4lf %.1lf %d\n", rmax, a, c, v2, ipen);
+					printIsee(rmax, v2, ipen, 2, a, c);
+					// printf("%.3lf %.4lf %.4lf %.1lf %d\n", rmax, a, c, v2, ipen);
 				}
 		L219:
 				;
 			} else {
 				if (iverb == 1) {
-					char temp[40];
-					snprintf(temp, sizeof(temp), "%.3lf %.0lf %.4lf %.4lf %.1lf %d %d\n", rmax, ntried, a, c, v2, ipen, icode);
-					fwrite(temp, strlen(temp), 1, imp_file);
+					saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 2, a, c);
+					// char temp[40];
+					// snprintf(temp, sizeof(temp), "%.3lf %.0lf %.4lf %.4lf %.1lf %d %d\n", rmax, ntried, a, c, v2, ipen, icode);
+					// fwrite(temp, strlen(temp), 1, imp_file);
 				}
 				if (isee == 1) {
-					printf("%.3lf %.4lf %.4lf %.1lf %d\n", rmax, a, c, v2, ipen);
+					printIsee(rmax, v2, ipen, 2, a, c);
+					// printf("%.3lf %.4lf %.4lf %.1lf %d\n", rmax, a, c, v2, ipen);
 				}
 			}
 	L297:
@@ -3561,7 +4173,4380 @@ L300:
 	}
 
 /*    Tetragonal case */
+
+	rpsmall = 1.0;
+	printf("Tetragonal:   Rp     a       c        V     Nind\n");
+
+	ifile = 3;
+	ncycles = 500.0;
+	cy = ncycles * 1.1;
+	celpre[3] = 90.0;
+	celpre[4] = 90.0;
+	celpre[5] = 90.0;
+
+	if (ngrid == 3) {
+		nruns = 10;
+		pmin = 2.0;
+		pmax = 30.0;
+		pma[2] = dmax1 * 4.1;
+		if (pma[2] > pmax) {
+			pma[2] = pmax;
+		}
+		pma[0] = dmax1 * 2.1;
+		if (pma[0] > pmax) {
+			pma[0] = pmax;
+		}
+		pma[1] = pma[0];
+		vmin = 8.0;
+		for (int i = 0; i < 3; ++i) {
+			pmi[i] = pmin;
+			delta[i] = (pma[i] - pmi[i]) / 2.0;
+			pstart[i] = pmi[i];
+		}
+		vmax = pma[0] * pma[1] * pma[2];
+		if (vmax > 4000.0) {
+			vmax = 4000.0;
+		}
+		ntimelim[2] = vmax * 5.0;
+	}
+
+	{
+		char temp[300] = "";
+		char *cur = temp, *const end = temp - sizeof(temp);
+		cur += snprintf(cur, end-cur, "\nTetragonal Monte Carlo search :\n Max(a, c), V %lf %lf %lf\n\n", pma[0], pma[2], vmax);
+		if (iverb == 1)
+		{
+			cur += snprintf(cur, end-cur, "  Results in tetragonal, run, tests : %d %d\n===============================================================================\n Rp  Trial number    a      c        V  Nind Icod\n\n", nrun, ntimelim[2]);
+		}
+		fwrite(temp, strlen(temp), 1, imp_file);
+	}
+
+	/*C
+C     READ hkl Miller indices in tet.hkl
+C*/
+
+	readHklFile("tet", 12, 800, ihh);
+
+	/*FILE *tet_hkl_file = openFile("tet", ".hkl", "r");
+	getline(&buffer, &buffsize, tet_hkl_file);
+	sscanf(buffer, "%d", &nhkl0);
+	nhkl0 = ndat * 12;
+	if (nhkl0 > 800) nhkl0 = 800;
+	for (int i = 1; i <= nhkl0; ++i)
+	{
+		getline(&buffer, &buffsize, tet_hkl_file);
+		sscanf(buffer, "%d %d %d", &ihh[1 + i * 3 - 4], &ihh[2 + i * 3 - 4], &ihh[3 + i * 3 - 4]);
+	}
+	fclose(tet_hkl_file);*/
+
+	for (int nrun = 1; nrun <= nruns; ++nrun) {
+	/* ------------------------------------------------------------------------- */
+	/*     Initialisation */
+
+	/*      CALL ESP_INIT(ISEED) */
+
+	/* ------------------------------------------------------------------------- */
+		rmax = rmaxref;
+		rmin = rmax;
+
+	/* ...  here starts the loop */
+
+		interest = 0;
+		tmax = ntimelim[2] / procs;
+		ttmax = ntimelim[2] * 10.0;
+		ncells = (int) ntimelim[2];
+		iiseed = 0;
+		ntried = 0.0;
+		ntriedt = 0.0;
+		nout = 0;
+		celpre[0] = pstart[0] + delta[0] * 2.0 * randi(&iseed);
+		celpre[1] = celpre[0];
+		celpre[2] = pstart[2] + delta[2] * 2.0 * randi(&iseed);
+		celold[0] = celpre[0];
+		celold[2] = celpre[2];
+		rglob = 1.0;
+		nglob = 0;
+
+	/* $OMP PARALLEL DEFAULT(SHARED) COPYIN(/CAL/,/CAL2/) */
+	/* $OMP& PRIVATE(NCEL,NTRIEDB,DEL,V1,ICODE,LLHKL,IHKL,TH3,NCALC, */
+	/* $OMP& RMAX2,A,C,V2,BPAR,V3,PSTARTB,IPEN,ISEE,INDIC,IP, */
+	/* $OMP& DIFF,DIFF2,DDT,DDQ) */
+	/* $OMP& FIRSTPRIVATE(iseed,iiseed,rmax0,ntried,ntriedt,nout, */
+	/* $OMP& celpre,celold,rglob,nglob,rmin,rmax,bb,afi) */
+	/* $OMP DO */
+
+		for (int ncel = 1; ncel <= ncells; ++ncel) {
+			if (nout >= 1) {
+				goto L396;
+			}
+			if (interest >= 1) {
+				goto L396;
+			}
+			++iiseed;
+			if (iiseed == 1) {
+				iseed = ((iseed - ncel * nrun) / 2 << 1) + 1;
+			}
+
+	L302:
+
+	/*     Which parameter to vary ? a or c ? */
+
+			ntriedb = 0.0;
+			ip = 3;
+			if (randi(&iseed) > .5f) {
+				ip = 1;
+			}
+			celpre[ip - 1] = pstart[ip - 1] + delta[ip - 1] * 2.0 * randi(&iseed);
+			ntried += 1.0;
+			goto L304;
+	L303:
+			del = deltab * (1.0 - ntriedb / cy);
+			int i = 3;
+			if (randi(&iseed) > .5f) {
+				i = 1;
+			}
+			celpre[i - 1] = pstartb[i - 1] + del * (randi(&iseed) - .5f) * 2.0;
+			ntriedb += 1.0;
+	L304:
+			celpre[1] = celpre[0];
+			for (int i = 1; i <= 3; ++i) {
+				for (int j = 1; j <= 3; ++j) {
+					al[i + j * 3 - 4] = 0.0;
+				}
+			}
+			dcell(celpre, al, &v1);
+			if (ntried > tmax) {
+				++nout;
+				goto L396;
+			}
+			if (ntriedb != 0.0) {
+				goto L306;
+			}
+			if (v1 > vmax || v1 < vmin) {
+				ntried += -1.0;
+				ntriedt += 1.0;
+				if (ntriedt > ttmax) {
+					++nout;
+					goto L396;
+				}
+				goto L302;
+			}
+
+	L306:
+			calcul1(&diff, &diff2);
+			if (nmx > ndat10) {
+				ntried += -1;
+				goto L302;
+			}
+			if (ntriedb != 0.0) {
+				goto L314;
+			}
+
+	/* ... Rp value satisfying ??? */
+
+			if (diff < rglob || lhkl > nglob) {
+				rglob = diff;
+				nglob = lhkl;
+				celold[ip - 1] = celpre[ip - 1];
+			}
+			if (lhkl >= nmax) {
+				rmax = diff;
+				icode = 2;
+				if (diff <= rmaxref) {
+					icode = 1;
+				}
+			} else {
+				icode = 1;
+			}
+			if (diff > rmax) {
+				goto L317;
+			}
+			if (lhkl < nmax) {
+				goto L317;
+			}
+	L314:
+			if (diff <= rmax) {
+				llhkl = lhkl;
+				rmax = diff;
+				rmax2 = diff2;
+				a = celpre[0];
+				c = celpre[2];
+				v2 = v1;
+				if (diff < rmin) {
+					rmin = diff;
+					bpar[0] = a;
+					bpar[2] = c;
+					v3 = v1;
+				}
+
+		/* ... "Refine" that cell (by Monte Carlo too...) */
+
+				pstartb[0] = celpre[0];
+				pstartb[2] = celpre[2];
+			}
+			if (ntriedb <= ncycles) {
+				goto L303;
+			}
+			rglob = .5f;
+			nglob = ndat2;
+			if (ip == 1) {
+				celold[ip - 1] = a;
+			}
+			if (ip == 3) {
+				celold[ip - 1] = c;
+			}
+			ntriedb = 0.0;
+			if (rmax >= rmax0[2]) {
+				goto L317;
+			}
+			if (rmax2 >= .15f) {
+				goto L317;
+			}
+			ipen = ndat - llhkl;
+			if (ipen > nind) {
+				goto L317;
+			}
+
+	/* $OMP CRITICAL(STORE1) */
+
+			++igc;
+
+	/*  Test if too much proposals, if yes decrease Rmax by 5% */
+
+			igt += 1.0;
+			if (nr == 1) {
+				if (igt > 50.0) {
+					if (ntried / igt < 1e3f) {
+						if (rmax0[2] > .2f) {
+							rmax0[2] -= rmax0[2] * .05f;
+							printRmaxReducedString(rmax0[2], imp_file);
+						}
+					}
+				}
+			}
+
+			if (igc > 10000) {
+				printStopString(imp_file);
+				--igc;
+				++interest;
+	/*      GO TO 5000 */
+			}
+			cel[igc * 6 - 6] = a;
+			cel[igc * 6 - 5] = a;
+			cel[igc * 6 - 4] = c;
+			cel[igc * 6 - 3] = 90.0;
+			cel[igc * 6 - 2] = 90.0;
+			cel[igc * 6 - 1] = 90.0;
+
+	/* $OMP END CRITICAL(STORE1) */
+
+	/* ... Check for supercell */
+
+			celpre[0] = a;
+			celpre[1] = a;
+			celpre[2] = c;
+			for (int i = 1; i <= 3; ++i) {
+				for (int j = 1; j <= 3; ++j) {
+		/* L340: */
+					al[i + j * 3 - 4] = 0.0;
+				}
+			}
+			dcell(celpre, al, &v1);
+
+	/* $OMP CRITICAL(STORE2) */
+
+			calcul2(&diff, ihkl, th3, &ncalc, &igc);
+			km[igc - 1] = llhkl;
+			km2[igc - 1] = lhkl;
+			ifi[igc - 1] = ifile;
+			nsol[igc - 1] = 1;
+			vgc[igc - 1] = v1;
+			rp[igc - 1] = rmax;
+			rp2[igc - 1] = diff;
+			if (rp[igc - 1] < rpsmall) {
+				rpsmall = rp[igc - 1];
+				isee = 1;
+			} else {
+				isee = 0;
+			}
+			supcel(&lhkl, ihkl, cel, &igc, vgc, &c4);
+			brav(&lhkl, ihkl, &ibr);
+			ib[igc - 1] = ibr;
+			a = cel[igc * 6 - 6];
+			cel[igc * 6 - 5] = a;
+			c = cel[igc * 6 - 4];
+			v2 = vgc[igc - 1];
+
+	/* $OMP END CRITICAL(STORE2) */
+
+	/* ... Check for interesting result */
+
+	/*      IF(INTEREST.GE.1)GO TO 396 */
+			indic = 2;
+			bb[2] = a;
+			bb[3] = a;
+			bb[4] = c;
+			bb[5] = 90.0;
+			bb[6] = 90.0;
+			bb[7] = 90.0;
+			afi[2] = 1.0;
+			afi[3] = 1.0;
+			afi[4] = 1.0;
+			afi[5] = 0.0;
+			afi[6] = 0.0;
+			afi[7] = 0.0;
+			celpre[0] = a;
+			celpre[1] = a;
+			celpre[2] = c;
+			for (int i = 1; i <= 3; ++i) {
+				for (int j = 1; j <= 3; ++j) {
+		/* L310: */
+					al[i + j * 3 - 4] = 0.0;
+				}
+			}
+
+	/* $OMP CRITICAL(FOUND) */
+
+			if (rp[igc - 1] < rmi) {
+				++interest;
+				printSaveInterstResString(imp_file, rmax, v2, ipen, 2, a, c);
+				/*const char *temp2 = saveInterestingResultString(imp_file);
+				//1115  FORMAT(14X,F5.3,F8.4,F9.1,I3)
+				printIsee(rmax, v2, ipen, 2, a, c);
+				printf("%s\n", temp2);*/
+
+		/* ... Refine that cell */
+
+				dcell(celpre, al, &v1);
+				calcul2(&diff, ihkl, th3, &ncalc, &igc);
+				celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
+				cncalc[igc - 1] = (double) ncalc;
+				if (ndat >= 20) {
+					fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
+					ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
+				} else {
+					pndat = (double) ndat;
+					fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1] *
+						2.0 * ddq);
+					ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
+				}
+				iref = 1;
+				goto L397;
+			} else {
+
+	/*  Anyway, calculate the M20 and F20 values */
+
+				dcell(celpre, al, &v1);
+				calcul2(&diff, ihkl, th3, &ncalc, &igc);
+				celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
+				cncalc[igc - 1] = (double) ncalc;
+				if (ndat >= 20) {
+					fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
+					ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
+				} else {
+					pndat = (double) ndat;
+					fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1] *
+						2.0 * ddq);
+					ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
+				}
+			}
+
+	/* Test if cell already found */
+
+			if (igc > 1) {
+				for (int i = 1; i < igc; ++i) {
+					if (ifi[i - 1] != ifile) {
+						goto L318;
+					}
+					vdelt = vgc[igc - 1] / 300.0;
+					vp = vgc[igc - 1] + vdelt;
+					vm = vgc[igc - 1] - vdelt;
+					if (vgc[i - 1] > vp || vgc[i - 1] < vm) {
+						goto L318;
+					}
+					adelt = cel[igc * 6 - 6] / 500.0;
+					ap = cel[igc * 6 - 6] + adelt;
+					am = cel[igc * 6 - 6] - adelt;
+					if (cel[i * 6 - 6] > ap || cel[i * 6 - 6] < am) {
+						goto L318;
+					}
+					++nsol[i - 1];
+					if (rp[igc - 1] < rp[i - 1]) {
+						if (isee == 1) {
+							printIsee(rmax, v2, ipen, 2, a, c);
+							// printf("%.3lf %.4lf %.4lf %.1lf %d\n", rmax, a, c, v2, ipen);
+						}
+						km[i - 1] = km[igc - 1];
+						vgc[i - 1] = vgc[igc - 1];
+						rp[i - 1] = rp[igc - 1];
+						cel[i * 6 - 6] = cel[igc * 6 - 6];
+						cel[i * 6 - 5] = cel[igc * 6 - 5];
+						cel[i * 6 - 4] = cel[igc * 6 - 4];
+					}
+					--igc;
+					if (nsol[i - 1] > 5) {
+					ntried = tmax + 1.0;
+					++nout;
+					}
+					goto L319;
+		L318:
+					;
+				}
+				if (iverb == 1) {
+					saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 2, a, c);
+					// char temp[40];
+					// snprintf(temp, sizeof(temp), "%.3lf %.0lf %.4lf %.4lf %.1lf %d %d\n", rmax, ntried, a, c, v2, ipen, icode);
+					// fwrite(temp, strlen(temp), 1, imp_file);
+				}
+				if (isee == 1) {
+					printIsee(rmax, v2, ipen, 2, a, c);
+					// printf("%.3lf %.4lf %.4lf %.1lf %d\n", rmax, a, c, v2, ipen);
+				}
+		L319:
+				;
+			} else {
+				if (iverb == 1) {
+					saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 2, a, c);
+					// char temp[40];
+					// snprintf(temp, sizeof(temp), "%.3lf %.0lf %.4lf %.4lf %.1lf %d %d\n", rmax, ntried, a, c, v2, ipen, icode);
+					// fwrite(temp, strlen(temp), 1, imp_file);
+				}
+				if (isee == 1) {
+					printIsee(rmax, v2, ipen, 2, a, c);
+					// printf("%.3lf %.4lf %.4lf %.1lf %d\n", rmax, a, c, v2, ipen);
+				}
+			}
+	L397:
+
+	/* $OMP END CRITICAL(FOUND) */
+
+
+	L317:
+			rmax = rmaxref;
+			if (randi(&iseed) > escape) {
+				celpre[ip - 1] = celold[ip - 1];
+			}
+
+	/*   END ON 4000 tests */
+
+	L396:
+			;
+		}
+
+	/* $OMP END DO NOWAIT */
+	/* $OMP END PARALLEL */
+
+
+	/* ... Stop if max limit of Monte Carlo tests outpassed */
+	/*         or if K is pressed (tested every 30000 MC event) */
+
+		if (interest >= 1) {
+			goto L5000;
+		}
+		killk(&pressedk);
+		if (rmin == rmax) {
+			goto L398;
+		}
+		if (iverb == 1) {
+			char temp[84];
+			snprintf(temp, sizeof(temp), "\nBest result : a = %lf Rp = %lf\nBest result : c = %lf V = %lf\n\n", bpar[0], rmin, bpar[2], v3);
+			fwrite(temp, strlen(temp), 1, imp_file);
+			writeFormattedDate(imp_file);
+		}
+		rmin = rmax;
+	L398:
+		if (pressedk) {
+			goto L5000;
+		}
+
+	/*  END ON NRUNS */
+
+	/* L399: */
+	}
+
+L400:
+
+	if (nsys[3] == 0) {
+		goto L500;
+	}
+
+/*    Orthorhombic case */
+
+	rpsmall = 1.0;
+	printf("Orthorhombic: Rp     a       b       c        V     Nind\n");
+
+	ifile = 4;
+	ncycles = 1e3f;
+	cy = ncycles * 1.1f;
+	celpre[3] = 90.0;
+	celpre[4] = 90.0;
+	celpre[5] = 90.0;
+
+	if (ngrid == 3) {
+		nruns2 = 6;
+		nruns = 10;
+		pmin = 2.0;
+		pmax = 20.0;
+		pma[0] = dmax1 * 2.1f;
+		pma[1] = dmax2 * 2.1f;
+		pma[2] = dmax3 * 2.1f;
+		if (pma[0] > pmax) {
+			pma[0] = pmax;
+		}
+		if (pma[1] > pmax) {
+			pma[1] = pmax;
+		}
+		if (pma[2] > pmax) {
+			pma[2] = pmax;
+		}
+		vorth = pma[0] * pma[1] * pma[2];
+		if (vorth > 3e3f) {
+			vorth = 3e3f;
+		}
+		vmax = vorth;
+		for (int i = 0; i < 3; ++i) {
+			pmi[i] = pmin;
+			delta[i] = (pma[i] - pmi[i]) / 2.0;
+			pstart[i] = pmi[i];
+		}
+	}
+
+	{
+		char temp[300] = "";
+		char *cur = temp, *const end = temp - sizeof(temp);
+		cur += snprintf(cur, end-cur, "\nOrthorhombic Monte Carlo search :\n Max(a,b,c), V %lf %lf %lf %lf\n\n", pma[0], pma[1], pma[2], vmax);
+		if (iverb == 1)
+		{
+			cur += snprintf(cur, end-cur, "  Results in orthorhombic, run, tests : %d %d\n===============================================================================\n Rp  Trial number    a   b   c       V  Nind icod\n\n", nrun, ntimelim[3]);
+		}
+		fwrite(temp, strlen(temp), 1, imp_file);
+	}
+
+	/*C
+C     READ hkl Miller indices in ort.hkl
+C*/
+
+	readHklFile("ort", 20, 1000, ihh);
+
+	/*FILE *ort_hkl_file = openFile("ort", ".hkl", "r");
+	getline(&buffer, &buffsize, ort_hkl_file);
+	sscanf(buffer, "%d", &nhkl0);
+	nhkl0 = ndat * 20;
+	if (nhkl0 > 1000) nhkl0 = 1000;
+	for (int i = 1; i <= nhkl0; ++i)
+	{
+		getline(&buffer, &buffsize, ort_hkl_file);
+		sscanf(buffer, "%d %d %d", &ihh[1 + i * 3 - 4], &ihh[2 + i * 3 - 4], &ihh[3 + i * 3 - 4]);
+	}
+	fclose(ort_hkl_file);*/
+
+
+	for (int nrun2 = 1; nrun2 <= nruns2; ++nrun2) {
+		if (ngrid == 3) {
+			if (nrun2 == 1) {
+				vmin = 8.0;
+				vmax = 500.0;
+				if (vorth < 500.0) {
+					vmax = vorth;
+				}
+				ntimelim[3] = (vmax - vmin) * 20.0;
+			}
+			if (nrun2 == 2) {
+				if (vorth < 500.0) {
+					goto L500;
+				}
+				vmin = 500.0;
+				vmax = 1e3f;
+				if (vorth < 1e3f) {
+					vmax = vorth;
+				}
+				ntimelim[3] = (vmax - vmin) * 20.0;
+			}
+			if (nrun2 == 3) {
+				if (vorth < 1e3f) {
+					goto L500;
+				}
+				vmin = 1e3f;
+				vmax = 1500.0;
+				if (vorth < 1500.0) {
+					vmax = vorth;
+				}
+				ntimelim[3] = (vmax - vmin) * 20.0;
+			}
+			if (nrun2 == 4) {
+				if (vorth < 1500.0) {
+					goto L500;
+				}
+				vmin = 1500.0;
+				vmax = 2e3f;
+				if (vorth < 2e3f) {
+					vmax = vorth;
+				}
+				ntimelim[3] = (vmax - vmin) * 20.0;
+			}
+			if (nrun2 == 5) {
+				if (vorth < 2e3f) {
+					goto L500;
+				}
+				vmin = 2e3f;
+				vmax = 2500.0;
+				if (vorth < 2500.0) {
+					vmax = vorth;
+				}
+				ntimelim[3] = (vmax - vmin) * 20.0;
+			}
+			if (nrun2 == 6) {
+				if (vorth < 2500.0) {
+					goto L500;
+				}
+				vmin = 2500.0;
+				vmax = 3e3f;
+				if (vorth < 3e3f) {
+					vmax = vorth;
+				}
+				ntimelim[3] = (vmax - vmin) * 20.0;
+			}
+		}
+
+		for (int nrun = 1; nrun <= nruns; ++nrun) {
+	/* ------------------------------------------------------------------------- */
+	/*     Initialisation */
+
+	/*      CALL ESP_INIT(ISEED) */
+
+	/* ------------------------------------------------------------------------- */
+			rmax = rmaxref;
+			rmin = rmax;
+
+	/* ...  here starts the loop */
+
+			interest = 0;
+			tmax = ntimelim[3] / procs;
+			ttmax = ntimelim[3] * 10.0;
+			ncells = (int) ntimelim[3];
+			iiseed = 0;
+			ntried = 0.0;
+			ntriedt = 0.0;
+			nout = 0;
+			celpre[0] = pstart[0] + delta[0] * 2.0 * randi(&iseed);
+			celpre[1] = pstart[1] + delta[1] * 2.0 * randi(&iseed);
+			celpre[2] = pstart[2] + delta[2] * 2.0 * randi(&iseed);
+			celold[0] = celpre[0];
+			celold[1] = celpre[1];
+			celold[2] = celpre[2];
+			rglob = 1.0;
+			nglob = 0;
+
+	/* $OMP PARALLEL DEFAULT(SHARED) COPYIN(/CAL/,/CAL2/) */
+	/* $OMP& PRIVATE(NCEL,NTRIEDB,DEL,V1,ICODE,LLHKL,IHKL,TH3,NCALC, */
+	/* $OMP& RMAX2,A,B,C,V2,BPAR,V3,PSTARTB,IPEN,ISEE,INDIC,IP,X, */
+	/* $OMP& DIFF,DIFF2,DDT,DDQ) */
+	/* $OMP& FIRSTPRIVATE(iseed,iiseed,rmax0,ntried,ntriedt,nout, */
+	/* $OMP& celpre,celold,rglob,nglob,rmin,rmax,bb,afi) */
+	/* $OMP DO */
+
+			for (int ncel = 1; ncel <= ncells; ++ncel) {
+				if (nout >= 1) {
+					goto L496;
+				}
+				if (interest >= 1) {
+					goto L496;
+				}
+				++iiseed;
+				if (iiseed == 1) {
+					iseed = ((iseed - ncel * nrun) / 2 << 1) + 1;
+				}
+
+		L402:
+
+		/*     Which parameter to vary ? a or b or c ? */
+
+				ntriedb = 0.0;
+				x = randi(&iseed);
+				if (x >= 0.0 && x < .33333f) {
+					ip = 1;
+				}
+				if (x >= .33333f && x < .66666f) {
+					ip = 2;
+				}
+				if (x >= .66666f && x <= 1.0) {
+					ip = 3;
+				}
+				celpre[ip - 1] = pstart[ip - 1] + delta[ip - 1] * 2 * randi(&iseed);
+				ntried += 1.0;
+				goto L404;
+		L403:
+				del = deltab * (1.0 - ntriedb / cy);
+				x = randi(&iseed);
+				int i = 1;
+				if (x >= 0.0 && x < .33333f) {
+					i = 1;
+				}
+				if (x >= .33333f && x < .66666f) {
+					i = 2;
+				}
+				if (x >= .66666f && x < 1.0) {
+					i = 3;
+				}
+				celpre[i - 1] = pstartb[i - 1] + del * (randi(&iseed) - .5f) * 2.0;
+				ntriedb += 1.0;
+		L404:
+				for (int i = 1; i <= 3; ++i) {
+					for (int j = 1; j <= 3; ++j) {
+						al[i + j * 3 - 4] = 0.0;
+					}
+				}
+				dcell(celpre, al, &v1);
+				if (ntried > tmax) {
+					++nout;
+					goto L496;
+				}
+				if (ntriedb != 0.0) {
+					goto L406;
+				}
+				if (v1 > vmax || v1 < vmin) {
+					ntried += -1.0;
+					ntriedt += 1.0;
+					if (ntriedt > ttmax) {
+						++nout;
+						goto L496;
+					}
+					goto L402;
+				}
+
+		L406:
+				calcul1(&diff, &diff2);
+				if (nmx > ndat10) {
+					ntried += -1;
+					goto L402;
+				}
+				if (ntriedb != 0.0) {
+					goto L414;
+				}
+
+		/* ... Rp value satisfying ??? */
+
+				if (diff < rglob || lhkl > nglob) {
+					rglob = diff;
+					nglob = lhkl;
+					celold[ip - 1] = celpre[ip - 1];
+				}
+				if (lhkl >= nmax) {
+					rmax = diff;
+					icode = 2;
+					if (diff <= rmaxref) {
+						icode = 1;
+					}
+				} else {
+					icode = 1;
+				}
+				if (diff > rmax) {
+					goto L417;
+				}
+				if (lhkl < nmax) {
+					goto L417;
+				}
+		L414:
+				if (diff <= rmax) {
+					llhkl = lhkl;
+					rmax = diff;
+					rmax2 = diff2;
+					a = celpre[0];
+					b = celpre[1];
+					c = celpre[2];
+					v2 = v1;
+					if (diff < rmin) {
+						rmin = diff;
+						bpar[0] = a;
+						bpar[1] = b;
+						bpar[2] = c;
+						v3 = v1;
+					}
+
+		/* ... "Refine" that cell (by Monte Carlo too...) */
+
+					pstartb[0] = celpre[0];
+					pstartb[1] = celpre[1];
+					pstartb[2] = celpre[2];
+				}
+				if (ntriedb <= ncycles) {
+					goto L403;
+				}
+				rglob = .5f;
+				nglob = ndat2;
+				if (ip == 1) {
+					celold[ip - 1] = a;
+				}
+				if (ip == 2) {
+					celold[ip - 1] = b;
+				}
+				if (ip == 3) {
+					celold[ip - 1] = c;
+				}
+				ntriedb = 0.0;
+				if (rmax >= rmax0[3]) {
+					goto L417;
+				}
+				if (rmax2 >= .15f) {
+					goto L417;
+				}
+				ipen = ndat - llhkl;
+				if (ipen > nind) {
+					goto L417;
+				}
+
+	/* $OMP CRITICAL(STORE1) */
+
+				++igc;
+
+		/*  Test if too much proposals, if yes decrease Rmax by 5% */
+
+				igt += 1.0;
+				if (nr == 1) {
+					if (igt > 50.0) {
+						if (ntried / igt < 1e4f) {
+							if (rmax0[3] > .2f) {
+								rmax0[3] -= rmax0[3] * .05f;
+								printRmaxReducedString(rmax0[3], imp_file);
+							}
+						}
+					}
+				}
+
+				if (igc > 10000) {
+					printStopString(imp_file);
+					--igc;
+					++interest;
+				}
+				cel[igc * 6 - 6] = a;
+				cel[igc * 6 - 5] = b;
+				cel[igc * 6 - 4] = c;
+				cel[igc * 6 - 3] = 90.0;
+				cel[igc * 6 - 2] = 90.0;
+				cel[igc * 6 - 1] = 90.0;
+
+		/* $OMP END CRITICAL(STORE1) */
+
+		/* ... Check for supercell */
+
+				celpre[0] = a;
+				celpre[1] = b;
+				celpre[2] = c;
+				for (int i = 1; i <= 3; ++i) {
+					for (int j = 1; j <= 3; ++j) {
+						al[i + j * 3 - 4] = 0.0;
+					}
+				}
+				dcell(celpre, al, &v1);
+
+		/* $OMP CRITICAL(STORE2) */
+
+				calcul2(&diff, ihkl, th3, &ncalc, &igc);
+				km[igc - 1] = llhkl;
+				km2[igc - 1] = lhkl;
+				ifi[igc - 1] = ifile;
+				nsol[igc - 1] = 1;
+				vgc[igc - 1] = v1;
+				rp[igc - 1] = rmax;
+				rp2[igc - 1] = diff;
+				if (rp[igc - 1] < rpsmall) {
+					rpsmall = rp[igc - 1];
+					isee = 1;
+				} else {
+					isee = 0;
+				}
+				supcel(&lhkl, ihkl, cel, &igc, vgc, &c1);
+				brav(&lhkl, ihkl, &ibr);
+				ib[igc - 1] = ibr;
+				a = cel[igc * 6 - 6];
+				b = cel[igc * 6 - 5];
+				c = cel[igc * 6 - 4];
+				v2 = vgc[igc - 1];
+
+		/* $OMP END CRITICAL(STORE2) */
+
+		/* ... Check for interesting result */
+
+		/*      IF(INTEREST.GE.1)GO TO 496 */
+				indic = 0;
+				bb[2] = a;
+				bb[3] = b;
+				bb[4] = c;
+				bb[5] = 90.0;
+				bb[6] = 90.0;
+				bb[7] = 90.0;
+				afi[2] = 1.0;
+				afi[3] = 1.0;
+				afi[4] = 1.0;
+				afi[5] = 0.0;
+				afi[6] = 0.0;
+				afi[7] = 0.0;
+				celpre[0] = a;
+				celpre[1] = b;
+				celpre[2] = c;
+				for (int i = 1; i <= 3; ++i) {
+					for (int j = 1; j <= 3; ++j) {
+						al[i + j * 3 - 4] = 0.0;
+					}
+				}
+
+	/* $OMP CRITICAL(FOUND) */
+
+				if (rp[igc - 1] < rmi) {
+					++interest;
+					printSaveInterstResString(imp_file, rmax, v2, ipen, 3, a, b, c);
+					/*const char *temp2 = saveInterestingResultString(imp_file);
+					//1115  FORMAT(14X,F5.3,F8.4,F9.1,I3)
+					printIsee(rmax, v2, ipen, 3, a, b, c);
+					printf("%s\n", temp2);
+
+		/* ... Refine that cell */
+
+					dcell(celpre, al, &v1);
+					calcul2(&diff, ihkl, th3, &ncalc, &igc);
+					celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
+					cncalc[igc - 1] = (double) ncalc;
+					if (ndat >= 20) {
+						fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
+						ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
+					} else {
+						pndat = (double) ndat;
+						fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1]	* 2.0 * ddq);
+						ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
+					}
+					iref = 1;
+					goto L497;
+				} else {
+
+		/*  Anyway, calculate the M20 and F20 values */
+
+					dcell(celpre, al, &v1);
+					calcul2(&diff, ihkl, th3, &ncalc, &igc);
+					celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
+					cncalc[igc - 1] = (double) ncalc;
+					if (ndat >= 20) {
+						fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
+						ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
+					} else {
+						pndat = (double) ndat;
+						fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1]
+							* 2.0 * ddq);
+						ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
+					}
+				}
+
+		/* Test if cell already found */
+
+				if (igc > 1) {
+					for (int i = 1; i < igc; ++i) {
+						if (ifi[i - 1] != ifile) {
+							goto L418;
+						}
+						vdelt = vgc[igc - 1] / 300.0;
+						vp = vgc[igc - 1] + vdelt;
+						vm = vgc[igc - 1] - vdelt;
+						if (vgc[i - 1] > vp || vgc[i - 1] < vm) {
+							goto L418;
+						}
+						adelt = cel[igc * 6 - 6] / 500.0;
+						ap = cel[igc * 6 - 6] + adelt;
+						am = cel[igc * 6 - 6] - adelt;
+						int na = 0;
+						if (cel[i * 6 - 6] > ap || cel[i * 6 - 6] < am) {
+							na = 1;
+						}
+						bdelt = cel[igc * 6 - 5] / 500.0;
+						bp = cel[igc * 6 - 5] + bdelt;
+						bm = cel[igc * 6 - 5] - bdelt;
+						nb = 0;
+						if (cel[i * 6 - 6] > bp || cel[i * 6 - 6] < bm) {
+							nb = 1;
+						}
+						cdelt = cel[igc * 6 - 4] / 500.0;
+						cp = cel[igc * 6 - 4] + cdelt;
+						cm = cel[igc * 6 - 4] - cdelt;
+						int nc = 0;
+						if (cel[i * 6 - 6] > cp || cel[i * 6 - 6] < cm) {
+							nc = 1;
+						}
+						if (na == 1 && nb == 1 && nc == 1) {
+							goto L418;
+						}
+						++nsol[i - 1];
+						if (rp[igc - 1] < rp[i - 1]) {
+							if (isee == 1) {
+								printIsee(rmax, v2, ipen, 3, a, b, c);
+								// printf("%.3lf %.4lf %.4lf %.4lf %.1lf %d\n", rmax, a, b, c, v2, ipen);
+							}
+							km[i - 1] = km[igc - 1];
+							vgc[i - 1] = vgc[igc - 1];
+							rp[i - 1] = rp[igc - 1];
+							cel[i * 6 - 6] = cel[igc * 6 - 6];
+							cel[i * 6 - 5] = cel[igc * 6 - 5];
+							cel[i * 6 - 4] = cel[igc * 6 - 4];
+						}
+						--igc;
+						if (nsol[i - 1] > 5) {
+							ntried = tmax + 1.0;
+							++nout;
+						}
+						goto L419;
+			L418:
+						;
+					}
+				if (iverb == 1) {
+					saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 3, a, b, c);
+					// char temp[40];
+					// snprintf(temp, sizeof(temp), "%.3lf %.0lf %.4lf %.4lf %.4lf %.1lf %d %d\n", rmax, ntried, a, b, c, v2, ipen, icode);
+					// fwrite(temp, strlen(temp), 1, imp_file);
+				}
+				if (isee == 1) {
+					printIsee(rmax, v2, ipen, 3, a, b, c);
+					// printf("%.3lf %.4lf %.4lf %.4lf %.1lf %d\n", rmax, a, b, c, v2, ipen);
+				}
+	L419:
+				;
+			} else {
+				if (iverb == 1) {
+					saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 3, a, b, c);
+					// char temp[40];
+					// snprintf(temp, sizeof(temp), "%.3lf %.0lf %.4lf %.4lf %.4lf %.1lf %d %d\n", rmax, ntried, a, b, c, v2, ipen, icode);
+					// fwrite(temp, strlen(temp), 1, imp_file);
+				}
+				if (isee == 1) {
+					printIsee(rmax, v2, ipen, 3, a, b, c);
+					// printf("%.3lf %.4lf %.4lf %.4lf %.1lf %d\n", rmax, a, b, c, v2, ipen);
+				}
+			}
+	L497:
+
+	/* $OMP END CRITICAL(FOUND) */
+
+	L417:
+			rmax = rmaxref;
+			if (randi(&iseed) > escape) {
+				celpre[ip - 1] = celold[ip - 1];
+			}
+
+		/*  END ON MC tests */
+
+			L496:
+				;
+			}
+
+	/* $OMP END DO NOWAIT */
+	/* $OMP END PARALLEL */
+
+	/* ... Stop if max limit of Monte Carlo tests outpassed */
+	/*         or if K is pressed (tested every 30000 MC event) */
+
+			if (interest >= 1) {
+				goto L5000;
+			}
+			killk(&pressedk);
+			if (rmin == rmax) {
+				goto L498;
+			}
+			if (iverb == 1) {
+				char temp[111];
+				snprintf(temp, sizeof(temp), "\nBest result : a = %lf Rp = %lf\nBest result : b = %lf\nBest result : c = %lf V = %lf\n\n", bpar[0], rmin, bpar[1], bpar[2], v3);
+				fwrite(temp, strlen(temp), 1, imp_file);
+				writeFormattedDate(imp_file);
+			}
+			rmin = rmax;
+	L498:
+			if (pressedk) {
+				goto L5000;
+			}
+
+		/*  END ON NRUNS */
+
+	/* L499: */
+		}
+	}
+
+/* Monoclinic case */
+
+L500:
+	if (nsys[4] == 0) {
+		goto L600;
+	}
+
+	rpsmall = 1.0;
+	printf("Monoclinic:   Rp     a       b       c       bet     V     Nind\n");
+	ifile = 5;
+	ncycles = 2e3f;
+	cy = ncycles * 1.1;
+	celpre[3] = 90.0;
+	celpre[5] = 90.0;
+
+	if (ngrid == 3) {
+		nruns = 20;
+		nruns2 = 6;
+		pmin = 2.0;
+		pmax = 20.0;
+		pma[0] = dmax1 * 2.1;
+		pma[1] = dmax1 * 2.1;
+		pma[2] = dmax2 * 2.1;
+		if (pma[0] > pmax) {
+			pma[0] = pmax;
+		}
+		if (pma[1] > pmax) {
+			pma[1] = pmax;
+		}
+		if (pma[2] > pmax) {
+			pma[2] = pmax;
+		}
+		vmon = pma[0] * pma[1] * pma[2];
+		if (vmon > 3e3f) {
+			vmon = 3e3f;
+		}
+		for (int i = 0; i < 3; ++i) {
+			pmi[i] = pmin;
+			delta[i] = (pma[i] - pmi[i]) / 2.0;
+			pstart[i] = pmi[i];
+		}
+	}
+
+	{
+		char temp[300] = "";
+		char *cur = temp, *const end = temp - sizeof(temp);
+		cur += snprintf(cur, end-cur, "\nMonoclinic Monte Carlo search :\n Max(a,b,c), V %lf %lf %lf %lf\n\n", pma[0], pma[1], pma[2], vmax);
+		if (iverb == 1)
+		{
+			cur += snprintf(cur, end-cur, "  Results in monoclinic, run, tests : %d %d\n===============================================================================\n Rp  Trial number    a   b   c    bet   V  Nind Icod\n\n", nrun, ntimelim[4]);
+		}
+		fwrite(temp, strlen(temp), 1, imp_file);
+	}
+
+	/*C
+C     READ hkl Miller indices in mon.hkl
+C*/
+
+	readHklFile("mon", 20, 1000, ihh);
+
+	for (int nrun2 = 1; nrun2 <= nruns2; ++nrun2) {
+
+		if (ngrid == 3) {
+			if (nrun2 == 1) {
+				vmin = 8.0;
+				vmax = 500.0;
+				if (vmon < 500.0) {
+					vmax = vmon;
+				}
+				ntimelim[4] = (vmax - vmin) * 200.0;
+			}
+			if (nrun2 == 2) {
+				if (vmon < 500.0) {
+					goto L600;
+				}
+				vmin = 500.0;
+				vmax = 1e3f;
+				if (vmon < 1e3f) {
+					vmax = vmon;
+				}
+				ntimelim[4] = (vmax - vmin) * 200.0;
+			}
+			if (nrun2 == 3) {
+				if (vmon < 1e3f) {
+					goto L600;
+				}
+				vmin = 1e3f;
+				vmax = 1500.0;
+				if (vmon < 1500.0) {
+					vmax = vmon;
+				}
+				ntimelim[4] = (vmax - vmin) * 200.0;
+			}
+			if (nrun2 == 4) {
+				if (vmon < 1500.0) {
+					goto L600;
+				}
+				vmin = 1500.0;
+				vmax = 2e3f;
+				if (vmon < 2e3f) {
+					vmax = vmon;
+				}
+				ntimelim[4] = (vmax - vmin) * 200.0;
+			}
+			if (nrun2 == 5) {
+				if (vmon < 2e3f) {
+					goto L600;
+				}
+				vmin = 2e3f;
+				vmax = 2500.0;
+				if (vmon < 2500.0) {
+					vmax = vmon;
+				}
+				ntimelim[4] = (vmax - vmin) * 200.0;
+			}
+			if (nrun2 == 6) {
+				if (vmon < 2500.0) {
+					goto L600;
+				}
+				vmin = 2500.0;
+				vmax = 3e3f;
+				if (vmon < 3e3f) {
+					vmax = vmon;
+				}
+				ntimelim[4] = (vmax - vmin) * 200.0;
+			}
+		}
+
+		for (int nrun = 1; nrun <= nruns; ++nrun) {
+	/* ------------------------------------------------------------------------- */
+	/*     Initialisation */
+
+	/*      CALL ESP_INIT(ISEED) */
+
+	/* ------------------------------------------------------------------------- */
+			rmax = rmaxref;
+			rmin = rmax;
+
+	/* ...  here starts the loop */
+
+			interest = 0;
+			tmax = ntimelim[4] / procs;
+			ttmax = ntimelim[4] * 10.0;
+			ncells = (int) ntimelim[4];
+			iiseed = 0;
+			ntried = 0.0;
+			ntriedt = 0.0;
+			nout = 0;
+			celpre[0] = pstart[0] + delta[0] * 2.0 * randi(&iseed);
+			celpre[1] = pstart[1] + delta[1] * 2.0 * randi(&iseed);
+			celpre[2] = pstart[2] + delta[2] * 2.0 * randi(&iseed);
+			celpre[4] = astart + deltc * 2.0 * randi(&iseed);
+			celold[0] = celpre[0];
+			celold[1] = celpre[1];
+			celold[2] = celpre[2];
+			celold[4] = celpre[4];
+			rglob = 1.0;
+			nglob = 0;
+	/* $OMP PARALLEL DEFAULT(SHARED) COPYIN(/CAL/,/CAL2/) */
+	/* $OMP& PRIVATE(NCEL,NTRIEDB,DEL,DELD,V1,ICODE,LLHKL,IHKL,TH3, */
+	/* $OMP& RMAX2,A,B,C,BET,V2,BPAR,V3,PSTARTB,IPEN,ISEE,INDIC,IP,X, */
+	/* $OMP& DIFF,DIFF2,NCALC,DDT,DDQ) */
+	/* $OMP& FIRSTPRIVATE(iseed,iiseed,rmax0,ntried,ntriedt,nout, */
+	/* $OMP& celpre,celold,rglob,nold,rmin,rmax,bb,afi) */
+	/* $OMP DO */
+
+			for (int ncel = 1; ncel <= ncells; ++ncel) {
+				if (nout >= 1) {
+					goto L596;
+				}
+				if (interest >= 1) {
+					goto L596;
+				}
+				++iiseed;
+				if (iiseed == 1) {
+					iseed = ((iseed - ncel * nrun) / 2 << 1) + 1;
+				}
+
+		L502:
+
+		/*     Which parameter to vary ? a or b or c or beta ? */
+
+				ntriedb = 0.0;
+				x = randi(&iseed);
+				if (x >= 0.0 && x < .25f) {
+					ip = 1;
+				}
+				if (x >= .25f && x < .5f) {
+					ip = 2;
+				}
+				if (x >= .5f && x < .75f) {
+					ip = 3;
+				}
+				if (x >= .75f && x <= 1.0) {
+					ip = 5;
+				}
+				if (ip != 5) {
+					celpre[ip - 1] = pstart[ip - 1] + delta[ip - 1] * 2.0 *	randi(&iseed);
+				} else {
+					celpre[ip - 1] = astart + deltc * 2.0 * randi(&iseed);
+				}
+				ntried += 1.0;
+				goto L504;
+		L503:
+				del = deltab * (1.0 - ntriedb / cy);
+				deld = deltad * (1.0 - ntriedb / cy);
+				x = randi(&iseed);
+				int i = 1;
+				if (x >= 0.0 && x < .25f) {
+					i = 1;
+				}
+				if (x >= .25f && x < .5f) {
+					i = 2;
+				}
+				if (x >= .5f && x < .75f) {
+					i = 3;
+				}
+				if (x >= .75f && x <= 1.0) {
+					i = 5;
+				}
+				if (i != 5) {
+					celpre[i - 1] = pstartb[i - 1] + del * (randi(&iseed) - .5f) * 2.0;
+				} else {
+					celpre[i - 1] = pstartb[i - 1] + deld * (randi(&iseed) - .5f) * 2.0;
+				}
+				ntriedb += 1.0;
+		L504:
+				for (int i = 1; i <= 3; ++i) {
+					for (int j = 1; j <= 3; ++j) {
+						al[i + j * 3 - 4] = 0.0;
+					}
+				}
+				dcell(celpre, al, &v1);
+				if (ntried > tmax) {
+					++nout;
+					goto L596;
+				}
+				if (ntriedb != 0.0) {
+					goto L506;
+				}
+				if (v1 > vmax || v1 < vmin) {
+					ntried += -1.0;
+					ntriedt += 1.0;
+					if (ntriedt > ttmax) {
+						++nout;
+						goto L596;
+					}
+					goto L502;
+				}
+
+		L506:
+				calcul1(&diff, &diff2);
+				if (nmx > ndat10) {
+					ntried += -1;
+					goto L502;
+				}
+				if (ntriedb != 0.0) {
+					goto L514;
+				}
+
+		/* ... Rp value satisfying ??? */
+
+				if (diff < rglob || lhkl > nglob) {
+					rglob = diff;
+					nglob = lhkl;
+					celold[ip - 1] = celpre[ip - 1];
+				}
+				if (lhkl >= nmax) {
+					rmax = diff;
+					icode = 2;
+					if (diff <= rmaxref) {
+						icode = 1;
+					}
+				} else {
+					icode = 1;
+				}
+				if (diff > rmax) {
+					goto L517;
+				}
+				if (lhkl < nmax) {
+					goto L517;
+				}
+		L514:
+				if (diff <= rmax) {
+					llhkl = lhkl;
+					rmax = diff;
+					rmax2 = diff2;
+					a = celpre[0];
+					b = celpre[1];
+					c = celpre[2];
+					bet = celpre[4];
+					v2 = v1;
+					if (diff < rmin) {
+						rmin = diff;
+						bpar[0] = a;
+						bpar[1] = b;
+						bpar[2] = c;
+						bpar[4] = bet;
+						v3 = v1;
+					}
+
+		/* ... "Refine" that cell (by Monte Carlo too...) */
+
+					pstartb[0] = celpre[0];
+					pstartb[1] = celpre[1];
+					pstartb[2] = celpre[2];
+					pstartb[4] = celpre[4];
+				}
+				if (ntriedb <= ncycles) {
+					goto L503;
+				}
+				rglob = .5f;
+				nglob = ndat2;
+				if (ip == 1) {
+					celold[ip - 1] = a;
+				}
+				if (ip == 2) {
+					celold[ip - 1] = b;
+				}
+				if (ip == 3) {
+					celold[ip - 1] = c;
+				}
+				if (ip == 5) {
+					celold[ip - 1] = bet;
+				}
+				ntriedb = 0.0;
+				if (rmax >= rmax0[4]) {
+					goto L517;
+				}
+				if (rmax2 >= .15f) {
+					goto L517;
+				}
+				ipen = ndat - llhkl;
+				if (ipen > nind) {
+					goto L517;
+				}
+
+		/* $OMP CRITICAL(STORE1) */
+
+				++igc;
+
+		/*  Test if too much proposals, if yes decrease Rmax by 5% */
+
+				igt += 1.0;
+				if (nr == 1) {
+					if (igt > 50.0) {
+						if (ntried / igt < 1e5f) {
+							if (rmax0[4] > 0.2) {
+								rmax0[4] -= rmax0[4] * 0.05;
+								printRmaxReducedString(rmax0[4], imp_file);
+							}
+						}
+					}
+				}
+
+				if (igc > 10000) {
+					printStopString(imp_file);
+					--igc;
+					++interest;
+		/*      GO TO 5000 */
+				}
+				cel[igc * 6 - 6] = a;
+				cel[igc * 6 - 5] = b;
+				cel[igc * 6 - 4] = c;
+				cel[igc * 6 - 3] = 90.0;
+				cel[igc * 6 - 2] = bet;
+				cel[igc * 6 - 1] = 90.0;
+
+		/* $OMP END CRITICAL(STORE1) */
+
+		/* ... Check for supercell */
+
+				celpre[0] = a;
+				celpre[1] = b;
+				celpre[2] = c;
+				celpre[4] = bet;
+				for (int i = 1; i <= 3; ++i) {
+					for (int j = 1; j <= 3; ++j) {
+						al[i + j * 3 - 4] = 0.0;
+					}
+				}
+				dcell(celpre, al, &v1);
+
+		/* $OMP CRITICAL(STORE2) */
+
+				calcul2(&diff, ihkl, th3, &ncalc, &igc);
+				km[igc - 1] = llhkl;
+				km2[igc - 1] = lhkl;
+				ifi[igc - 1] = ifile;
+				nsol[igc - 1] = 1;
+				vgc[igc - 1] = v1;
+				rp[igc - 1] = rmax;
+				rp2[igc - 1] = diff;
+				if (rp[igc - 1] < rpsmall) {
+					rpsmall = rp[igc - 1];
+					isee = 1;
+				} else {
+					isee = 0;
+				}
+				supcel(&lhkl, ihkl, cel, &igc, vgc, &c1);
+				brav(&lhkl, ihkl, &ibr);
+				ib[igc - 1] = ibr;
+				a = cel[igc * 6 - 6];
+				b = cel[igc * 6 - 5];
+				c = cel[igc * 6 - 4];
+				v2 = vgc[igc - 1];
+
+		/* $OMP END CRITICAL(STORE2) */
+
+		/* ... Check for interesting result */
+
+		/*      IF(INTEREST.GE.1)GO TO 596 */
+				indic = 0;
+				bb[2] = a;
+				bb[3] = b;
+				bb[4] = c;
+				bb[5] = 90.0;
+				bb[6] = bet;
+				bb[7] = 90.0;
+				afi[2] = 1.0;
+				afi[3] = 1.0;
+				afi[4] = 1.0;
+				afi[5] = 0.0;
+				afi[6] = 1.0;
+				afi[7] = 0.0;
+				celpre[0] = a;
+				celpre[1] = b;
+				celpre[2] = c;
+				celpre[4] = bet;
+				for (int i = 1; i <= 3; ++i) {
+					for (int j = 1; j <= 3; ++j) {
+						al[i + j * 3 - 4] = 0.0;
+					}
+				}
+
+		/* $OMP CRITICAL(FOUND) */
+
+				if (rp[igc - 1] < rmi) {
+					++interest;
+					printSaveInterstResString(imp_file, rmax, v2, ipen, 4, a, b, c, bet);
+					/*const char *temp2 = saveInterestingResultString(imp_file);
+					//1115  FORMAT(14X,F5.3,F8.4,F9.1,I3)
+					printIsee(rmax, v2, ipen, 4, a, b, c, bet);
+					printf("%s\n", temp2);
+
+		/* ... Refine that cell */
+
+					dcell(celpre, al, &v1);
+					calcul2(&diff, ihkl, th3, &ncalc, &igc);
+					celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
+					cncalc[igc - 1] = (double) ncalc;
+					if (ndat >= 20) {
+						fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
+						ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
+					} else {
+						pndat = (double) ndat;
+						fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1] * 2.0 * ddq);
+						ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
+					}
+		/*      WRITE(20,7000)FM20(IGC) */
+		/*      WRITE(20,7001)FF20(IGC),DDT,NCALC */
+		/* 	WRITE(20,*) */
+		/*      PRINT 7000,FM20(IGC) */
+		/*      PRINT 7001,FF20(IGC),DDT,NCALC */
+		/* 	PRINT * */
+					iref = 1;
+					goto L597;
+				} else {
+
+		/*  Anyway, calculate the M20 and F20 values */
+
+					dcell(celpre, al, &v1);
+					calcul2(&diff, ihkl, th3, &ncalc, &igc);
+					celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
+					cncalc[igc - 1] = (double) ncalc;
+					if (ndat >= 20) {
+						fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
+						ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
+					} else {
+						pndat = (double) ndat;
+						fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1] * 2.0 * ddq);
+						ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
+					}
+				}
+
+		/* Test if cell already found */
+
+
+				if (igc > 1) {
+					for (i = 1; i < igc; ++i) {
+						if (ifi[i - 1] != ifile) {
+							goto L518;
+						}
+						vdelt = vgc[igc - 1] / 300.0;
+						vp = vgc[igc - 1] + vdelt;
+						vm = vgc[igc - 1] - vdelt;
+						if (vgc[i - 1] > vp || vgc[i - 1] < vm) {
+							goto L518;
+						}
+						bdelt = cel[igc * 6 - 5] / 500.0;
+						bp = cel[igc * 6 - 5] + bdelt;
+						bm = cel[igc * 6 - 5] - bdelt;
+						if (cel[i * 6 - 5] > bp || cel[i * 6 - 5] < bm) {
+							goto L518;
+						}
+						betdelt = cel[igc * 6 - 2] / 500.0;
+						betp = cel[igc * 6 - 2] + betdelt;
+						betm = cel[igc * 6 - 2] - betdelt;
+						if (cel[i * 6 - 2] > betp || cel[i * 6 - 2] < betm) {
+							goto L518;
+						}
+						adelt = cel[igc * 6 - 6] / 500.0;
+						ap = cel[igc * 6 - 6] + adelt;
+						am = cel[igc * 6 - 6] - adelt;
+						na = 0;
+						if (cel[i * 6 - 6] > ap || cel[i * 6 - 6] < am) {
+							na = 1;
+						}
+						cdelt = cel[igc * 6 - 4] / 500.0;
+						cp = cel[igc * 6 - 4] + cdelt;
+						cm = cel[igc * 6 - 4] - cdelt;
+						nc = 0;
+						if (cel[i * 6 - 6] > cp || cel[i * 6 - 6] < cm) {
+							nc = 1;
+						}
+						if (na == 1 && nc == 1) {
+							goto L518;
+						}
+						++nsol[i - 1];
+						if (rp[igc - 1] < rp[i - 1]) {
+							if (isee == 1) {
+								printIsee(rmax, v2, ipen, 4, a, b, c, bet);
+							}
+							km[i - 1] = km[igc - 1];
+							vgc[i - 1] = vgc[igc - 1];
+							rp[i - 1] = rp[igc - 1];
+							cel[i * 6 - 6] = cel[igc * 6 - 6];
+							cel[i * 6 - 5] = cel[igc * 6 - 5];
+							cel[i * 6 - 4] = cel[igc * 6 - 4];
+							cel[i * 6 - 2] = cel[igc * 6 - 2];
+						}
+						--igc;
+						if (nsol[i - 1] > 5) {
+							ntried = tmax + 1.0;
+							++nout;
+						}
+						goto L519;
+			L518:
+						;
+					}
+					if (iverb == 1) {
+						saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 4, a, b, c, bet);
+					}
+					if (isee == 1) {
+						printIsee(rmax, v2, ipen, 4, a, b, c, bet);
+					}
+		L519:
+					;
+				} else {
+					if (iverb == 1) {
+						saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 4, a, b, c, bet);
+					}
+					if (isee == 1) {
+						printIsee(rmax, v2, ipen, 4, a, b, c, bet);
+					}
+				}
+		L597:
+
+		/* $OMP END CRITICAL(FOUND) */
+
+		L517:
+				rmax = rmaxref;
+				if (randi(&iseed) > escape) {
+					celpre[ip - 1] = celold[ip - 1];
+				}
+
+		/*  END ON MC tests */
+
+		L596:
+				;
+			}
+
+	/* $OMP END DO NOWAIT */
+	/* $OMP END PARALLEL */
+
+	/* ... Stop if max limit of Monte Carlo tests outpassed */
+	/*         or if K is pressed (tested every 30000 MC event) */
+
+			if (interest >= 1) {
+				goto L5000;
+			}
+			killk(&pressedk);
+			if (rmin == rmax) {
+				goto L598;
+			}
+			if (iverb == 1) {
+				char temp[151];
+				snprintf(temp, sizeof(temp), "\nBest result : a =    %lf Rp = %lf\nBest result : b =    %lf\nBest result : c =    %lf \nBest result : beta = %lf V = %lf\n\n", bpar[0], rmin, bpar[1], bpar[2], bpar[4], v3);
+				fwrite(temp, strlen(temp), 1, imp_file);
+				writeFormattedDate(imp_file);
+			}
+			rmin = rmax;
+	L598:
+			if (pressedk) {
+				goto L5000;
+			}
+
+	/*  END ON NRUNS */
+
+	/* L599: */
+		}
+	}
+
+L600:
+	if (nsys[5] == 0) {
+		goto L700;
+	}
+
+/*    Triclinic case */
+
+
+	rpsmall = 1.0;
+	printf("Triclinic:    Rp     a       b       c       alp    bet    gam     V     Nind\n");
+	ifile = 6;
+	ncycles = 5e3f;
+	cy = ncycles * 1.1f;
+
+	if (ngrid == 3) {
+		nruns = 20;
+		nruns2 = 8;
+		pmin = 2.0;
+		pmax = 20.0;
+		pma[0] = dmax1 * 1.5f;
+		pma[1] = dmax2 * 1.5f;
+		pma[2] = dmax3 * 1.5f;
+		if (pma[0] > pmax) {
+			pma[0] = pmax;
+		}
+		if (pma[1] > pmax) {
+			pma[1] = pmax;
+		}
+		if (pma[2] > pmax) {
+			pma[2] = pmax;
+		}
+		vtric = pma[0] * pma[1] * pma[2];
+		if (vtric > 2e3f) {
+			vtric = 2e3f;
+		}
+		vmax = vtric;
+		for (int i = 0; i < 3; ++i) {
+			pmi[i] = pmin;
+			delta[i] = (pma[i] - pmi[i]) / 2.0;
+	/* L623: */
+			pstart[i] = pmi[i];
+		}
+	}
+
+	{
+		char temp[300] = "";
+		char *cur = temp, *const end = temp - sizeof(temp);
+		cur += snprintf(cur, end-cur, "\nTriclinic Monte Carlo search :\n Max(a,b,c), V %lf %lf %lf %lf\n\n", pma[0], pma[1], pma[2], vmax);
+		if (iverb == 1)
+		{
+			cur += snprintf(cur, end-cur, "  Results in triclinic, run, tests : %d %d\n===============================================================================\n Rp Trial number  a  b  c  alp bet gam  V  Nind Icod\n\n", nrun, ntimelim[5]);
+		}
+		fwrite(temp, strlen(temp), 1, imp_file);
+	}
+
+/*C
+C     READ hkl Miller indices in tri.hkl
+C*/
+
+	readHklFile("tri", 20, 1000, ihh);
+
+	for (int nrun2 = 1; nrun2 <= nruns2; ++nrun2) {
+
+
+		if (ngrid == 3) {
+			if (nrun2 == 1) {
+				vmin = 8.0;
+				vmax = 250.0;
+				if (vtric < 250.0) {
+					vmax = vtric;
+				}
+				ntimelim[5] = (vmax - vmin) * 4e3f;
+			}
+			if (nrun2 == 2) {
+				if (vtric < 250.0) {
+					goto L700;
+				}
+				vmin = 250.0;
+				vmax = 500.0;
+				if (vtric < 500.0) {
+					vmax = vtric;
+				}
+				ntimelim[5] = (vmax - vmin) * 4e3f;
+			}
+			if (nrun2 == 3) {
+				if (vtric < 500.0) {
+					goto L700;
+				}
+				vmin = 500.0;
+				vmax = 750.0;
+				if (vtric < 750.0) {
+					vmax = vtric;
+				}
+				ntimelim[5] = (vmax - vmin) * 4e3f;
+			}
+			if (nrun2 == 4) {
+				if (vtric < 750.0) {
+					goto L700;
+				}
+				vmin = 750.0;
+				vmax = 1e3f;
+				if (vtric < 1e3f) {
+					vmax = vtric;
+				}
+				ntimelim[5] = (vmax - vmin) * 4e3f;
+			}
+			if (nrun2 == 5) {
+				if (vtric < 1e3f) {
+					goto L700;
+				}
+				vmin = 1e3f;
+				vmax = 1250.0;
+				if (vtric < 1250.0) {
+					vmax = vtric;
+				}
+				ntimelim[5] = (vmax - vmin) * 4e3f;
+			}
+			if (nrun2 == 6) {
+				if (vtric < 1250.0) {
+					goto L700;
+				}
+				vmin = 1250.0;
+				vmax = 1500.0;
+				if (vtric < 1500.0) {
+					vmax = vtric;
+				}
+				ntimelim[5] = (vmax - vmin) * 4e3f;
+			}
+			if (nrun2 == 7) {
+				if (vtric < 1500.0) {
+					goto L700;
+				}
+				vmin = 1500.0;
+				vmax = 1750.0;
+				if (vtric < 1750.0) {
+					vmax = vtric;
+				}
+				ntimelim[5] = (vmax - vmin) * 4e3f;
+			}
+			if (nrun2 == 8) {
+				if (vtric < 1750.0) {
+					goto L700;
+				}
+				vmin = 1750.0;
+				vmax = 2e3f;
+				if (vtric < 2e3f) {
+					vmax = vtric;
+				}
+				ntimelim[5] = (vmax - vmin) * 4e3f;
+			}
+		}
+
+		for (int nrun = 1; nrun <= nruns; ++nrun) {
+	/* ------------------------------------------------------------------------- */
+	/*     Initialisation */
+
+	/*      CALL ESP_INIT(ISEED) */
+
+	/* ------------------------------------------------------------------------- */
+			rmax = rmaxref;
+			rmin = rmax;
+
+	/* ...  here starts the loop */
+
+			interest = 0;
+			tmax = ntimelim[5] / procs;
+			ttmax = ntimelim[5] * 10.0;
+			ncells = (int) ntimelim[5];
+			iiseed = 0;
+			ntried = 0.0;
+			ntriedt = 0.0;
+			nout = 0;
+
+	/* ...  here starts the loop */
+
+			celpre[0] = pstart[0] + delta[0] * 2.0 * randi(&iseed);
+			celpre[1] = pstart[1] + delta[1] * 2.0 * randi(&iseed);
+			celpre[2] = pstart[2] + delta[2] * 2.0 * randi(&iseed);
+			celpre[3] = astartt[0] + deltct[0] * 2.0 * randi(&iseed);
+			celpre[4] = astartt[1] + deltct[1] * 2.0 * randi(&iseed);
+			celpre[5] = astartt[2] + deltct[2] * 2.0 * randi(&iseed);
+			celold[0] = celpre[0];
+			celold[1] = celpre[1];
+			celold[2] = celpre[2];
+			celold[3] = celpre[3];
+			celold[4] = celpre[4];
+			celold[5] = celpre[5];
+			rglob = 1.0;
+			nglob = 0;
+
+	/* $OMP PARALLEL DEFAULT(SHARED) COPYIN(/CAL/,/CAL2/) */
+	/* $OMP& PRIVATE(NCEL,NTRIEDB,DEL,DELD,V1,ICODE,LLHKL,IHKL,TH3, */
+	/* $OMP& RMAX2,A,B,C,ALP,BET,GAM,V2,BPAR,V3,PSTARTB,IPEN,ISEE,INDIC,IP,X, */
+	/* $OMP& DIFF,DIFF2,IP2,ANG,NCALC,DDT,DDQ) */
+	/* $OMP& FIRSTPRIVATE(iseed,iiseed,rmax0,ntried,ntriedt,nout, */
+	/* $OMP& celpre,celold,rglob,nglob,rmin,rmax,bb,afi) */
+	/* $OMP DO */
+
+			for (int ncel = 1; ncel <= ncells; ++ncel) {
+				if (nout >= 1) {
+					goto L696;
+				}
+				if (interest >= 1) {
+					goto L696;
+				}
+				++iiseed;
+				if (iiseed == 1) {
+					iseed = ((iseed - ncel * nrun) / 2 << 1) + 1;
+				}
+
+		L602:
+
+		/*     Which parameter to vary ? a or b or c or alpha or beta or gamma ? */
+
+				ntriedb = 0.0;
+				x = randi(&iseed);
+				if (x >= 0.0 && x < .16666f) {
+					ip = 1;
+				}
+				if (x >= .16666f && x < .33333f) {
+					ip = 2;
+				}
+				if (x >= .33333f && x < .5f) {
+					ip = 3;
+				}
+				if (x >= .5f && x < .66666f) {
+					ip = 4;
+				}
+				if (x >= .66666f && x < .83333f) {
+					ip = 5;
+				}
+				if (x >= .83333f && x <= 1.0) {
+					ip = 6;
+				}
+				if (ip != 4 && ip != 5 && ip != 6) {
+					celpre[ip - 1] = pstart[ip - 1] + delta[ip - 1] * 2.0 *	randi(&iseed);
+				} else {
+					celpre[ip - 1] = astartt[ip - 4] + deltct[ip - 4] * 2.0 * randi(&iseed);
+				}
+				ang = celpre[3] + celpre[4] + celpre[5];
+				if (ang >= 360.0 && ang <= 180.0) {
+					goto L696;
+				}
+				ntried += 1.0;
+				goto L604;
+		L603:
+				del = deltab * (1.0 - ntriedb / cy);
+				deld = deltad * (1.0 - ntriedb / cy);
+				x = randi(&iseed);
+				if (x >= 0.0 && x < .16666f) {
+					ip2 = 1;
+				}
+				if (x >= .16666f && x < .33333f) {
+					ip2 = 2;
+				}
+				if (x >= .33333f && x < .5f) {
+					ip2 = 3;
+				}
+				if (x >= .5f && x < .66666f) {
+					ip2 = 4;
+				}
+				if (x >= .66666f && x < .83333f) {
+					ip2 = 5;
+				}
+				if (x >= .83333f && x <= 1.0) {
+					ip2 = 6;
+				}
+				if (ip2 != 4 && ip2 != 5 && ip2 != 6) {
+					celpre[ip2 - 1] = pstartb[ip2 - 1] + del * (randi(&iseed) - .5f) * 2.0;
+				} else {
+					celpre[ip2 - 1] = pstartb[ip2 - 1] + deld * (randi(&iseed) - .5f) * 2.0;
+				}
+				ang = celpre[3] + celpre[4] + celpre[5];
+				if (ang >= 360.0 && ang <= 180.0) {
+					goto L603;
+				}
+				ntriedb += 1.0;
+		L604:
+				for (int i = 1; i <= 3; ++i) {
+					for (int j = 1; j <= 3; ++j) {
+						al[i + j * 3 - 4] = 0.0;
+					}
+				}
+				dcell(celpre, al, &v1);
+				if (ntried > tmax) {
+					++nout;
+					goto L696;
+				}
+				if (ntriedb != 0.0) {
+					goto L606;
+				}
+				if (v1 > vmax || v1 < vmin) {
+					ntried += -1.0;
+					ntriedt += 1.0;
+					if (ntriedt > ttmax) {
+						++nout;
+						goto L696;
+					}
+					goto L602;
+				}
+
+		L606:
+				calcul1(&diff, &diff2);
+				if (nmx > ndat10) {
+					ntried += -1;
+					goto L602;
+				}
+				if (ntriedb != 0.0) {
+					goto L614;
+				}
+
+		/* ... Rp value satisfying ??? */
+
+				if (diff < rglob || lhkl > nglob) {
+					rglob = diff;
+					nglob = lhkl;
+					celold[ip - 1] = celpre[ip - 1];
+				}
+				if (lhkl >= nmax) {
+					rmax = diff;
+					icode = 2;
+					if (diff <= rmaxref) {
+						icode = 1;
+					}
+				} else {
+					icode = 1;
+				}
+				if (diff > rmax) {
+					goto L617;
+				}
+				if (lhkl < nmax) {
+					goto L617;
+				}
+		L614:
+				if (diff <= rmax) {
+					llhkl = lhkl;
+					rmax = diff;
+					rmax2 = diff2;
+					a = celpre[0];
+					b = celpre[1];
+					c = celpre[2];
+					alp = celpre[3];
+					bet = celpre[4];
+					gam = celpre[5];
+					v2 = v1;
+					if (diff < rmin) {
+						rmin = diff;
+						bpar[0] = a;
+						bpar[1] = b;
+						bpar[2] = c;
+						bpar[3] = alp;
+						bpar[4] = bet;
+						bpar[5] = gam;
+						v3 = v1;
+					}
+
+		/* ... "Refine" that cell (by Monte Carlo too...) */
+
+					pstartb[0] = celpre[0];
+					pstartb[1] = celpre[1];
+					pstartb[2] = celpre[2];
+					pstartb[3] = celpre[3];
+					pstartb[4] = celpre[4];
+					pstartb[5] = celpre[5];
+				}
+				if (ntriedb <= ncycles) {
+					goto L603;
+				}
+				rglob = .5f;
+				nglob = ndat2;
+				if (ip == 1) {
+					celold[ip - 1] = a;
+				}
+				if (ip == 2) {
+					celold[ip - 1] = b;
+				}
+				if (ip == 3) {
+					celold[ip - 1] = c;
+				}
+				if (ip == 4) {
+					celold[ip - 1] = alp;
+				}
+				if (ip == 5) {
+					celold[ip - 1] = bet;
+				}
+				if (ip == 6) {
+					celold[ip - 1] = gam;
+				}
+				ntriedb = 0.0;
+				if (rmax >= rmax0[5]) {
+					goto L617;
+				}
+				if (rmax2 >= .15f) {
+					goto L617;
+				}
+				ipen = ndat - llhkl;
+				if (ipen > nind) {
+					goto L617;
+				}
+
+		/* $OMP CRITICAL(STORE1) */
+
+				++igc;
+
+		/*  Test if too much proposals, if yes decrease Rmax by 5% */
+
+				igt += 1.0;
+				if (nr == 1) {
+					if (igt > 50.0) {
+						if (ntried / igt < 1e5f) {
+							if (rmax0[5] > 0.2) {
+								rmax0[5] -= rmax0[5] * 0.05;
+								printRmaxReducedString(rmax0[5], imp_file);
+							}
+						}
+					}
+				}
+
+				if (igc > 10000) {
+					printStopString(imp_file);
+					--igc;
+					++interest;
+		/*      GO TO 5000 */
+				}
+				cel[igc * 6 - 6] = a;
+				cel[igc * 6 - 5] = b;
+				cel[igc * 6 - 4] = c;
+				cel[igc * 6 - 3] = alp;
+				cel[igc * 6 - 2] = bet;
+				cel[igc * 6 - 1] = gam;
+
+		/* $OMP END CRITICAL(STORE1) */
+
+		/* ... Check for supercell */
+
+				celpre[0] = a;
+				celpre[1] = b;
+				celpre[2] = c;
+				celpre[3] = alp;
+				celpre[4] = bet;
+				celpre[5] = gam;
+				for (int i = 1; i <= 3; ++i) {
+					for (int j = 1; j <= 3; ++j) {
+						al[i + j * 3 - 4] = 0.0;
+					}
+				}
+				dcell(celpre, al, &v1);
+
+		/* $OMP CRITICAL(STORE2) */
+
+				calcul2(&diff, ihkl, th3, &ncalc, &igc);
+				km[igc - 1] = llhkl;
+				km2[igc - 1] = lhkl;
+				ifi[igc - 1] = ifile;
+				nsol[igc - 1] = 1;
+				vgc[igc - 1] = v1;
+				rp[igc - 1] = rmax;
+				rp2[igc - 1] = diff;
+				if (rp[igc - 1] < rpsmall) {
+					rpsmall = rp[igc - 1];
+					isee = 1;
+				} else {
+					isee = 0;
+				}
+				supcel(&lhkl, ihkl, cel, &igc, vgc, &c1);
+				brav(&lhkl, ihkl, &ibr);
+				ib[igc - 1] = ibr;
+				a = cel[igc * 6 - 6];
+				b = cel[igc * 6 - 5];
+				c = cel[igc * 6 - 4];
+				v2 = vgc[igc - 1];
+
+		/* $OMP END CRITICAL(STORE2) */
+
+		/* ... Check for interesting result */
+
+		/*      IF(INTEREST.GE.1)GO TO 696 */
+				indic = 0;
+				bb[2] = a;
+				bb[3] = b;
+				bb[4] = c;
+				bb[5] = alp;
+				bb[6] = bet;
+				bb[7] = gam;
+				afi[2] = 1.0;
+				afi[3] = 1.0;
+				afi[4] = 1.0;
+				afi[5] = 1.0;
+				afi[6] = 1.0;
+				afi[7] = 1.0;
+				celpre[0] = a;
+				celpre[1] = b;
+				celpre[2] = c;
+				celpre[3] = alp;
+				celpre[4] = bet;
+				celpre[5] = gam;
+				for (int i = 1; i <= 3; ++i) {
+					for (int j = 1; j <= 3; ++j) {
+						al[i + j * 3 - 4] = 0.0;
+					}
+				}
+
+		/* $OMP CRITICAL(FOUND) */
+
+				if (rp[igc - 1] < rmi) {
+					++interest;
+					printSaveInterstResString(imp_file, rmax, v2, ipen, 6, a, b, c, alp, bet, gam);
+					/*const char *temp2 = saveInterestingResultString(imp_file);
+					//1115  FORMAT(14X,F5.3,F8.4,F9.1,I3)
+					printIsee(rmax, v2, ipen, 6, a, b, c, alp, bet, gam);
+					printf("%s\n", temp2);
+
+		/* ... Refine that cell */
+
+					dcell(celpre, al, &v1);
+					calcul2(&diff, ihkl, th3, &ncalc, &igc);
+					celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
+					cncalc[igc - 1] = (double) ncalc;
+					if (ndat >= 20) {
+						fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
+						ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
+					} else {
+						pndat = (double) ndat;
+						fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1]	* 2.0 * ddq);
+						ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
+					}
+
+					iref = 1;
+					goto L697;
+				} else {
+
+		/*  Anyway, calculate the M20 and F20 values */
+
+					dcell(celpre, al, &v1);
+					calcul2(&diff, ihkl, th3, &ncalc, &igc);
+					celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
+					cncalc[igc - 1] = (double) ncalc;
+					if (ndat >= 20) {
+						fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
+						ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
+					} else {
+						pndat = (double) ndat;
+						fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1]	* 2.0 * ddq);
+						ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
+					}
+				}
+
+		/* Test if cell already found */
+
+
+				if (igc > 1) {
+					for (int i = 1; i < igc; ++i) {
+						if (ifi[i - 1] != ifile) {
+							goto L618;
+						}
+						vdelt = vgc[igc - 1] / 300.0;
+						vp = vgc[igc - 1] + vdelt;
+						vm = vgc[igc - 1] - vdelt;
+						if (vgc[i - 1] > vp || vgc[i - 1] < vm) {
+							goto L618;
+						}
+						adelt = cel[igc * 6 - 6] / 500.0;
+						ap = cel[igc * 6 - 6] + adelt;
+						am = cel[igc * 6 - 6] - adelt;
+						na = 0;
+						if (cel[i * 6 - 6] > ap || cel[i * 6 - 6] < am) {
+							na = 1;
+						}
+						bdelt = cel[igc * 6 - 5] / 500.0;
+						bp = cel[igc * 6 - 5] + bdelt;
+						bm = cel[igc * 6 - 5] - bdelt;
+						nb = 0;
+						if (cel[i * 6 - 6] > bp || cel[i * 6 - 6] < bm) {
+							nb = 1;
+						}
+						cdelt = cel[igc * 6 - 4] / 500.0;
+						cp = cel[igc * 6 - 4] + cdelt;
+						cm = cel[igc * 6 - 4] - cdelt;
+						nc = 0;
+						if (cel[i * 6 - 6] > cp || cel[i * 6 - 6] < cm) {
+							nc = 1;
+						}
+						if (na == 1 && nb == 1 && nc == 1) {
+							goto L618;
+						}
+						na = 0;
+						if (cel[i * 6 - 5] > ap || cel[i * 6 - 5] < am) {
+							na = 1;
+						}
+						nb = 0;
+						if (cel[i * 6 - 5] > bp || cel[i * 6 - 5] < bm) {
+							nb = 1;
+						}
+						nc = 0;
+						if (cel[i * 6 - 5] > cp || cel[i * 6 - 5] < cm) {
+							nc = 1;
+						}
+						if (na == 1 && nb == 1 && nc == 1) {
+							goto L618;
+						}
+						++nsol[i - 1];
+						if (rp[igc - 1] < rp[i - 1]) {
+							if (isee == 1) {
+								printIsee(rmax, v2, ipen, 6, a, b, c, alp, bet, gam);
+							}
+			/*     1WRITE(*,1615)RMAX,A,B,C,ALP,BET,GAM,V2,IPEN */
+							km[i - 1] = km[igc - 1];
+							vgc[i - 1] = vgc[igc - 1];
+							rp[i - 1] = rp[igc - 1];
+							cel[i * 6 - 6] = cel[igc * 6 - 6];
+							cel[i * 6 - 5] = cel[igc * 6 - 5];
+							cel[i * 6 - 4] = cel[igc * 6 - 4];
+							cel[i * 6 - 3] = cel[igc * 6 - 3];
+							cel[i * 6 - 2] = cel[igc * 6 - 2];
+							cel[i * 6 - 1] = cel[igc * 6 - 1];
+						}
+						--igc;
+						if (nsol[i - 1] > 5) {
+							ntried = tmax + 1.0;
+							++nout;
+						}
+						goto L619;
+			L618:
+						;
+					}
+					if (iverb == 1) {
+						saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 6, a, b, c, alp, bet, gam);
+					}
+					if (isee == 1) {
+						printIsee(rmax, v2, ipen, 6, a, b, c, alp, bet, gam);
+					}
+		L619:
+					;
+				} else {
+					if (iverb == 1) {
+						saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 6, a, b, c, alp, bet, gam);
+					}
+					if (isee == 1) {
+						printIsee(rmax, v2, ipen, 6, a, b, c, alp, bet, gam);
+					}
+				}
+		L697:
+
+		/* $OMP END CRITICAL(FOUND) */
+
+		L617:
+				rmax = rmaxref;
+				if (randi(&iseed) > escape) {
+					celpre[ip - 1] = celold[ip - 1];
+				}
+
+		/*  END ON MC tests */
+
+		L696:
+				;
+			}
+
+	/* $OMP END DO NOWAIT */
+	/* $OMP END PARALLEL */
+
+	/* ... Stop if max limit of Monte Carlo tests outpassed */
+	/*         or if K is pressed (tested every 30000 MC event) */
+
+			if (interest >= 1) {
+				goto L5000;
+			}
+			killk(&pressedk);
+	/* L616: */
+			if (rmin == rmax) {
+				goto L698;
+			}
+			if (iverb == 1) {
+				char temp[211];
+				snprintf(temp, sizeof(temp), "\nBest result : a =    %lf Rp = %lf\nBest result : b =    %lf\nBest result : c =    %lf \nBest result : alph = %lf\nBest result : beta = %lf\nBest result : gamm = %lf V = %lf\n\n", bpar[0], rmin, bpar[1], bpar[2], bpar[3], bpar[4], bpar[5], v3);
+				fwrite(temp, strlen(temp), 1, imp_file);
+				writeFormattedDate(imp_file);
+			}
+			rmin = rmax;
+	L698:
+			if (pressedk) {
+				goto L5000;
+			}
+
+	/*  END ON NRUNS */
+
+	/* L699: */
+		}
+	}
+
 L700:
+	if (ngrid == 0) {
+		goto L5000;
+	}
+	if (nblack == 0 && ngrid == 3) {
+		goto L5000;
+	}
+	printf("\nGrid search :\n");
+
+/* ...  Cell generation by systematic grid */
+
+
+	if (nsys[0] == 0) {
+		goto L1200;
+	}
+
+/*    Cubic case */
+
+	rpsmall = 1.0;
+	printf("Cubic:        Rp     a       V     Nind\n");
+
+		ifile = 1;
+	rmax = rmaxref;
+	rmin = rmax;
+	ntried = 0.0;
+	ncycles = 200.0;
+	cy = ncycles * 1.1f;
+	celpre[3] = 90.0;
+	celpre[4] = 90.0;
+	celpre[5] = 90.0;
+	if (iverb == 1) {
+		saveGridResultsInString("cubic", imp_file);
+	}
+
+	if (ngrid == 3) {
+		pmin = 2.0;
+		pmax = dmax1 * 3.1f;
+		pmi[0] = pmin;
+		pma[0] = pmax;
+		vmin = 8.0;
+		vmax = pmax * pmax * pmax;
+		if (iverb == 1) {
+			char temp[30];
+			snprintf(temp, sizeof(temp), " Max a, V %lf %lf\n\n", pmax, vmax);
+			fwrite(temp, strlen(temp), 1, imp_file);
+		}
+	}
+
+	if (iverb == 1) {
+		char *temp = " Rp  Trial number    a         V  Nind Icod\n\n";
+		fwrite(temp, strlen(temp), 1, imp_file);
+	}
+
+	/*C
+C     READ hkl Miller indices in cub.hkl
+C*/
+
+	readHklFile("cub", 6, 400, ihh);
+
+	/* ...  here starts the loop */
+
+	celpre[0] = pmi[0] - spar;
+L1102:
+	ntriedb = 0.0;
+	celpre[0] += spar;
+	ntried += 1.0;
+	goto L1104;
+L1103:
+	del = deltab * (1.0 - ntriedb / cy);
+	celpre[0] = pstartb[0] + del * (randi(&iseed) - .5f) * 2.0;
+	ntriedb += 1.0;
+L1104:
+	celpre[1] = celpre[0];
+	celpre[2] = celpre[0];
+	for (int i = 1; i <= 3; ++i) {
+		for (int j = 1; j <= 3; ++j) {
+			al[i + j * 3 - 4] = 0.0;
+		}
+	}
+	dcell(celpre, al, &v1);
+	if (celpre[0] > pma[0] && ntriedb == 0.0) {
+		goto L1116;
+	}
+	if (ntriedb != 0.0) {
+		goto L1106;
+	}
+	if (v1 > vmax || v1 < vmin) {
+		ntried += -1.0;
+		goto L1102;
+	}
+
+L1106:
+	calcul1(&diff, &diff2);
+	if (nmx > ndat10) {
+		ntried += -1;
+		goto L1102;
+	}
+	if (ntriedb != 0.0) {
+		goto L1114;
+	}
+
+	/* ... Rp value satisfying ??? */
+
+	if (lhkl >= nmax) {
+		rmax = diff;
+		icode = 2;
+		if (diff <= rmaxref) {
+			icode = 1;
+		}
+	} else {
+		icode = 1;
+	}
+	celold[0] = celpre[0];
+	if (diff > rmax) {
+		goto L1117;
+	}
+	if (lhkl < nmax) {
+		goto L1117;
+	}
+L1114:
+	if (diff <= rmax) {
+		llhkl = lhkl;
+		rmax = diff;
+		rmax2 = diff2;
+		a = celpre[0];
+		v2 = v1;
+		if (diff < rmin) {
+			rmin = diff;
+			bpar[0] = a;
+			v3 = v1;
+		}
+
+	/* ... "Refine" that cell (by Monte Carlo too...) */
+
+		pstartb[0] = celpre[0];
+	}
+	if (ntriedb <= ncycles) {
+		goto L1103;
+	}
+	ntriedb = 0.0;
+	if (rmax >= rmax0[0]) {
+		goto L1117;
+	}
+	if (rmax2 >= .15f) {
+		goto L1117;
+	}
+	ipen = ndat - llhkl;
+	if (ipen > nind) {
+		goto L1117;
+	}
+	++igc;
+
+/*  Test if too much proposals, if yes decrease Rmax by 5% */
+
+	igt += 1.0;
+	if (nr == 1) {
+		if (igt > 50.0) {
+			if (ntried / igt < 100.0) {
+				if (rmax0[0] > .1f) {
+					rmax0[0] -= rmax0[0] * .05f;
+					printRmaxReducedString(rmax0[0], imp_file);
+				}
+			}
+		}
+	}
+
+	if (igc > 10000) {
+		printStopString(imp_file);
+		--igc;
+		goto L5000;
+	}
+	cel[igc * 6 - 6] = a;
+	cel[igc * 6 - 5] = a;
+	cel[igc * 6 - 4] = a;
+	cel[igc * 6 - 3] = 90.0;
+	cel[igc * 6 - 2] = 90.0;
+	cel[igc * 6 - 1] = 90.0;
+
+/* ... Check for supercell */
+
+	celpre[0] = a;
+	celpre[1] = a;
+	celpre[2] = a;
+	for (int i = 1; i <= 3; ++i) {
+		for (int j = 1; j <= 3; ++j) {
+				al[i + j * 3 - 4] = 0.0;
+			}
+	}
+	dcell(celpre, al, &v1);
+	calcul2(&diff, ihkl, th3, &ncalc, &igc);
+	km[igc - 1] = llhkl;
+	km2[igc - 1] = lhkl;
+	ifi[igc - 1] = ifile;
+	nsol[igc - 1] = 1;
+	vgc[igc - 1] = v1;
+	rp[igc - 1] = rmax;
+	rp2[igc - 1] = diff;
+	if (rp[igc - 1] < rpsmall) {
+		rpsmall = rp[igc - 1];
+		isee = 1;
+	} else {
+		isee = 0;
+	}
+	supcel(&lhkl, ihkl, cel, &igc, vgc, &c3);
+	brav(&lhkl, ihkl, &ibr);
+	ib[igc - 1] = ibr;
+	a = cel[igc * 6 - 6];
+	cel[igc * 6 - 5] = a;
+	cel[igc * 6 - 4] = a;
+	v2 = vgc[igc - 1];
+
+/* ... Check for interesting result */
+
+	if (rp[igc - 1] < rmi) {
+		printSaveInterstResString(imp_file, rmax, v2, ipen, 1, a);
+		/*const char *temp2 = saveInterestingResultString(imp_file);
+		printIsee(rmax, v2, ipen, 1, a);
+		printf("%s\n", temp2);
+	/* ... Refine that cell */
+
+		indic = 1;
+		bb[2] = a;
+		bb[3] = a;
+		bb[4] = a;
+		bb[5] = 90.0;
+		bb[6] = 90.0;
+		bb[7] = 90.0;
+		afi[2] = 1.0;
+		afi[3] = 1.0;
+		afi[4] = 1.0;
+		afi[5] = 0.0;
+		afi[6] = 0.0;
+		afi[7] = 0.0;
+		celpre[0] = a;
+		celpre[1] = a;
+		celpre[2] = a;
+		for (int i = 1; i <= 3; ++i) {
+			for (int j = 1; j <= 3; ++j) {
+				al[i + j * 3 - 4] = 0.0;
+			}
+		}
+		dcell(celpre, al, &v1);
+		calcul2(&diff, ihkl, th3, &ncalc, &igc);
+		celref(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq, imp_file);
+		if (ndat >= 20) {
+			cncalc[igc - 1] = (double) ncalc;
+			fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
+			ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
+
+			saveFMFF20(fm20[igc - 1], ff20[igc - 1], ddt, ncalc, imp_file);
+		}
+		iref = 1;
+		goto L5000;
+	}
+
+/* Test if cell already found */
+
+	if (igc > 1) {
+		for (int i = 1; i < igc; ++i) {
+			if (ifi[i - 1] != ifile) {
+				goto L1118;
+			}
+			vdelt = vgc[igc - 1] / 300.0;
+			vp = vgc[igc - 1] + vdelt;
+			vm = vgc[igc - 1] - vdelt;
+			if (vgc[i - 1] > vp || vgc[i - 1] < vm) {
+				goto L1118;
+			}
+			++nsol[i - 1];
+			if (rp[igc - 1] < rp[i - 1]) {
+				if (isee == 1) {
+					printIsee(rmax, v2, ipen, 1, a);
+				}
+				km[i - 1] = km[igc - 1];
+				vgc[i - 1] = vgc[igc - 1];
+				rp[i - 1] = rp[igc - 1];
+				cel[i * 6 - 6] = cel[igc * 6 - 6];
+				cel[i * 6 - 5] = cel[igc * 6 - 5];
+				cel[i * 6 - 4] = cel[igc * 6 - 4];
+			}
+			--igc;
+			goto L1119;
+	L1118:
+			;
+		}
+		if (iverb == 1) {
+			saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 1, a);
+		}
+		if (isee == 1) {
+			printIsee(rmax, v2, ipen, 1, a);
+		}
+	L1119:
+		;
+	} else {
+		if (iverb == 1) {
+			saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 1, a);
+		}
+		if (isee == 1) {
+			printIsee(rmax, v2, ipen, 1, a);
+		}
+	}
+
+
+
+L1117:
+	rmax = rmaxref;
+	celpre[0] = celold[0];
+
+/* ... Stop if max limit of grid tests outpassed */
+/*         or if K is pressed (tested every 30000 MC event) */
+
+	if (celpre[0] > pma[0]) {
+		goto L1116;
+	}
+	// tkill = d_mod(&ntried, &c_b1413);
+	if ((int) ntried % 30000 == 0) {
+		killk(&pressedk);
+		if (pressedk) {
+			goto L1116;
+		}
+	}
+	goto L1102;
+L1116:
+	if (rmin == rmax) {
+		goto L1198;
+	}
+	if (iverb == 1) {
+		char temp[80];
+		snprintf(temp, sizeof(temp), "\nBest result : a=%lf V=%lf Rp=%lf\n\n", bpar[0], v3, rmin);
+		fwrite(temp, strlen(temp), 1, imp_file);
+		writeFormattedDate(imp_file);
+	}
+	rmin = rmax;
+L1198:
+	if (pressedk) {
+		goto L5000;
+	}
+
+L1200:
+	if (nsys[1] == 0) {
+		goto L1300;
+	}
+
+	/*    Hexagonal case */
+
+
+	ihr = 0;
+	if (ngrid == 3) {
+		ihr = 1;
+	}
+L1290:
+	if (ihr == 2) {
+		nsys[1] = 2;
+	}
+	if (iverb == 1) {
+		if (nsys[1] == 1) {
+			printf("Hexagonal:    Rp     a      c       V     Nind\n");
+		}
+		if (nsys[1] == 2) {
+			printf("Rhombohedral: Rp     a      c       V     Nind\n");
+		}
+	}
+	rpsmall = 1.0;
+
+	/* ------------------------------------------------------------------------- */
+/*     Initialisation */
+
+/*      CALL ESP_INIT(ISEED) */
+
+/* ------------------------------------------------------------------------- */
+	ifile = 2;
+	rmax = rmaxref;
+	rmin = rmax;
+	ntried = 0.0;
+	ncycles = 500.0;
+	cy = ncycles * 1.1f;
+	celpre[3] = 90.0;
+	celpre[4] = 90.0;
+	celpre[5] = 120.0;
+	if (iverb == 1) {
+		if (nsys[1] == 1) {
+			saveGridResultsInString("hexagonal", imp_file);
+		}
+		if (nsys[1] == 2) {
+			saveGridResultsInString("rhombohedral", imp_file);
+		}
+	}
+
+	if (ngrid == 3) {
+		pmin = 2.0;
+		pmax = 30.0;
+		pmi[0] = pmin;
+		pmi[2] = pmin;
+		pma[2] = dmax1 * 6.1f;
+		if (pma[2] > pmax) {
+			pma[2] = pmax;
+		}
+		pma[0] = dmax1 * 2.1f;
+		if (pma[0] > pmax) {
+			pma[0] = pmax;
+		}
+		pma[1] = pma[0];
+		vmin = 8.0;
+		vmax = pma[0] * pma[1] * pma[2];
+		if (vmax > 4e3f) {
+			vmax = 4e3f;
+		}
+		if (iverb == 1) {
+			char temp[43];
+			snprintf(temp, sizeof(temp), "\n Max(a,c), V  %lf %lf %lf\n", pma[0], pma[2], vmax);
+			fwrite(temp, strlen(temp), 1, imp_file);
+		}
+	}
+
+	if (iverb == 1) {
+		char temp[] = " Rp  Trial number    a      c        V  Nind Icod\n\n";
+		fwrite(temp, strlen(temp), 1, imp_file);
+	}
+
+/*     READ hkl Miller indices in hex.hkl */
+
+	if (nsys[1] == 2)
+	{
+		readHklFile("rho", 12, 600, ihh);
+	}
+	else
+	{
+		readHklFile("hex", 12, 800, ihh);
+	}
+
+/* ...  here starts the loop */
+
+	celpre[0] = pmi[0] - spar;
+	celpre[1] = celpre[0];
+	celpre[2] = pmi[2] - spar;
+	int ifin = 1;
+
+L1202:
+
+/*     Which parameter to vary ? a or c ? */
+
+	ntriedb = 0.0;
+	if (ifin == 1) {
+		celpre[0] += spar;
+		if (celpre[0] > pma[0]) {
+			goto L1216;
+		}
+		ifin = 0;
+		ntried += 1.0;
+	}
+	celpre[2] += spar;
+	if (celpre[2] > pma[2]) {
+		celpre[2] = pmi[2] - spar;
+		ifin = 1;
+		goto L1202;
+	}
+	ntried += 1.0;
+	goto L1204;
+L1203:
+	del = deltab * (1.0 - ntriedb / cy);
+	int i = 3;
+	if (randi(&iseed) > .5f) {
+		i = 1;
+	}
+	celpre[i - 1] = pstartb[i - 1] + del * (randi(&iseed) - .5f) * 2.0;
+	ntriedb += 1.0;
+L1204:
+	celpre[1] = celpre[0];
+	for (int i = 1; i <= 3; ++i) {
+		for (int j = 1; j <= 3; ++j) {
+			al[i + j * 3 - 4] = 0.0;
+		}
+	}
+	dcell(celpre, al, &v1);
+	if (celpre[0] > pma[0] && ntriedb == 0.0) {
+		goto L1216;
+	}
+	if (ntriedb != 0.0) {
+		goto L1206;
+	}
+	if (v1 > vmax || v1 < vmin) {
+		ntried += -1.0;
+		goto L1202;
+	}
+
+L1206:
+	calcul1(&diff, &diff2);
+	if (nmx > ndat10) {
+		ntried += -1;
+		goto L1202;
+	}
+	if (ntriedb != 0.0) {
+		goto L1214;
+	}
+
+/* ... Rp value satisfying ??? */
+
+	if (lhkl >= nmax) {
+		rmax = diff;
+		icode = 2;
+		if (diff <= rmaxref) {
+			icode = 1;
+		}
+	} else {
+		icode = 1;
+	}
+	celold[0] = celpre[0];
+	celold[2] = celpre[2];
+	if (diff > rmax) {
+		goto L1217;
+	}
+	if (lhkl < nmax) {
+		goto L1217;
+	}
+L1214:
+	if (diff <= rmax) {
+		llhkl = lhkl;
+		rmax = diff;
+		rmax2 = diff2;
+		a = celpre[0];
+		c = celpre[2];
+		v2 = v1;
+		if (diff < rmin) {
+			rmin = diff;
+			bpar[0] = a;
+			bpar[2] = c;
+			v3 = v1;
+		}
+
+	/* ... "Refine" that cell (by Monte Carlo too...) */
+
+		pstartb[0] = celpre[0];
+		pstartb[2] = celpre[2];
+	}
+	if (ntriedb <= ncycles) {
+		goto L1203;
+	}
+	ntriedb = 0.0;
+	if (rmax >= rmax0[1]) {
+		goto L1217;
+	}
+	if (rmax2 >= .15f) {
+		goto L1217;
+	}
+	ipen = ndat - llhkl;
+	if (ipen > nind) {
+		goto L1217;
+	}
+	++igc;
+
+/*  Test if too much proposals, if yes decrease Rmax by 5% */
+
+	igt += 1.0;
+	if (nr == 1) {
+		if (igt > 50.0) {
+			if (ntried / igt < 1e3f) {
+				if (rmax0[1] > .1f) {
+					rmax0[1] -= rmax0[1] * .05f;
+					printRmaxReducedString(rmax0[1], imp_file);
+				}
+			}
+		}
+	}
+
+	if (igc > 10000) {
+		printStopString(imp_file);
+		--igc;
+		goto L5000;
+	}
+	cel[igc * 6 - 6] = a;
+	cel[igc * 6 - 5] = a;
+	cel[igc * 6 - 4] = c;
+	cel[igc * 6 - 3] = 90.0;
+	cel[igc * 6 - 2] = 90.0;
+	cel[igc * 6 - 1] = 120.0;
+
+/* ... Check for supercell */
+
+	celpre[0] = a;
+	celpre[1] = a;
+	celpre[2] = c;
+	for (int i = 1; i <= 3; ++i) {
+		for (int j = 1; j <= 3; ++j) {
+			al[i + j * 3 - 4] = 0.0;
+		}
+	}
+	dcell(celpre, al, &v1);
+	calcul2(&diff, ihkl, th3, &ncalc, &igc);
+	km[igc - 1] = llhkl;
+	km2[igc - 1] = lhkl;
+	ifi[igc - 1] = ifile;
+	nsol[igc - 1] = 1;
+	vgc[igc - 1] = v1;
+	rp[igc - 1] = rmax;
+	rp2[igc - 1] = diff;
+	if (rp[igc - 1] < rpsmall) {
+		rpsmall = rp[igc - 1];
+		isee = 1;
+	} else {
+		isee = 0;
+	}
+	supcel(&lhkl, ihkl, cel, &igc, vgc, &c2);
+	brav(&lhkl, ihkl, &ibr);
+	ib[igc - 1] = ibr;
+	a = cel[igc * 6 - 6];
+	cel[igc * 6 - 5] = a;
+	c = cel[igc * 6 - 4];
+	v2 = vgc[igc - 1];
+
+/* ... Check for interesting result */
+
+	if (rp[igc - 1] < rmi) {
+		printSaveInterstResString(imp_file, rmax, v2, ipen, 2, a, c);
+	/* ... Refine that cell */
+
+		indic = 2;
+		bb[2] = a;
+		bb[3] = a;
+		bb[4] = c;
+		bb[5] = 90.0;
+		bb[6] = 90.0;
+		bb[7] = 120.0;
+		afi[2] = 1.0;
+		afi[3] = 1.0;
+		afi[4] = 1.0;
+		afi[5] = 0.0;
+		afi[6] = 0.0;
+		afi[7] = 0.0;
+		celpre[0] = a;
+		celpre[1] = a;
+		celpre[2] = c;
+		for (int i = 1; i <= 3; ++i) {
+			for (int j = 1; j <= 3; ++j) {
+				al[i + j * 3 - 4] = 0.0;
+			}
+		}
+		dcell(celpre, al, &v1);
+		calcul2(&diff, ihkl, th3, &ncalc, &igc);
+		celref(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq, imp_file);
+		if (ndat >= 20) {
+			cncalc[igc - 1] = (double) ncalc;
+			fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
+			ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
+			saveFMFF20(fm20[igc - 1], ff20[igc - 1], ddt, ncalc, imp_file);
+		}
+		iref = 1;
+		goto L5000;
+	}
+
+/* Test if cell already found */
+
+	if (igc > 1) {
+		for (i = 1; i < igc; ++i) {
+			if (ifi[i - 1] != ifile) {
+				goto L1218;
+			}
+			vdelt = vgc[igc - 1] / 300.0;
+			vp = vgc[igc - 1] + vdelt;
+			vm = vgc[igc - 1] - vdelt;
+			if (vgc[i - 1] > vp || vgc[i - 1] < vm) {
+				goto L1218;
+			}
+			adelt = cel[igc * 6 - 6] / 500.0;
+			ap = cel[igc * 6 - 6] + adelt;
+			am = cel[igc * 6 - 6] - adelt;
+			if (cel[i * 6 - 6] > ap || cel[i * 6 - 6] < am) {
+				goto L1218;
+			}
+			++nsol[i - 1];
+			if (rp[igc - 1] < rp[i - 1]) {
+				if (isee == 1) {
+					printIsee(rmax, v2, ipen, 2, a, c);
+				}
+				km[i - 1] = km[igc - 1];
+				vgc[i - 1] = vgc[igc - 1];
+				rp[i - 1] = rp[igc - 1];
+				cel[i * 6 - 6] = cel[igc * 6 - 6];
+				cel[i * 6 - 5] = cel[igc * 6 - 5];
+				cel[i * 6 - 4] = cel[igc * 6 - 4];
+			}
+			--igc;
+			goto L1219;
+	L1218:
+			;
+		}
+		if (iverb == 1) {
+			saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 2, a, c);
+		}
+		if (isee == 1) {
+			printIsee(rmax, v2, ipen, 2, a, c);
+		}
+	L1219:
+		;
+	} else {
+		if (iverb == 1) {
+			saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 2, a, c);
+		}
+		if (isee == 1) {
+			printIsee(rmax, v2, ipen, 2, a, c);
+		}
+	}
+
+
+L1217:
+	rmax = rmaxref;
+	celpre[0] = celold[0];
+	celpre[2] = celold[2];
+
+/* ... Stop if max limit of grid Carlo tests outpassed */
+/*         or if K is pressed (tested every 30000 MC event) */
+
+	if (celpre[0] > pma[0]) {
+		goto L1216;
+	}
+	int tkill = (int) ntried % 30000;
+	if (tkill >= 0.0) {
+		killk(&pressedk);
+		if (pressedk) {
+			goto L1216;
+		}
+	}
+	goto L1202;
+L1216:
+	if (rmin == rmax) {
+	goto L1298;
+	}
+	if (iverb == 1) {
+		char temp[84];
+		snprintf(temp, sizeof(temp), "\nBest result : a = %lf Rp = %lf\nBest result : c = %lf V = %lf\n\n", bpar[0], rmin, bpar[2], v3);
+		fwrite(temp, strlen(temp), 1, imp_file);
+		writeFormattedDate(imp_file);
+	}
+	rmin = rmax;
+L1298:
+	if (pressedk) {
+		goto L5000;
+	}
+
+	++ihr;
+	if (ihr == 2) {
+		goto L1290;
+	}
+L1300:
+	if (nsys[2] == 0) {
+		goto L1400;
+	}
+
+	/*    Tetragonal case */
+
+
+	rpsmall = 1.0;
+	printf("Tetragonal:   Rp     a       c        V     Nind\n");
+
+	/* ------------------------------------------------------------------------- */
+/*     Initialisation */
+
+/*      CALL ESP_INIT(ISEED) */
+
+/* ------------------------------------------------------------------------- */
+	ifile = 3;
+	rmax = rmaxref;
+	rmin = rmax;
+	ntried = 0.0;
+	ncycles = 500.0;
+	cy = ncycles * 1.1f;
+	celpre[3] = 90.0;
+	celpre[4] = 90.0;
+	celpre[5] = 90.0;
+	if (iverb == 1) {
+		saveGridResultsInString("tetragonal", imp_file);
+	}
+
+	if (ngrid == 3) {
+		pmin = 2.0;
+		pmax = 30.0;
+		pmi[0] = pmin;
+		pmi[2] = pmin;
+		pma[0] = dmax1 * 2.1f;
+		if (pma[0] > pmax) {
+			pma[0] = pmax;
+		}
+		pma[2] = dmax1 * 4.0;
+		if (pma[2] > pmax) {
+			pma[2] = pmax;
+		}
+		vmin = 8.0;
+		vmax = pma[0] * pma[1] * pma[2];
+		if (vmax > 4e3f) {
+			vmax = 4e3f;
+		}
+		if (iverb == 1) {
+			char temp[43];
+			snprintf(temp, sizeof(temp), "\n Max(a,c), V  %lf %lf %lf\n", pma[0], pma[2], vmax);
+			fwrite(temp, strlen(temp), 1, imp_file);
+		}
+	}
+
+	if (iverb == 1) {
+		char temp[] = " Rp  Trial number    a      c        V  Nind Icod\n\n";
+		fwrite(temp, strlen(temp), 1, imp_file);
+	}
+
+/*     READ hkl Miller indices in tet.hkl */
+
+	readHklFile("tet", 12, 800, ihh);
+
+/* ...  here starts the loop */
+
+	celpre[0] = pmi[0] - spar;
+	celpre[1] = celpre[0];
+	celpre[2] = pmi[2] - spar;
+	ifin = 1;
+
+L1302:
+
+/*     Which parameter to vary ? a or c ? */
+
+	ntriedb = 0.0;
+	if (ifin == 1) {
+		celpre[0] += spar;
+		if (celpre[0] > pma[0]) {
+			goto L1316;
+		}
+		ifin = 0;
+		ntried += 1.0;
+	}
+	celpre[2] += spar;
+	if (celpre[2] > pma[2]) {
+		celpre[2] = pmi[2] - spar;
+		ifin = 1;
+		goto L1302;
+	}
+	ntried += 1.0;
+	goto L1304;
+L1303:
+	del = deltab * (1.0 - ntriedb / cy);
+	i = 3;
+	if (randi(&iseed) > .5f) {
+		i = 1;
+	}
+	celpre[i - 1] = pstartb[i - 1] + del * (randi(&iseed) - .5f) * 2.0;
+	ntriedb += 1.0;
+L1304:
+	celpre[1] = celpre[0];
+	for (int i = 1; i <= 3; ++i) {
+		for (int j = 1; j <= 3; ++j) {
+			al[i + j * 3 - 4] = 0.0;
+		}
+	}
+	dcell(celpre, al, &v1);
+	if (celpre[0] > pma[0] && ntriedb == 0.0) {
+		goto L1316;
+	}
+	if (ntriedb != 0.0) {
+		goto L1306;
+	}
+	if (v1 > vmax || v1 < vmin) {
+		ntried += -1;
+		goto L1302;
+	}
+
+L1306:
+	calcul1(&diff, &diff2);
+	if (nmx > ndat10) {
+		ntried += -1;
+		goto L1302;
+	}
+	if (ntriedb != 0.0) {
+		goto L1314;
+	}
+
+/* ... Rp value satisfying ??? */
+
+	if (lhkl >= nmax) {
+		rmax = diff;
+		icode = 2;
+		if (diff <= rmaxref) {
+			icode = 1;
+		}
+	} else {
+		icode = 1;
+	}
+	celold[0] = celpre[0];
+	celold[2] = celpre[2];
+	if (diff > rmax) {
+		goto L1317;
+	}
+	if (lhkl < nmax) {
+		goto L1317;
+	}
+L1314:
+	if (diff <= rmax) {
+		llhkl = lhkl;
+		rmax = diff;
+		rmax2 = diff2;
+		a = celpre[0];
+		c = celpre[2];
+		v2 = v1;
+		if (diff < rmin) {
+			rmin = diff;
+			bpar[0] = a;
+			bpar[2] = c;
+			v3 = v1;
+		}
+
+	/* ... "Refine" that cell (by Monte Carlo too...) */
+
+		pstartb[0] = celpre[0];
+		pstartb[2] = celpre[2];
+	}
+	if (ntriedb <= ncycles) {
+		goto L1303;
+	}
+	ntriedb = 0.0;
+	if (rmax >= rmax0[2]) {
+		goto L1317;
+	}
+	if (rmax2 >= .15f) {
+		goto L1317;
+	}
+	ipen = ndat - llhkl;
+	if (ipen > nind) {
+		goto L1317;
+	}
+	++igc;
+
+/*  Test if too much proposals, if yes decrease Rmax by 5% */
+
+	igt += 1.0;
+	if (nr == 1) {
+		if (igt > 50.0) {
+			if (ntried / igt < 1e3f) {
+				if (rmax0[2] > .1f) {
+					rmax0[2] -= rmax0[2] * .05f;
+					printRmaxReducedString(rmax0[2], imp_file);
+				}
+			}
+		}
+	}
+
+	if (igc > 10000) {
+		printStopString(imp_file);
+		--igc;
+		goto L5000;
+	}
+	cel[igc * 6 - 6] = a;
+	cel[igc * 6 - 5] = a;
+	cel[igc * 6 - 4] = c;
+	cel[igc * 6 - 3] = 90.0;
+	cel[igc * 6 - 2] = 90.0;
+	cel[igc * 6 - 1] = 90.0;
+
+/* ... Check for supercell */
+
+	celpre[0] = a;
+	celpre[1] = a;
+	celpre[2] = c;
+	for (int i = 1; i <= 3; ++i) {
+		for (int j = 1; j <= 3; ++j) {
+			al[i + j * 3 - 4] = 0.0;
+		}
+	}
+	dcell(celpre, al, &v1);
+	calcul2(&diff, ihkl, th3, &ncalc, &igc);
+	km[igc - 1] = llhkl;
+	km2[igc - 1] = lhkl;
+	ifi[igc - 1] = ifile;
+	nsol[igc - 1] = 1;
+	vgc[igc - 1] = v1;
+	rp[igc - 1] = rmax;
+	rp2[igc - 1] = diff;
+	if (rp[igc - 1] < rpsmall) {
+		rpsmall = rp[igc - 1];
+		isee = 1;
+	} else {
+		isee = 0;
+	}
+	supcel(&lhkl, ihkl, cel, &igc, vgc, &c4);
+	brav(&lhkl, ihkl, &ibr);
+	ib[igc - 1] = ibr;
+	a = cel[igc * 6 - 6];
+	cel[igc * 6 - 5] = a;
+	c = cel[igc * 6 - 4];
+	v2 = vgc[igc - 1];
+
+/* ... Check for interesting result */
+
+	if (rp[igc - 1] < rmi) {
+		printSaveInterstResString(imp_file, rmax, v2, ipen, 2, a, c);
+
+	/* ... Refine that cell */
+
+		indic = 2;
+		bb[2] = a;
+		bb[3] = a;
+		bb[4] = c;
+		bb[5] = 90.0;
+		bb[6] = 90.0;
+		bb[7] = 90.0;
+		afi[2] = 1.0;
+		afi[3] = 1.0;
+		afi[4] = 1.0;
+		afi[5] = 0.0;
+		afi[6] = 0.0;
+		afi[7] = 0.0;
+		celpre[0] = a;
+		celpre[1] = a;
+		celpre[2] = c;
+		for (int i = 1; i <= 3; ++i) {
+			for (int j = 1; j <= 3; ++j) {
+				al[i + j * 3 - 4] = 0.0;
+			}
+		}
+		dcell(celpre, al, &v1);
+		calcul2(&diff, ihkl, th3, &ncalc, &igc);
+		celref(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq, imp_file);
+		if (ndat >= 20) {
+			cncalc[igc - 1] = (double) ncalc;
+			fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
+			ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
+			saveFMFF20(fm20[igc - 1], ff20[igc - 1], ddt, ncalc, imp_file);
+		}
+		iref = 1;
+		goto L5000;
+	}
+
+/* Test if cell already found */
+
+	if (igc > 1) {
+		for (i = 1; i < igc; ++i) {
+			if (ifi[i - 1] != ifile) {
+				goto L1318;
+			}
+			vdelt = vgc[igc - 1] / 300.0;
+			vp = vgc[igc - 1] + vdelt;
+			vm = vgc[igc - 1] - vdelt;
+			if (vgc[i - 1] > vp || vgc[i - 1] < vm) {
+				goto L1318;
+			}
+			adelt = cel[igc * 6 - 6] / 500.0;
+			ap = cel[igc * 6 - 6] + adelt;
+			am = cel[igc * 6 - 6] - adelt;
+			if (cel[i * 6 - 6] > ap || cel[i * 6 - 6] < am) {
+				goto L1318;
+			}
+			++nsol[i - 1];
+			if (rp[igc - 1] < rp[i - 1]) {
+				if (isee == 1) {
+					printIsee(rmax, v2, ipen, 2, a, c);
+				}
+				km[i - 1] = km[igc - 1];
+				vgc[i - 1] = vgc[igc - 1];
+				rp[i - 1] = rp[igc - 1];
+				cel[i * 6 - 6] = cel[igc * 6 - 6];
+				cel[i * 6 - 5] = cel[igc * 6 - 5];
+				cel[i * 6 - 4] = cel[igc * 6 - 4];
+				}
+			--igc;
+			goto L1319;
+	L1318:
+			;
+		}
+		if (iverb == 1) {
+			saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 2, a, c);
+		}
+		if (isee == 1) {
+			printIsee(rmax, v2, ipen, 2, a, c);
+		}
+	L1319:
+		;
+	} else {
+		if (iverb == 1) {
+			saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 2, a, c);
+		}
+		if (isee == 1) {
+			printIsee(rmax, v2, ipen, 2, a, c);
+		}
+	}
+
+
+L1317:
+	rmax = rmaxref;
+	celpre[0] = celold[0];
+	celpre[2] = celold[2];
+
+/* ... Stop if max limit of grid tests outpassed */
+/*         or if K is pressed (tested every 30000 MC event) */
+
+	if (celpre[0] > pma[0]) {
+		goto L1316;
+	}
+	tkill = (int) ntried % 30000;
+	if (tkill >= 0.0) {
+		killk(&pressedk);
+		if (pressedk) {
+			goto L1316;
+		}
+	}
+	goto L1302;
+L1316:
+	if (rmin == rmax) {
+	goto L1398;
+	}
+	if (iverb == 1) {
+		char temp[84];
+		snprintf(temp, sizeof(temp), "\nBest result : a = %lf Rp = %lf\nBest result : c = %lf V = %lf\n\n", bpar[0], rmin, bpar[2], v3);
+		fwrite(temp, strlen(temp), 1, imp_file);
+		writeFormattedDate(imp_file);
+	}
+	rmin = rmax;
+L1398:
+	if (pressedk) {
+		goto L5000;
+	}
+
+
+L1400:
+
+	if (nsys[3] == 0) {
+		goto L1500;
+	}
+
+/*    Orthorhombic case */
+
+
+	rpsmall = 1.0;
+	printf("Orthorhombic: Rp     a       b       c        V     Nind");
+/* ------------------------------------------------------------------------- */
+/*     Initialisation */
+
+/*      CALL ESP_INIT(ISEED) */
+
+/* ------------------------------------------------------------------------- */
+	ifile = 4;
+	rmax = rmaxref;
+	rmin = rmax;
+	ntried = 0.0;
+	ncycles = 1e3f;
+	cy = ncycles * 1.1f;
+	celpre[3] = 90.0;
+	celpre[4] = 90.0;
+	celpre[5] = 90.0;
+	if (iverb == 1) {
+		saveGridResultsInString("orthorhombic", imp_file);
+	}
+
+	if (ngrid == 3) {
+		pmin = 2.0;
+		pmax = 20.0;
+		pmi[0] = pmin;
+		pma[0] = dmax1 * 2.1f;
+		if (pma[0] > pmax) {
+			pma[0] = pmax;
+		}
+		pmi[1] = pmin;
+		pma[1] = dmax2 * 2.1f;
+		if (pma[1] > pmax) {
+			pma[1] = pmax;
+		}
+		pmi[2] = pmin;
+		pma[2] = dmax3 * 2.1f;
+		if (pma[2] > pmax) {
+			pma[2] = pmax;
+		}
+		vmin = 8.0;
+		vmax = pma[0] * pma[1] * pma[2];
+		if (vmax > 2e3f) {
+			vmax = 2e3f;
+		}
+		if (iverb == 1) {
+			char temp[53];
+			snprintf(temp, sizeof(temp), " Max (a,b,c) V %lf %lf %lf %lf\n\n", pma[0], pma[1], pma[2], vmax);
+			fwrite(temp, strlen(temp), 1, imp_file);
+		}
+	}
+
+	if (iverb == 1) {
+		char temp[] = " Rp  Trial number    a   b   c        V  Nind Icod\n\n";
+		fwrite(temp, strlen(temp), 1, imp_file);
+	}
+
+/*     READ hkl Miller indices in ort.hkl */
+
+	readHklFile("ort", 20, 1000, ihh);
+
+/* ...  here starts the loop */
+
+	celpre[0] = pmi[0] - spar;
+	celpre[1] = pmi[1] - spar;
+	celpre[2] = pmi[2] - spar;
+	ifin = 1;
+	int ifin2 = 1;
+
+L1402:
+
+/*     Which parameter to vary ? a or b or c ? */
+
+	ntriedb = 0.0;
+	if (ifin == 1) {
+		celpre[0] += spar;
+		printf("  a = %lf", celpre[0]);
+		if (celpre[0] > pma[0]) {
+			goto L1416;
+		}
+		ifin = 0;
+		ntried += 1.0;
+	}
+	if (ifin2 == 1) {
+		celpre[1] += spar;
+		ifin2 = 0;
+	}
+	if (celpre[1] > pma[1]) {
+		celpre[1] = pmi[1] - spar;
+		ifin = 1;
+		goto L1402;
+	}
+	ntried += 1.0;
+	celpre[2] += spar;
+	if (celpre[2] > pma[2]) {
+		celpre[2] = pmi[2] - spar;
+		ifin2 = 1;
+		goto L1402;
+	}
+	ntried += 1.0;
+	goto L1404;
+L1403:
+	del = deltab * (1.0 - ntriedb / cy);
+	x = randi(&iseed);
+	if (x >= 0.0 && x < .33333f) {
+		i = 1;
+	}
+	if (x >= .33333f && x < .66666f) {
+		i = 2;
+	}
+	if (x >= .66666f && x <= 1.0) {
+		i = 3;
+	}
+	celpre[i - 1] = pstartb[i - 1] + del * (randi(&iseed) - .5f) * 2.0;
+	ntriedb += 1.0;
+L1404:
+	for (int i = 1; i <= 3; ++i) {
+		for (int j = 1; j <= 3; ++j) {
+			al[i + j * 3 - 4] = 0.0;
+		}
+	}
+	dcell(celpre, al, &v1);
+	if (celpre[0] > pma[0] && ntriedb == 0.0) {
+		goto L1416;
+	}
+	if (ntriedb != 0.0) {
+		goto L1406;
+	}
+	if (v1 > vmax || v1 < vmin) {
+		ntried += -1.0;
+		goto L1402;
+	}
+
+L1406:
+	calcul1(&diff, &diff2);
+	if (nmx > ndat10) {
+		ntried += -1;
+		goto L1402;
+	}
+	if (ntriedb != 0.0) {
+		goto L1414;
+	}
+
+/* ... Rp value satisfying ??? */
+
+	if (lhkl >= nmax) {
+		rmax = diff;
+		icode = 2;
+		if (diff <= rmaxref) {
+			icode = 1;
+		}
+	} else {
+		icode = 1;
+	}
+	celold[0] = celpre[0];
+	celold[1] = celpre[1];
+	celold[2] = celpre[2];
+	if (diff > rmax) {
+		goto L1417;
+	}
+	if (lhkl < nmax) {
+		goto L1417;
+	}
+L1414:
+	if (diff <= rmax) {
+		llhkl = lhkl;
+		rmax = diff;
+		rmax2 = diff2;
+		a = celpre[0];
+		b = celpre[1];
+		c = celpre[2];
+		v2 = v1;
+		if (diff < rmin) {
+			rmin = diff;
+			bpar[0] = a;
+			bpar[1] = b;
+			bpar[2] = c;
+			v3 = v1;
+		}
+
+	/* ... "Refine" that cell (by Monte Carlo too...) */
+
+		pstartb[0] = celpre[0];
+		pstartb[1] = celpre[1];
+		pstartb[2] = celpre[2];
+	}
+	if (ntriedb <= ncycles) {
+		goto L1403;
+	}
+	ntriedb = 0.0;
+	if (rmax >= rmax0[3]) {
+		goto L1417;
+	}
+	if (rmax2 >= .15f) {
+		goto L1417;
+	}
+	ipen = ndat - llhkl;
+	if (ipen > nind) {
+		goto L1417;
+	}
+	++igc;
+
+/*  Test if too much proposals, if yes decrease Rmax by 5% */
+
+	igt += 1.0;
+	if (nr == 1) {
+		if (igt > 50.0) {
+			if (ntried / igt < 1e4f) {
+				if (rmax0[3] > .1f) {
+					rmax0[3] -= rmax0[3] * .05f;
+					printRmaxReducedString(rmax0[3], imp_file);
+				}
+			}
+		}
+	}
+
+	if (igc > 10000) {
+		printStopString(imp_file);
+		--igc;
+		goto L5000;
+	}
+	cel[igc * 6 - 6] = a;
+	cel[igc * 6 - 5] = b;
+	cel[igc * 6 - 4] = c;
+	cel[igc * 6 - 3] = 90.0;
+	cel[igc * 6 - 2] = 90.0;
+	cel[igc * 6 - 1] = 90.0;
+
+/* ... Check for supercell */
+
+	celpre[0] = a;
+	celpre[1] = b;
+	celpre[2] = c;
+	for (int i = 1; i <= 3; ++i) {
+		for (int j = 1; j <= 3; ++j) {
+			al[i + j * 3 - 4] = 0.0;
+		}
+	}
+	dcell(celpre, al, &v1);
+	calcul2(&diff, ihkl, th3, &ncalc, &igc);
+	km[igc - 1] = llhkl;
+	km2[igc - 1] = lhkl;
+	ifi[igc - 1] = ifile;
+	nsol[igc - 1] = 1;
+	vgc[igc - 1] = v1;
+	rp[igc - 1] = rmax;
+	rp2[igc - 1] = diff;
+	if (rp[igc - 1] < rpsmall) {
+		rpsmall = rp[igc - 1];
+		isee = 1;
+	} else {
+		isee = 0;
+	}
+	supcel(&lhkl, ihkl, cel, &igc, vgc, &c1);
+	brav(&lhkl, ihkl, &ibr);
+	ib[igc - 1] = ibr;
+	a = cel[igc * 6 - 6];
+	b = cel[igc * 6 - 5];
+	c = cel[igc * 6 - 4];
+	v2 = vgc[igc - 1];
+
+/* ... Check for interesting result */
+
+	if (rp[igc - 1] < rmi) {
+		printSaveInterstResString(imp_file, rmax, v2, ipen, 3, a, b, c);
+
+	/* ... Refine that cell */
+
+		indic = 0;
+		bb[2] = a;
+		bb[3] = b;
+		bb[4] = c;
+		bb[5] = 90.0;
+		bb[6] = 90.0;
+		bb[7] = 90.0;
+		afi[2] = 1.0;
+		afi[3] = 1.0;
+		afi[4] = 1.0;
+		afi[5] = 0.0;
+		afi[6] = 0.0;
+		afi[7] = 0.0;
+		celpre[0] = a;
+		celpre[1] = b;
+		celpre[2] = c;
+		for (int i = 1; i <= 3; ++i) {
+			for (int j = 1; j <= 3; ++j) {
+	/* L1410: */
+			al[i + j * 3 - 4] = 0.0;
+			}
+		}
+		dcell(celpre, al, &v1);
+		calcul2(&diff, ihkl, th3, &ncalc, &igc);
+		celref(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq, imp_file);
+		if (ndat >= 20) {
+			cncalc[igc - 1] = (double) ncalc;
+			fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
+			ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
+			saveFMFF20(fm20[igc - 1], ff20[igc - 1], ddt, ncalc, imp_file);
+		}
+		iref = 1;
+		goto L5000;
+		}
+
+/* Test if cell already found */
+
+	if (igc > 1) {
+		for (int i = 1; i < igc; ++i) {
+			if (ifi[i - 1] != ifile) {
+				goto L1418;
+			}
+			vdelt = vgc[igc - 1] / 300.0;
+			vp = vgc[igc - 1] + vdelt;
+			vm = vgc[igc - 1] - vdelt;
+			if (vgc[i - 1] > vp || vgc[i - 1] < vm) {
+				goto L1418;
+			}
+			adelt = cel[igc * 6 - 6] / 500.0;
+			ap = cel[igc * 6 - 6] + adelt;
+			am = cel[igc * 6 - 6] - adelt;
+			na = 0;
+			if (cel[i * 6 - 6] > ap || cel[i * 6 - 6] < am) {
+				na = 1;
+			}
+			bdelt = cel[igc * 6 - 5] / 500.0;
+			bp = cel[igc * 6 - 5] + bdelt;
+			bm = cel[igc * 6 - 5] - bdelt;
+			nb = 0;
+			if (cel[i * 6 - 6] > bp || cel[i * 6 - 6] < bm) {
+				nb = 1;
+			}
+			cdelt = cel[igc * 6 - 4] / 500.0;
+			cp = cel[igc * 6 - 4] + cdelt;
+			cm = cel[igc * 6 - 4] - cdelt;
+			nc = 0;
+			if (cel[i * 6 - 6] > cp || cel[i * 6 - 6] < cm) {
+				nc = 1;
+			}
+			if (na == 1 && nb == 1 && nc == 1) {
+				goto L1418;
+			}
+			++nsol[i - 1];
+			if (rp[igc - 1] < rp[i - 1]) {
+				if (isee == 1) {
+				printIsee(rmax, v2, ipen, 3, a, b, c);
+				}
+				km[i - 1] = km[igc - 1];
+				vgc[i - 1] = vgc[igc - 1];
+				rp[i - 1] = rp[igc - 1];
+				cel[i * 6 - 6] = cel[igc * 6 - 6];
+				cel[i * 6 - 5] = cel[igc * 6 - 5];
+				cel[i * 6 - 4] = cel[igc * 6 - 4];
+			}
+			--igc;
+			goto L1419;
+	L1418:
+			;
+		}
+		if (iverb == 1) {
+			saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 3, a, b, c);
+		}
+		if (isee == 1) {
+			printIsee(rmax, v2, ipen, 3, a, b, c);
+		}
+	L1419:
+		;
+	} else {
+		if (iverb == 1) {
+			saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 3, a, b, c);
+		}
+		if (isee == 1) {
+			printIsee(rmax, v2, ipen, 3, a, b, c);
+		}
+	}
+
+
+L1417:
+	rmax = rmaxref;
+	celpre[0] = celold[0];
+	celpre[1] = celold[1];
+	celpre[2] = celold[2];
+
+/* ... Stop if max limit of grid tests outpassed */
+/*         or if K is pressed (tested every 30000 MC event) */
+
+	if (celpre[0] > pma[0]) {
+		goto L1416;
+	}
+	tkill = (int) ntried % 30000;
+	if (tkill >= 0.0) {
+		killk(&pressedk);
+		if (pressedk) {
+			goto L1416;
+		}
+	}
+	goto L1402;
+L1416:
+	if (rmin == rmax) {
+		goto L1498;
+	}
+	if (iverb == 1) {
+		char temp[111];
+		snprintf(temp, sizeof(temp), "\nBest result : a = %lf Rp = %lf\nBest result : b = %lf\nBest result : c = %lf V = %lf\n\n", bpar[0], rmin, bpar[1], bpar[2], v3);
+		fwrite(temp, strlen(temp), 1, imp_file);
+		writeFormattedDate(imp_file);
+	}
+	rmin = rmax;
+L1498:
+	if (pressedk) {
+		goto L5000;
+	}
+
+
+L1500:
+
+	/*    Monoclinic case - would be too long in grid search, but... */
+
+
+	rpsmall = 1.0;
+	printf("Monoclinic:   Rp     a       b       c       bet     V     Nind\n");
+/* ------------------------------------------------------------------------- */
+/*     Initialisation */
+
+/*      CALL ESP_INIT(ISEED) */
+
+/* ------------------------------------------------------------------------- */
+	ifile = 5;
+	rmax = rmaxref;
+	rmin = rmax;
+	ntried = 0.0;
+	ncycles = 2e3f;
+	cy = ncycles * 1.1f;
+	celpre[3] = 90.0;
+	celpre[5] = 90.0;
+	if (iverb == 1) {
+		saveGridResultsInString("monoclinic", imp_file);
+	}
+
+	if (ngrid == 3) {
+		pmin = 2.0;
+		pmax = 20.0;
+		pmi[0] = pmin;
+		pma[0] = dmax1 * 2.1f;
+		if (pma[0] > pmax) {
+			pma[0] = pmax;
+		}
+		pmi[1] = pmin;
+		pma[1] = dmax1 * 2.1f;
+		if (pma[1] > pmax) {
+			pma[1] = pmax;
+		}
+		pmi[2] = pmin;
+		pma[2] = dmax2 * 2.1f;
+		if (pma[2] > pmax) {
+			pma[2] = pmax;
+		}
+		vmin = 8.0;
+		vmax = pma[0] * pma[1] * pma[2];
+		if (vmax > 2e3f) {
+			vmax = 2e3f;
+		}
+		if (iverb == 1) {
+			char temp[53];
+			snprintf(temp, sizeof(temp), " Max (a,b,c) V %lf %lf %lf %lf\n\n", pma[0], pma[1], pma[2], vmax);
+			fwrite(temp, strlen(temp), 1, imp_file);
+		}
+	}
+
+	if (iverb == 1) {
+		char temp[] = " Rp  Trial number    a   b   c     bet  V  Nind Icod\n\n";
+		fwrite(temp, strlen(temp), 1, imp_file);
+	}
+
+/*     READ hkl Miller indices in mon.hkl */
+	readHklFile("mon", 20, 1000, ihh);
+
+/* ...  here starts the loop */
+
+	celpre[0] = pmi[0] - spar;
+	celpre[1] = pmi[1] - spar;
+	celpre[2] = pmi[2] - spar;
+	celpre[4] = pmi[4] - sang;
+	int ifin1 = 1;
+	ifin2 = 1;
+	int ifin3 = 1;
+
+L1502:
+
+/*     Which parameter to vary ? a or b or c or bet ? */
+
+	ntriedb = 0.0;
+	if (ifin1 == 1) {
+		celpre[0] += spar;
+		printf("  a = %lf", celpre[0]);
+		if (celpre[0] > pma[0]) {
+			goto L1516;
+		}
+		ifin1 = 0;
+		ntried += 1.0;
+	}
+	if (ifin2 == 1) {
+		celpre[1] += spar;
+		ifin2 = 0;
+	}
+	if (celpre[1] > pma[1]) {
+		celpre[1] = pmi[1] - spar;
+		ifin1 = 1;
+		goto L1502;
+	}
+	ntried += 1.0;
+	if (ifin3 == 1) {
+		celpre[2] += spar;
+		ifin3 = 0;
+	}
+	if (celpre[2] > pma[2]) {
+		celpre[2] = pmi[2] - spar;
+		ifin2 = 1;
+		goto L1502;
+	}
+	ntried += 1.0;
+	celpre[4] += sang;
+	if (celpre[4] > pma[4]) {
+		celpre[4] = pmi[4] - sang;
+		ifin3 = 1;
+		goto L1502;
+	}
+	ntried += 1.0;
+	goto L1504;
+L1503:
+	del = deltab * (1.0 - ntriedb / cy);
+	deld = deltad * (1.0 - ntriedb / cy);
+	x = randi(&iseed);
+	if (x >= 0.0 && x < .25f) {
+		i = 1;
+	}
+	if (x >= .25f && x < .5f) {
+		i = 2;
+	}
+	if (x >= .5f && x < .75f) {
+		i = 3;
+	}
+	if (x >= .75f && x <= 1.0) {
+		i = 5;
+	}
+	if (i != 5) {
+		celpre[i - 1] = pstartb[i - 1] + del * (randi(&iseed) - .5f) * 2.0;
+	} else {
+		celpre[i - 1] = pstartb[i - 1] + deld * (randi(&iseed) - .5f) *	2.0;
+	}
+	ntriedb += 1.0;
+L1504:
+	for (int i = 1; i <= 3; ++i) {
+		for (int j = 1; j <= 3; ++j) {
+			al[i + j * 3 - 4] = 0.0;
+		}
+	}
+	dcell(celpre, al, &v1);
+	if (celpre[0] > pma[0] && ntriedb == 0.0) {
+		goto L1516;
+	}
+	if (ntriedb != 0.0) {
+		goto L1506;
+	}
+	if (v1 > vmax || v1 < vmin) {
+		ntried += -1.0;
+		goto L1502;
+	}
+
+L1506:
+	calcul1(&diff, &diff2);
+	if (nmx > ndat10) {
+		ntried += -1;
+		goto L1502;
+	}
+	if (ntriedb != 0.0) {
+		goto L1514;
+	}
+
+/* ... Rp value satisfying ??? */
+
+	if (lhkl >= nmax) {
+		rmax = diff;
+		icode = 2;
+		if (diff <= rmaxref) {
+			icode = 1;
+		}
+	} else {
+		icode = 1;
+	}
+	celold[0] = celpre[0];
+	celold[1] = celpre[1];
+	celold[2] = celpre[2];
+	celold[4] = celpre[4];
+	if (diff > rmax) {
+		goto L1517;
+	}
+	if (lhkl < nmax) {
+		goto L1517;
+	}
+L1514:
+	if (diff <= rmax) {
+		llhkl = lhkl;
+		rmax = diff;
+		rmax2 = diff2;
+		a = celpre[0];
+		b = celpre[1];
+		c = celpre[2];
+		bet = celpre[4];
+		v2 = v1;
+		if (diff < rmin) {
+			rmin = diff;
+			bpar[0] = a;
+			bpar[1] = b;
+			bpar[2] = c;
+			bpar[4] = bet;
+			v3 = v1;
+		}
+
+	/* ... "Refine" that cell (by Monte Carlo too...) */
+
+		pstartb[0] = celpre[0];
+		pstartb[1] = celpre[1];
+		pstartb[2] = celpre[2];
+		pstartb[4] = celpre[4];
+	}
+	if (ntriedb <= ncycles) {
+		goto L1503;
+	}
+	ntriedb = 0.0;
+	if (rmax >= rmax0[4]) {
+		goto L1517;
+	}
+	if (rmax2 >= .15f) {
+		goto L1517;
+	}
+	ipen = ndat - llhkl;
+	if (ipen > nind) {
+		goto L1517;
+	}
+	++igc;
+
+/*  Test if too much proposals, if yes decrease Rmax by 5% */
+
+	igt += 1.0;
+	if (nr == 1) {
+		if (igt > 50.0) {
+			if (ntried / igt < 1e5f) {
+				if (rmax0[4] > .1f) {
+					rmax0[4] -= rmax0[4] * .05f;
+					printRmaxReducedString(rmax0[4], imp_file);
+				}
+			}
+		}
+	}
+
+	if (igc > 10000) {
+		printStopString(imp_file);
+		--igc;
+		goto L5000;
+	}
+	cel[igc * 6 - 6] = a;
+	cel[igc * 6 - 5] = b;
+	cel[igc * 6 - 4] = c;
+	cel[igc * 6 - 3] = 90.0;
+	cel[igc * 6 - 2] = bet;
+	cel[igc * 6 - 1] = 90.0;
+
+/* ... Check for supercell */
+
+	celpre[0] = a;
+	celpre[1] = b;
+	celpre[2] = c;
+	celpre[4] = bet;
+	for (int i = 1; i <= 3; ++i) {
+		for (int j = 1; j <= 3; ++j) {
+			al[i + j * 3 - 4] = 0.0;
+		}
+	}
+	dcell(celpre, al, &v1);
+	calcul2(&diff, ihkl, th3, &ncalc, &igc);
+	km[igc - 1] = llhkl;
+	km2[igc - 1] = lhkl;
+	ifi[igc - 1] = ifile;
+	nsol[igc - 1] = 1;
+	vgc[igc - 1] = v1;
+	rp[igc - 1] = rmax;
+	rp2[igc - 1] = diff;
+	if (rp[igc - 1] < rpsmall) {
+		rpsmall = rp[igc - 1];
+		isee = 1;
+	} else {
+		isee = 0;
+	}
+	supcel(&lhkl, ihkl, cel, &igc, vgc, &c1);
+	a = cel[igc * 6 - 6];
+	b = cel[igc * 6 - 5];
+	c = cel[igc * 6 - 4];
+	v2 = vgc[igc - 1];
+
+/* ... Check for interesting result */
+
+	if (rp[igc - 1] < rmi) {
+		printSaveInterstResString(imp_file, rmax, v2, ipen, 4, a, b, c, bet);
+
+	/* ... Refine that cell */
+
+		indic = 0;
+		bb[2] = a;
+		bb[3] = b;
+		bb[4] = c;
+		bb[5] = 90.0;
+		bb[6] = bet;
+		bb[7] = 90.0;
+		afi[2] = 1.0;
+		afi[3] = 1.0;
+		afi[4] = 1.0;
+		afi[5] = 0.0;
+		afi[6] = 1.0;
+		afi[7] = 0.0;
+		celpre[0] = a;
+		celpre[1] = b;
+		celpre[2] = c;
+		celpre[4] = bet;
+		for (int i = 1; i <= 3; ++i) {
+			for (int j = 1; j <= 3; ++j) {
+				al[i + j * 3 - 4] = 0.0;
+			}
+		}
+		dcell(celpre, al, &v1);
+		calcul2(&diff, ihkl, th3, &ncalc, &igc);
+		celref(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq, imp_file);
+		if (ndat >= 20) {
+			cncalc[igc - 1] = (double) ncalc;
+			fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
+			ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
+			saveFMFF20(fm20[igc - 1], ff20[igc - 1], ddt, ncalc, imp_file);
+		}
+		iref = 1;
+		goto L5000;
+	}
+
+/* Test if cell already found */
+	if (igc > 1) {
+		for (i = 1; i < igc; ++i) {
+			if (ifi[i - 1] != ifile) {
+				goto L1518;
+			}
+			vdelt = vgc[igc - 1] / 300.0;
+			vp = vgc[igc - 1] + vdelt;
+			vm = vgc[igc - 1] - vdelt;
+			if (vgc[i - 1] > vp || vgc[i - 1] < vm) {
+				goto L1518;
+			}
+			bdelt = cel[igc * 6 - 5] / 500.0;
+			bp = cel[igc * 6 - 5] + bdelt;
+			bm = cel[igc * 6 - 5] - bdelt;
+			if (cel[i * 6 - 5] > bp || cel[i * 6 - 5] < bm) {
+				goto L1518;
+			}
+			betdelt = cel[igc * 6 - 2] / 500.0;
+			betp = cel[igc * 6 - 2] + betdelt;
+			betm = cel[igc * 6 - 2] - betdelt;
+			if (cel[i * 6 - 2] > betp || cel[i * 6 - 2] < betm) {
+				goto L1518;
+			}
+			adelt = cel[igc * 6 - 6] / 500.0;
+			ap = cel[igc * 6 - 6] + adelt;
+			am = cel[igc * 6 - 6] - adelt;
+			na = 0;
+			if (cel[i * 6 - 6] > ap || cel[i * 6 - 6] < am) {
+				na = 1;
+			}
+			cdelt = cel[igc * 6 - 4] / 500.0;
+			cp = cel[igc * 6 - 4] + cdelt;
+			cm = cel[igc * 6 - 4] - cdelt;
+			nc = 0;
+			if (cel[i * 6 - 6] > cp || cel[i * 6 - 6] < cm) {
+				nc = 1;
+			}
+			if (na == 1 && nc == 1) {
+				goto L1518;
+			}
+			++nsol[i - 1];
+			if (rp[igc - 1] < rp[i - 1]) {
+				if (isee == 1) {
+					printIsee(rmax, v2, ipen, 4, a, b, c, bet);
+				}
+				km[i - 1] = km[igc - 1];
+				vgc[i - 1] = vgc[igc - 1];
+				rp[i - 1] = rp[igc - 1];
+				cel[i * 6 - 6] = cel[igc * 6 - 6];
+				cel[i * 6 - 5] = cel[igc * 6 - 5];
+				cel[i * 6 - 4] = cel[igc * 6 - 4];
+				cel[i * 6 - 2] = cel[igc * 6 - 2];
+			}
+			--igc;
+			goto L1519;
+	L1518:
+			;
+		}
+		if (iverb == 1) {
+			saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 4, a, b, c, bet);
+		}
+		if (isee == 1) {
+			printIsee(rmax, v2, ipen, 4, a, b, c, bet);
+		}
+	L1519:
+		;
+	} else {
+		if (iverb == 1) {
+			saveIverb(rmax, ntried, v2, ipen, icode, imp_file, 4, a, b, c, bet);
+		}
+		if (isee == 1) {
+			printIsee(rmax, v2, ipen, 4, a, b, c, bet);
+		}
+	}
+
+
+L1517:
+	rmax = rmaxref;
+	celpre[0] = celold[0];
+	celpre[1] = celold[1];
+	celpre[2] = celold[2];
+	celpre[4] = celold[4];
+
+/* ... Stop if max limit of grid tests outpassed */
+/*         or if K is pressed (tested every 30000 MC event) */
+
+	if (celpre[0] > pma[0]) {
+		goto L1516;
+	}
+	tkill = (int) ntried % 30000;
+	if (tkill >= 0.0) {
+		killk(&pressedk);
+		if (pressedk) {
+			goto L1516;
+		}
+	}
+	goto L1502;
+L1516:
+	if (rmin == rmax) {
+		goto L1598;
+	}
+	if (iverb == 1) {
+		char temp[151];
+		snprintf(temp, sizeof(temp), "\nBest result : a =    %lf Rp = %lf\nBest result : b =    %lf\nBest result : c =    %lf \nBest result : beta = %lf V = %lf\n\n", bpar[0], rmin, bpar[1], bpar[2], bpar[4], v3);
+		fwrite(temp, strlen(temp), 1, imp_file);
+		writeFormattedDate(imp_file);
+	}
+	rmin = rmax;
+L1598:
+	if (pressedk) {
+	goto L5000;
+	}
+
+
+
 L5000:
 
 //==============================================================================

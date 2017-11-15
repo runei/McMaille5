@@ -1,4 +1,7 @@
 *.inp
 *.imp
 *.dat
+*.for
 McMaille
+McMaille-mine
+tests
