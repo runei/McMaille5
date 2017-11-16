@@ -369,6 +369,386 @@ L111:
 
 //==============================================================================
 
+int sort3(int *n, int *na, int *l)
+{
+
+	int i1;
+	/* Local variables */
+	static int i, j, k, m, li, lj, lk, ip, iq, lq, ix, nt, ilt[10], itt, iut[10];
+
+/*     ******************************************************** */
+/*     THE SUBROUTINE SORT APPLIES TO THE ARRAY A WITH J ELEMENTS. */
+/*     THE INDICES OF THE ORDERED ARRAY ARE PLACED IN ARRAY L */
+/*     TO OBTAIN THE ORDERED ARRAY REPLACE THE INDICES I OF A(I) */
+/*     WITH I=L(I)---REF.CACM 271 */
+/*     ********************************************************* */
+
+	/* Parameter adjustments */
+	--l;
+	--na;
+
+	/* Function Body */
+	j = *n;
+	i = 1;
+	m = 1;
+	i1 = j;
+	for (k = 1; k <= i1; ++k) {
+/* L10: */
+	l[k] = k;
+	}
+L20:
+	if (j - i - 1 <= 0) {
+	goto L140;
+	} else {
+	goto L30;
+	}
+L30:
+	ip = (j + i) / 2;
+	itt = l[ip];
+	nt = na[itt];
+	l[ip] = l[i];
+	iq = j;
+	k = i + 1;
+L40:
+	if (k > iq) {
+	goto L90;
+	}
+	lk = l[k];
+	if (na[lk] <= nt) {
+	goto L80;
+	}
+	iq = iq;
+L50:
+	if (iq < k) {
+	goto L70;
+	}
+	lq = l[iq];
+	if (na[lq] >= nt) {
+	goto L60;
+	}
+	ix = l[k];
+	l[k] = l[iq];
+	l[iq] = ix;
+	--iq;
+	goto L80;
+L60:
+	--iq;
+	goto L50;
+L70:
+	iq = k - 1;
+	goto L100;
+L80:
+	++k;
+	goto L40;
+L90:
+L100:
+	l[i] = l[iq];
+	l[iq] = itt;
+	if ((iq << 1) - i - j <= 0) {
+	goto L120;
+	} else {
+	goto L110;
+	}
+L110:
+	ilt[m - 1] = i;
+	iut[m - 1] = iq - 1;
+	i = iq + 1;
+	goto L130;
+L120:
+	ilt[m - 1] = iq + 1;
+	iut[m - 1] = j;
+	j = iq - 1;
+L130:
+	++m;
+	goto L20;
+L140:
+	if (i - j >= 0) {
+	goto L170;
+	} else {
+	goto L150;
+	}
+L150:
+	li = l[i];
+	lj = l[j];
+	if (na[li] - na[lj] <= 0) {
+	goto L170;
+	} else {
+	goto L160;
+	}
+L160:
+	ix = l[i];
+	l[i] = l[j];
+	l[j] = ix;
+L170:
+	--m;
+	if (m <= 0) {
+	goto L190;
+	} else {
+	goto L180;
+	}
+L180:
+	i = ilt[m - 1];
+	j = iut[m - 1];
+	goto L20;
+L190:
+	return 0;
+} /* sort3_ */
+
+
+//==============================================================================
+
+int sort2(int *n, double *na, int *l)
+{
+
+	/* Local variables */
+	static int i, j, k, m, li, lj, lk, ip, iq, lq, ix, nt, ilt[10], itt,
+		 iut[10];
+
+/*     ******************************************************** */
+/*     THE SUBROUTINE SORT APPLIES TO THE ARRAY A WITH J ELEMENTS. */
+/*     THE INDICES OF THE ORDERED ARRAY ARE PLACED IN ARRAY L */
+/*     TO OBTAIN THE ORDERED ARRAY REPLACE THE INDICES I OF A(I) */
+/*     WITH I=L(I)---REF.CACM 271 */
+/*     ********************************************************* */
+
+	/* Parameter adjustments */
+	--l;
+	--na;
+
+	/* Function Body */
+	j = *n;
+	i = 1;
+	m = 1;
+	for (k = 1; k <= j; ++k) {
+		l[k] = k;
+	}
+L20:
+	if (j - i - 1 <= 0) {
+		goto L140;
+	} else {
+		goto L30;
+	}
+L30:
+	ip = (j + i) / 2;
+	itt = l[ip];
+	nt = na[itt];
+	l[ip] = l[i];
+	iq = j;
+	k = i + 1;
+L40:
+	if (k > iq) {
+		goto L90;
+	}
+	lk = l[k];
+	if (na[lk] <= nt) {
+		goto L80;
+	}
+	iq = iq;
+L50:
+	if (iq < k) {
+		goto L70;
+	}
+	lq = l[iq];
+	if (na[lq] >= nt) {
+		goto L60;
+	}
+	ix = l[k];
+	l[k] = l[iq];
+	l[iq] = ix;
+	--iq;
+	goto L80;
+L60:
+	--iq;
+	goto L50;
+L70:
+	iq = k - 1;
+	goto L100;
+L80:
+	++k;
+	goto L40;
+L90:
+L100:
+	l[i] = l[iq];
+	l[iq] = itt;
+	if ((iq << 1) - i - j <= 0) {
+		goto L120;
+	} else {
+		goto L110;
+	}
+L110:
+	ilt[m - 1] = i;
+	iut[m - 1] = iq - 1;
+	i = iq + 1;
+	goto L130;
+L120:
+	ilt[m - 1] = iq + 1;
+	iut[m - 1] = j;
+	j = iq - 1;
+L130:
+	++m;
+	goto L20;
+L140:
+	if (i - j >= 0) {
+		goto L170;
+	} else {
+		goto L150;
+	}
+L150:
+	li = l[i];
+	lj = l[j];
+	if (na[li] - na[lj] <= 0) {
+		goto L170;
+	} else {
+		goto L160;
+	}
+L160:
+	ix = l[i];
+	l[i] = l[j];
+	l[j] = ix;
+L170:
+	--m;
+	if (m <= 0) {
+		goto L190;
+	} else {
+		goto L180;
+	}
+L180:
+	i = ilt[m - 1];
+	j = iut[m - 1];
+	goto L20;
+L190:
+	return 0;
+} /* sort2_ */
+
+
+//==============================================================================
+
+int sort(int *n, double *a, int *l)
+{
+
+	/* Local variables */
+	static int i, j, k, m;
+	static double t;
+	static int li, lj, lk, ip, iq, lq, ix, ilt[10], itt, iut[10];
+
+/*     ******************************************************** */
+/*     THE SUBROUTINE SORT APPLIES TO THE ARRAY A WITH J ELEMENTS. */
+/*     THE INDICES OF THE ORDERED ARRAY ARE PLACED IN ARRAY L */
+/*     TO OBTAIN THE ORDERED ARRAY REPLACE THE INDICES I OF A(I) */
+/*     WITH I=L(I)---REF.CACM 271 */
+/*     ********************************************************* */
+
+	/* Parameter adjustments */
+	--l;
+	--a;
+
+	/* Function Body */
+	j = *n;
+	i = 1;
+	m = 1;
+	for (int k = 1; k <= j; ++k) {
+		l[k] = k;
+	}
+L20:
+	if (j - i - 1 <= 0) {
+		goto L140;
+	} else {
+		goto L30;
+	}
+L30:
+	ip = (j + i) / 2;
+	itt = l[ip];
+	t = a[itt];
+	l[ip] = l[i];
+	iq = j;
+	k = i + 1;
+L40:
+	if (k > iq) {
+		goto L90;
+	}
+	lk = l[k];
+	if (a[lk] <= t) {
+		goto L80;
+	}
+	iq = iq;
+L50:
+	if (iq < k) {
+		goto L70;
+	}
+	lq = l[iq];
+	if (a[lq] >= t) {
+		goto L60;
+	}
+	ix = l[k];
+	l[k] = l[iq];
+	l[iq] = ix;
+	--iq;
+	goto L80;
+L60:
+	--iq;
+	goto L50;
+L70:
+	iq = k - 1;
+	goto L100;
+L80:
+	++k;
+	goto L40;
+L90:
+L100:
+	l[i] = l[iq];
+	l[iq] = itt;
+	if ((iq << 1) - i - j <= 0) {
+		goto L120;
+	} else {
+		goto L110;
+	}
+L110:
+	ilt[m - 1] = i;
+	iut[m - 1] = iq - 1;
+	i = iq + 1;
+	goto L130;
+L120:
+	ilt[m - 1] = iq + 1;
+	iut[m - 1] = j;
+	j = iq - 1;
+L130:
+	++m;
+	goto L20;
+L140:
+	if (i - j >= 0) {
+		goto L170;
+	} else {
+		goto L150;
+	}
+L150:
+	li = l[i];
+	lj = l[j];
+	if (a[li] - a[lj] <= 0.0) {
+		goto L170;
+	} else {
+		goto L160;
+	}
+L160:
+	ix = l[i];
+	l[i] = l[j];
+	l[j] = ix;
+L170:
+	--m;
+	if (m <= 0) {
+		goto L190;
+	} else {
+		goto L180;
+	}
+L180:
+	i = ilt[m - 1];
+	j = iut[m - 1];
+	goto L20;
+L190:
+	return 0;
+} /* sort_ */
+
+//==============================================================================
+
 /*  Test on Bravais lattice */
 
 int brav(int *n, int *ihkl, int *ibr)
@@ -399,8 +779,8 @@ int brav(int *n, int *ihkl, int *ibr)
 	j += k;
 	}
 	if (j == 0) {
-	*ibr = 1;
-	return 0;
+		*ibr = 1;
+		return 0;
 	}
 
 /*     F lattice */
@@ -2273,27 +2653,28 @@ FILE *openFile(const char *file_name, const char *ext, const char *mode)
 	return result;
 }
 
-char *getFormattedDate()
+struct tm *getDate()
 {
 	time_t timer;
-	char *result;
-	size_t size = 40;
-
-	result = (char *)malloc(size * sizeof(char));
 
 	struct tm* tm_info;
 
 	time(&timer);
 	tm_info = localtime(&timer);
 
-	strftime(result, size, "\n\n %d-%b-%Y\t\t%H hour %M min %S Sec\n\n", tm_info);
-
-	return result;
+	return tm_info;
 }
 
 void writeFormattedDate(FILE *file)
 {
-	char *date = getFormattedDate();
+	struct tm *tm_info = getDate();
+
+	char *date;
+	size_t size = 40;
+
+	date = (char *)malloc(size * sizeof(char));
+	strftime(date, size, "\n\n %d-%b-%Y\t\t%H hour %M min %S Sec\n\n", tm_info);
+
 	fwrite(date, strlen(date), 1, file);
 	free(date);
 }
@@ -2566,24 +2947,137 @@ void saveGridResultsInString(const char *str, FILE *imp_file)
 
 //==============================================================================
 
+char *getMore(const int *ifi, int j)
+{
+	if (ifi[j] == 1) {
+		return "Cubic *****";
+	}
+	if (ifi[j] == 2) {
+		return "Hexag **** ";
+	}
+	if (ifi[j] == 3) {
+		return "Tetra **** ";
+	}
+	if (ifi[j] == 4) {
+		return "Ortho ***  ";
+	}
+	if (ifi[j] == 5) {
+		return "           ";
+	}
+	if (ifi[j] == 6) {
+		return "           ";
+	}
+	if (ifi[j] == 7) {
+		return "Rhomb **** ";
+	}
+	return "";
+}
+
+//==============================================================================
+
+char getBL(const int *ib, const int *ifi, int j)
+{
+	char bl;
+	--j;
+	if (ib[j] == 1) {
+		bl = 'I';
+	}
+	if (ib[j] == 2) {
+		bl = 'A';
+	}
+	if (ib[j] == 3) {
+		bl = 'B';
+	}
+	if (ib[j] == 4) {
+		bl = 'C';
+	}
+	if (ib[j] == 5) {
+		bl = 'F';
+	}
+	if (ib[j] == 6) {
+		bl = 'P';
+	}
+	if (ifi[j] == 7) {
+		bl = 'R';
+	}
+	return bl;
+}
+
+//==============================================================================
+
+void writeInFile(const char *temp, FILE* file)
+{
+	fwrite(temp, strlen(temp), 1, file);
+}
+
+//==============================================================================
+
+void writeFormattedInFile(FILE *file, const char* format, const int num, ...)
+{
+	va_list valist;
+	va_start(valist, num);
+
+	char *temp;
+	temp = (char *)malloc(sizeof(format) + num*8);
+
+	snprintf(temp, sizeof(temp), format, valist);
+
+	writeInFile(temp, file);
+
+	va_end(valist);
+	free(temp);
+}
+
+//==============================================================================
+
+char *intArrayToString(const char* format, const int *array, const int init, const int end)
+{
+	char *temp;
+	temp = (char *)malloc(sizeof(format) * (end - init) * 5);
+
+	char *cur = temp, *const end_str = temp - sizeof(temp);
+	for (int i = init; i < end; ++i)
+	{
+		cur += snprintf(cur, end_str - cur, format, array[i]);
+	}
+	return temp;
+}
+
+//==============================================================================
+
+char *doubleArrayToString(const char* format, const double *array, const int init, const int end)
+{
+	char *temp;
+	temp = (char *)malloc(sizeof(format) * (end - init) * 10);
+
+	char *cur = temp, *const end_str = temp - sizeof(temp);
+	for (int i = init; i < end; ++i)
+	{
+		cur += snprintf(cur, end_str - cur, format, array[i]);
+	}
+	return temp;
+}
+
+//==============================================================================
+
 int main(int argc, char *argv[])
 {
 
-	int nsys[6], ihkl[30000], nrun;
+	int nsys[6], ihkl[30000], nsol[N_HKL], nrun, ll[N_HKL], lll[N_HKL], km[N_HKL];
 	char text[20];
-	double pstartb[6],delta[3],pstart[3];
+	double pstartb[6],delta[3],pstart[3], rp2[N_HKL];
 	double celpre[6],celold[6],w1[N_HKL],fm20[N_HKL],ff20[N_HKL];
 	double bpar[6],cel[60000],rp[N_HKL],vgc[N_HKL],d[N_HKL];
-	double ifi[N_HKL],ll[N_HKL],qo[N_HKL],ib[N_HKL];
-	double afi[8],bb[8],km[N_HKL],th3[N_HKL];
-	double pmi[6],pma[6],nsol[N_HKL],cncalc[N_HKL],xfom[N_HKL];
-	double deltct[3],astartt[3],imn[10],im[10];
+	int km3[100000],ll2[100000],ifi[N_HKL],ib[N_HKL], irefs[N_HKL], im[10];
+	double afi[8],bb[8],qo[N_HKL],th3[N_HKL];
+	double pmi[6],pma[6],cncalc[N_HKL],xfom[N_HKL];
+	double deltct[3],astartt[3],imn[10];
 	double hw[N_HKL],hw4[N_HKL],bbb[N_HKL],fcal[N_HKL],hh[3];
 	double pos[16000],yobs[16000],ycalc[16000];
 	double dump[N_HKL],somega[N_HKL],theta[N_HKL],rmax0[6];
-	double nha[16000],nhb[16000],jhh[3][N_HKL],irefs[N_HKL];
-	double isyst[7],lll[N_HKL],ql[6],rp2[N_HKL],km2[N_HKL];
-	double km3[100000],ll2[100000],id1[100000],id2[100000];
+	double nha[16000],nhb[16000],jhh[3*N_HKL];
+	double isyst[7],ql[6],km2[N_HKL];
+	double id1[100000],id2[100000];
 
     const int procs = 1;  // 360./3.1415926
 
@@ -8542,16 +9036,1257 @@ L1516:
 	rmin = rmax;
 L1598:
 	if (pressedk) {
-	goto L5000;
+		goto L5000;
 	}
 
+L1600:
+	if (nsys[5] == 0) {
+		goto L5000;
+	}
+
+/*    Triclinic case - would be too long in grid search... */
 
 
 L5000:
+	if (igc == 0) {
+		goto L6000;
+	}
+	int imem = 0;
+
+/*   Prepare sorted output for CHEKCELL */
+
+	{
+		char temp[] = "\n===============================================================================\n  FINAL LIST OF CELL PROPOSALS, sorted by McM20 :\n===============================================================================\n\n      Global list as produced in the .ckm file\n            (IN=number of indexed lines)\n  The correct cell has some chances to be just below\n\nIN  F.o.M.    Volume   V/V1      a        b        c       alpha   beta    gamma   Bravais lattice\n\n";
+		fwrite(temp, strlen(temp), 1, imp_file);
+	}
+
+	FILE *ckm_file = openFile(file_name, ".ckm", "w+");
+	FILE *mcm_file = openFile(file_name, ".mcm", "w+");
+
+	/*  Calculate new F.o.M */
+
+	for (int j = 1; j <= igc; ++j) {
+		if (rp[j - 1] < .001f) {
+			rp[j - 1] = .001f;
+		}
+		double x2 = 1.0;
+		if (ib[j - 1] == 1) {
+			x2 = 4.0;
+		}
+		if (ib[j - 1] == 2) {
+			x2 = 2.0;
+		}
+		if (ib[j - 1] == 3) {
+			x2 = 2.0;
+		}
+		if (ib[j - 1] == 4) {
+			x2 = 2.0;
+		}
+		if (ib[j - 1] == 5) {
+			x2 = 6.0;
+		}
+		if (ifi[j - 1] == 7) {
+			x2 = 6.0;
+		}
+		double x3 = 1.0;
+		if (ifi[j - 1] == 1) {
+			x3 = 6.0;
+		}
+		if (ifi[j - 1] == 2) {
+			x3 = 4.0;
+		}
+		if (ifi[j - 1] == 3) {
+			x3 = 4.0;
+		}
+		if (ifi[j - 1] == 4) {
+			x3 = 2.0;
+		}
+		if (ifi[j - 1] == 7) {
+			x3 = 6.0;
+		}
+		xfom[j - 1] = 1.0 / rp[j - 1] * 100.0 / cncalc[j - 1] * x2 * x3;
+	}
+
+	sort(&igc, xfom, ll);
+	++imem;
+	im[imem - 1] = ll[igc - 1];
+	char indxprog[] = "McMaille4.00";
+	int ibest = ll[igc - 1];
+	for (int i = 1; i <= igc; ++i) {
+		if (i > 20) {
+			goto L20000;
+		}
+		int j = ll[igc + 1 - i - 1];
+		int ipedig = j;
+		for (int k = 1; k <= 6; ++k) {
+			celpre[k - 1] = cel[k + j * 6 - 7];
+		}
+		dcell(celpre, al, &v1);
+		ql[0] = al[0] * 1e4f;
+		ql[1] = al[4] * 1e4f;
+		ql[2] = al[8] * 1e4f;
+		ql[3] = al[7] * 1e4f;
+		ql[4] = al[6] * 1e4f;
+		ql[5] = al[3] * 1e4f;
+
+		char bl = getBL(ib, ifi, j);
+		char more[11];
+		snprintf(more, sizeof(more), "%s", getMore(ifi, j));
+		double vr = vgc[j - 1] / vgc[ll[igc - 1] - 1];
+
+		char temp[60], temp_cel[60], temp_ql[60];
+		char *cur = temp, *const end = temp - sizeof(temp);
+		char *cur_cel = temp_cel, *const end_cel = temp_cel - sizeof(temp_cel);
+		char *cur_ql = temp_ql, *const end_ql = temp_ql - sizeof(temp_ql);
+
+		for (int k = 1; k <= 6; ++k)
+		{
+			cur_cel += snprintf(cur_cel, end_cel-cur_cel, " %.4lf", cel[k + j * 6 - 7]);
+			cur_ql += snprintf(cur_ql, end_ql-cur_ql, " %.4lf", ql[k - 1]);
+		}
+
+		struct tm *tm_info = getDate();
+		char *date;
+		size_t size = 40;
+
+		date = (char *)malloc(size * sizeof(char));
+		strftime(date, size, "%d %b %Y %H %M %S", tm_info);
+
+		snprintf(temp, sizeof(temp), "%d %.2lf %.3lf%.2lf                                       %s\n", km[j - 1], xfom[j - 1], vgc[j - 1], vr, temp_cel);
+		fwrite(temp, strlen(temp), 1, ckm_file);
+
+		snprintf(temp, sizeof(temp), "%d %.2lf %.3lf%.2lf   %s    %c  %s\n", km[j - 1], xfom[j - 1], vgc[j - 1], vr, temp_cel, bl,  more);
+		fwrite(temp, strlen(temp), 1, imp_file);
+
+		snprintf(temp, sizeof(temp), "%d %.2lf %.3lf%.2lf %c %s %s %d %s %s\n\n", km[j - 1], xfom[j - 1], vgc[j - 1], vr, bl, indxprog, date, ipedig, temp_cel, temp_ql);
+		fwrite(temp, strlen(temp), 1, imp_file);
+
+			//%d %.2lf %.3lf%.2lf %c %s %s %d %s %s\n\n", , , km[j - 1], xfom[j - 1], vgc[j - 1], vr, bl, indxprog, date, ipedig, temp_cel, temp_ql);
+
+		free(date);
+
+		fwrite(temp, strlen(temp), 1, imp_file);
+	}
+L20000:
+	;
+
+	{
+		char temp[] = "\n===============================================================================\n  FINAL LIST OF CELL PROPOSALS, sorted by F(20) :\n===============================================================================\n\n      Global list   (IN=number of indexed lines)\n  The correct cell has some chances to be just below\n\nIN  F(20)    Volume   V/V1      a        b        c       alpha   beta    gamma   Bravais lattice\n\n";
+		fwrite(temp, strlen(temp), 1, imp_file);
+	}
+	sort(&igc, ff20, ll);
+	++imem;
+	im[imem - 1] = ll[igc - 1];
+	for (int i = 1; i <= igc; ++i) {
+		if (i > 20) {
+			goto L20002;
+		}
+		int j = ll[igc + 1 - i - 1];
+		int ipedig = j;
+		for (int k = 1; k <= 6; ++k) {
+			celpre[k - 1] = cel[k + j * 6 - 7];
+		}
+		dcell(celpre, al, &v1);
+		char bl = getBL(ib, ifi, j);
+		char more[11];
+		snprintf(more, sizeof(more), "%s", getMore(ifi, j));
+		double vr = vgc[j - 1] / vgc[ll[igc - 1] - 1];
+
+		{
+			char temp[30], temp_cel[60];
+			char *cur_cel = temp_cel, *const end_cel = temp_cel - sizeof(temp_cel);
+
+			for (int k = 1; k <= 6; ++k)
+			{
+				cur_cel += snprintf(cur_cel, end_cel-cur_cel, " %.4lf", cel[k + j * 6 - 7]);
+			}
+
+			snprintf(temp, sizeof(temp), "%d %.2lf %.3lf%.2lf   %s    %c  %s\n", km[j - 1], ff20[j - 1], vgc[j - 1], vr, temp_cel, bl, more);
+			fwrite(temp, strlen(temp), 1, imp_file);
+		}
+
+	}
+L20002:
+	{
+		char temp[] = "\n===============================================================================\n  FINAL LIST OF CELL PROPOSALS, sorted by M(20) :\n===============================================================================\n\n      Global list   (IN=number of indexed lines)\n  The correct cell has some chances to be just below\n\nIN  M(20)    Volume   V/V1      a        b        c       alpha   beta    gamma   Bravais lattice\n\n";
+		fwrite(temp, strlen(temp), 1, imp_file);
+	}
+	sort(&igc, fm20, ll);
+	++imem;
+	im[imem - 1] = ll[igc - 1];
+		for (i = 1; i <= igc; ++i) {
+		if (i > 20) {
+			goto L20004;
+		}
+		int j = ll[igc + 1 - i - 1];
+		int ipedig = j;
+		for (int k = 1; k <= 6; ++k) {
+			celpre[k - 1] = cel[k + j * 6 - 7];
+		}
+		dcell(celpre, al, &v1);
+		char bl = getBL(ib, ifi, j);
+		char more[11];
+		snprintf(more, sizeof(more), "%s", getMore(ifi, j));
+		double vr = vgc[j - 1] / vgc[ll[igc - 1] - 1];
+
+		{
+			char temp[30], temp_cel[60];
+			char *cur_cel = temp_cel, *const end_cel = temp_cel - sizeof(temp_cel);
+
+			for (int k = 1; k <= 6; ++k)
+			{
+				cur_cel += snprintf(cur_cel, end_cel-cur_cel, " %.4lf", cel[k + j * 6 - 7]);
+			}
+
+			snprintf(temp, sizeof(temp), "%d %.2lf %.3lf%.2lf   %s    %c  %s\n", km[j - 1], ff20[j - 1], vgc[j - 1], vr, temp_cel, bl, more);
+			fwrite(temp, strlen(temp), 1, imp_file);
+		}
+	}
+L20004:
+
+	{
+		char temp[] = "\n===============================================================================\n  See for the highest F.o.M. above the cell(s) with highest symmetry, if any\n  (Cubic, hexagonal, etc), they could correspond to the the right solution\n===============================================================================\n\n";
+		fwrite(temp, strlen(temp), 1, imp_file);
+	}
+
+/*   Make output for cells sorted by symmetry */
+
+	fclose(ckm_file);
+	fclose(mcm_file);
+
+
+	/*   Make output for cells sorted by symmetry */
+
+	{
+		char temp[] = "\n  Cells sorted by symmetry\n\n    Rp     Vol     Vol/V1 Ind Nsol    a        b         c      alpha  beta  gamma\n";
+		fwrite(temp, strlen(temp), 1, imp_file);
+	}
+	for (int i = 1; i < 7; ++i) {
+		isyst[i] = 0;
+	}
+	for (int i = 0; i < igc; ++i) {
+		if (ifi[i] == 1) {
+			isyst[0] = 1;
+		}
+		if (ifi[i] == 2) {
+			isyst[1] = 1;
+		}
+		if (ifi[i] == 3) {
+			isyst[2] = 1;
+		}
+		if (ifi[i] == 4) {
+			isyst[3] = 1;
+		}
+		if (ifi[i] == 5) {
+			isyst[4] = 1;
+		}
+		if (ifi[i] == 6) {
+			isyst[5] = 1;
+		}
+		if (ifi[i] == 7) {
+			isyst[6] = 1;
+		}
+	}
+	for (int jifi = 1; jifi <= 7; ++jifi) {
+		if (isyst[jifi - 1] == 0) {
+			goto L2020;
+		}
+		FILE *general_ckm_file;
+		switch (jifi) {
+			case 1:  goto L2021;
+			case 2:  goto L2022;
+			case 3:  goto L2023;
+			case 4:  goto L2024;
+			case 5:  goto L2025;
+			case 6:  goto L2026;
+			case 7:  goto L2027;
+		}
+	L2021:
+		writeInFile("\n   Cubic cells\n\n", imp_file);
+		general_ckm_file = openFile(file_name, "_cub.ckm", "w+");
+		goto L2028;
+	L2022:
+		writeInFile("\n   Hexagonal/trigonal cells\n\n", imp_file);
+		general_ckm_file = openFile(file_name, "_hex.ckm", "w+");
+		goto L2028;
+	L2023:
+		writeInFile("\n   Tetragonal cells\n\n", imp_file);
+		general_ckm_file = openFile(file_name, "_tet.ckm", "w+");
+		goto L2028;
+	L2024:
+		writeInFile("\n   Orthorhombic cells\n\n", imp_file);
+		general_ckm_file = openFile(file_name, "_ort.ckm", "w+");
+		goto L2028;
+	L2025:
+		writeInFile("\n   Monoclinic cells\n\n", imp_file);
+		general_ckm_file = openFile(file_name, "_mon.ckm", "w+");
+		goto L2028;
+	L2026:
+		writeInFile("\n   Triclinic cells\n\n", imp_file);
+		general_ckm_file = openFile(file_name, "_tri.ckm", "w+");
+		goto L2028;
+	L2027:
+		writeInFile("\n   Rhombohedral cells\n\n", imp_file);
+		general_ckm_file = openFile(file_name, "_rho.ckm", "w+");
+	L2028:
+		;
+		int jjj = 0;
+		for (int i = 1; i <= igc; ++i) {
+			if (i > 20) {
+				goto L20060;
+			}
+			int j = ll[i - 1];
+			if (ifi[j - 1] != jifi) {
+				goto L2006;
+			}
+			++jjj;
+			lll[jjj - 1] = j;
+			if (rp[j - 1] < .001f) {
+				rp[j - 1] = .001f;
+			}
+			x = 1.0 / rp[j - 1] * 5.0;
+			double vr = vgc[j - 1] / vgc[lll[0] - 1];
+			char temp[80], temp_cel[60];
+			char *cur = temp_cel, *const end = temp_cel - sizeof(temp_cel);
+
+			for (int k = 1; k <= 6; ++k) {
+				cur += snprintf(cur, end-cur, " %.4lf", cel[k + j * 6 - 7]);
+			}
+
+			snprintf(temp, sizeof(temp), "%.3lf %.3lf %.2lf %d %d%s\n", rp[j - 1], vgc[j - 1], vr, km[j - 1], nsol[j - 1], temp_cel);
+
+			writeInFile(temp, imp_file);
+
+			snprintf(temp, sizeof(temp), "%d %.2lf %.3lf %.2lf                                       %s\n", km[j - 1], x, vgc[j - 1], vr, temp_cel);
+
+			writeInFile(temp, general_ckm_file);
+	L2006:
+			;
+		}
+	L20060:
+		;
+		int nsolmax = nsol[lll[0] - 1];
+		if (nsolmax > 5) {
+			char temp[126];
+			snprintf(temp, sizeof(temp), "\nWARNING - WARNING - WARNING :\nSame solution found Nsol = %d times,\nyou should probably reduce the test numbers...\n\n", nsolmax);
+			writeInFile(temp, imp_file);
+		}
+		fclose(imp_file);
+	L2020:
+		;
+		}
+
+/* ... Refine the "best" cell if this was not already done */
+
+/*     READ hkl Miller indices in *.hkl */
+
+	ifile = ifi[ibest - 1];
+	switch (ifile) {
+	case 1:  readHklFile("cub", 6, 400, ihh);
+	case 2:  readHklFile("hex", 12, 800, ihh);
+	case 3:  readHklFile("tet", 12, 800, ihh);
+	case 4:  readHklFile("ort", 20, 1000, ihh);
+	case 5:  readHklFile("mon", 20, 1000, ihh);
+	case 6:  readHklFile("tri", 20, 1000, ihh);
+	case 7:  readHklFile("rho", 12, 600, ihh);
+	}
+
+
+L50:
+
+/*      IF(IREF.EQ.1)GO TO 5900 */
+	writeInFile("\n    \"Best\" cell with largest McM20 :\n    --------------------------------\n\n", imp_file);
+
+	int j = ibest;
+	ifile = ifi[j - 1];
+	indic = 0;
+	if (ifile == 1) {
+		indic = 1;
+	}
+	if (ifile == 2) {
+		indic = 2;
+	}
+	if (ifile == 3) {
+		indic = 2;
+	}
+	if (ifile == 7) {
+		indic = 2;
+	}
+	bb[2] = cel[j * 6 - 6];
+	bb[3] = cel[j * 6 - 5];
+	bb[4] = cel[j * 6 - 4];
+	bb[5] = cel[j * 6 - 3];
+	bb[6] = cel[j * 6 - 2];
+	bb[7] = cel[j * 6 - 1];
+	afi[2] = 1.0;
+	afi[3] = 1.0;
+	afi[4] = 1.0;
+	afi[5] = 1.0;
+	afi[6] = 1.0;
+	afi[7] = 1.0;
+	if (ifile == 1) {
+		afi[5] = 0.0;
+	}
+	if (ifile == 1) {
+		afi[6] = 0.0;
+	}
+	if (ifile == 1) {
+		afi[7] = 0.0;
+	}
+	if (ifile == 2) {
+		afi[5] = 0.0;
+	}
+	if (ifile == 2) {
+		afi[6] = 0.0;
+	}
+	if (ifile == 2) {
+		afi[7] = 0.0;
+	}
+	if (ifile == 3) {
+		afi[5] = 0.0;
+	}
+	if (ifile == 3) {
+		afi[6] = 0.0;
+	}
+	if (ifile == 3) {
+		afi[7] = 0.0;
+	}
+	if (ifile == 4) {
+		afi[5] = 0.0;
+	}
+	if (ifile == 4) {
+		afi[6] = 0.0;
+	}
+	if (ifile == 4) {
+		afi[7] = 0.0;
+	}
+	if (ifile == 5) {
+		afi[5] = 0.0;
+	}
+	if (ifile == 5) {
+		afi[7] = 0.0;
+	}
+	if (ifile == 7) {
+		afi[5] = 0.0;
+	}
+	if (ifile == 7) {
+		afi[6] = 0.0;
+	}
+	if (ifile == 7) {
+		afi[7] = 0.0;
+	}
+	celpre[0] = bb[2];
+	celpre[1] = bb[3];
+	celpre[2] = bb[4];
+	celpre[3] = bb[5];
+	celpre[4] = bb[6];
+	celpre[5] = bb[7];
+	bb[0] = 0.0;
+/* zeropoint after correction... = 0. */
+	for (int i = 1; i <= 3; ++i) {
+		for (int jj = 1; jj <= 3; ++jj) {
+			al[i + jj * 3 - 4] = 0.0;
+		}
+	}
+	dcell(celpre, al, &v1);
+	calcul2(&diff, ihkl, th3, &ncalc, &j);
+	celref(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq, imp_file);
+	if (ndat >= 20) {
+		cncalc[igc - 1] = (double) ncalc;
+		fm20[j - 1] = qo[19] / (cncalc[j - 1] * 2.0 * ddq);
+		ff20[j - 1] = 20.0 / (cncalc[j - 1] * ddt);
+		saveFMFF20(fm20[j - 1], ff20[j - 1], ddt, ncalc, imp_file);
+	}
+
+/*   Make a .prf with the best solution */
+
+
+/* .....START TO GENERATE THE "OBSERVED" PROFILE */
+
+/*   Sum on observed peak positions */
+
+	double xnhkl = (double) ndat;
+	double hmin = 100.0;
+	for (int i = 0; i < ndat; ++i) {
+		th2[i] += bb[0];
+		fobs[i] = fobs[i] / sum_f * xnhkl *	50.0;
+	}
+	sum_f = xnhkl * 50.0;
+	double flog = log(2.0) * 4.0;
+	double slog = 1.0 / sqrt(flog);
+	if (w < 0.0) {
+		w = 0.0;
+		x = 0.0;
+		for (int i = 0; i < nhkl; ++i) {
+			w += w1[i];
+			x += 1.0;
+		}
+		w /= x;
+	}
+
+/*  Use FWHM 1/2 the entered value... */
+
+/* Computing 2nd power */
+	double r1 = w / 2.0;
+	w = r1 * r1;
+
+
+	for (int nm = 1; nm <= nhkl; ++nm) {
+		double dd = slabda / (sin(th2[nm - 1] / pi) * 2.0);
+	/* Computing 2nd power */
+		r1 = dd;
+		double sss = 1 / (r1 * r1);
+
+	/*     Needs to calculate halfwidths and positions */
+
+		d[nm - 1] = sqrt(1.0 / sss);
+		double sinth = slabda * slabda * sss / 4.0;
+		double costh = 1.0 - sinth;
+		double tanth = sqrt(sinth / costh);
+		theta[nm - 1] = atan(tanth) * pi;
+		hw[nm - 1] = sqrt(w);
+		if (hmin > hw[nm - 1]) {
+			hmin = hw[nm - 1];
+		}
+		hw[nm - 1] *= slog;
+		hw4[nm - 1] = hw[nm - 1] / slog * 2.0;
+		bbb[nm - 1] = hw[nm - 1] * hw[nm - 1];
+	/* L1802: */
+	}
+	double dmi = d[nhkl - 1] - .02f;
+
+/*  Step and positions */
+/*  The minimum step is FWHMmin/STEPN */
+
+	double step = hmin / 4.0;
+	double astep = step * 1e3f;
+	double istep = astep;
+	astep = (double) istep;
+	step = astep / 1e3f;
+	pos[0] = step;
+	double po = step;
+	for (int i = 2; i <= 16000; ++i) {
+		po += step;
+		if (po > 160.0) {
+			goto L1804;
+		}
+	/* L1803: */
+		pos[i - 1] = po;
+	}
+L1804:
+	;
+	int npts = i - 1;
+/*  Sum at each point */
+	for (int k = 1; k <= npts; ++k) {
+		yobs[k - 1] = 0.0;
+	/*  SUM on all hkl */
+		for (int j = 1; j <= nhkl; ++j) {
+			double deltap = pos[k - 1] - theta[j - 1];
+			if (fabs(deltap) > hw4[j - 1]) {
+				goto L1806;
+			}
+			double delt = deltap * deltap;
+			double omeg = exp(-delt / bbb[j - 1]) / hw[j - 1];
+			yobs[k - 1] += omeg * fobs[j - 1];
+	L1806:
+			;
+		}
+		if (yobs[k - 1] < .01f) {
+			yobs[k - 1] = 0.0;
+		}
+	/* L1805: */
+	}
+	int l = npts + 1;
+	for (int k = 1; k <= npts; ++k) {
+		--l;
+		if (yobs[l - 1] != 0.0) {
+			goto L1808;
+		}
+	}
+L1808:
+	n2 = l;
+	n1 = 1;
+
+	for (int i = 1; i <= 6; ++i) {
+		int k = i + 2;
+		celpre[i - 1] = bb[k - 1];
+	}
+	for (int i = 1; i <= 3; ++i) {
+		for (int j = 1; j <= 3; ++j) {
+			al[i + j * 3 - 4] = 0.0;
+		}
+	}
+	dcell(celpre, al, &v1);
+
+/* ...  Keep only the hkl for d > dmin */
+
+	int jh = 0;
+	for (int i = 1; i <= nhkl0; ++i) {
+		for (int kk = 1; kk <= 3; ++kk) {
+			hh[kk - 1] = (double) ihh[kk + i * 3 - 4];
+		}
+	/*     HH IS INDICES OF REFLECTION */
+		x = 0.0;
+		for (int j = 1; j <= 3; ++j) {
+			for (int k = j; k <= 3; ++k) {
+				x = al[j + k * 3 - 4] * hh[j - 1] * hh[k - 1] + x;
+			}
+		}
+		x = 1 / sqrt(x);
+		if (x < dmi) {
+			goto L59;
+		}
+		++jh;
+		for (int kk = 1; kk <= 3; ++kk) {
+			jhh[kk + jh * 3 - 4] = ihh[kk + i * 3 - 4];
+		}
+		fcal[jh - 1] = 50.0;
+		d[jh - 1] = x;
+	/*     X IS D(hkl) FOR REFLECTION HH */
+	L59:
+		;
+	}
+	nhkl = jh;
+
+/*   Again, calculate 2-theta, etc. */
+
+	for (int nm = 1; nm <= nhkl; ++nm) {
+
+		double dd = d[nm - 1];
+	/* Computing 2nd power */
+		r1 = dd;
+		double sss = 1 / (r1 * r1);
+
+	/*     Needs to calculate halfwidths and positions again */
+
+		double sinth = slabda * slabda * sss / 4.0;
+		double costh = 1.0 - sinth;
+		double tanth = sqrt(sinth / costh);
+		theta[nm - 1] = atan(tanth) * pi;
+		hw[nm - 1] = sqrt(w);
+		if (hmin > hw[nm - 1]) {
+			hmin = hw[nm - 1];
+		}
+		hw[nm - 1] *= slog;
+		hw4[nm - 1] = hw[nm - 1] / slog * 2.0;
+		bbb[nm - 1] = hw[nm - 1] * hw[nm - 1];
+	}
+
+/* ...  Calculate best Yobs */
+
+/*  Sum at each point */
+
+	for (int k = 1; k <= nhkl; ++k) {
+		somega[k - 1] = 0.0;
+		fobs[k - 1] = 0.0;
+	}
+	for (int k = 1; k <= n2; ++k) {
+		ycalc[k - 1] = 0.0;
+	/*  SUM on all hkl */
+		int kpos = 0;
+		double omegt = 0.0;
+		for (int j = 1; j <= nhkl; ++j) {
+			double deltap = pos[k - 1] - theta[j - 1];
+			if (fabs(deltap) > hw4[j - 1]) {
+				goto L1812;
+			}
+			if (kpos == 0) {
+				nha[k - 1] = j;
+			}
+			kpos = 1;
+			nhb[k - 1] = j;
+			double delt = deltap * deltap;
+			double omeg = exp(-delt / bbb[j - 1]) / hw[j - 1];
+			somega[j - 1] += omeg;
+			dump[j - 1] = fcal[j - 1] * omeg;
+			ycalc[k - 1] += dump[j - 1];
+	L1812:
+			;
+		}
+		if (ycalc[k - 1] == 0.0) {
+			goto L1813;
+		}
+		double yoy = yobs[k - 1] / ycalc[k - 1];
+		for (j = nha[k - 1]; j <= nhb[k - 1]; ++j) {
+			fobs[j - 1] += dump[j - 1] * yoy;
+		}
+	L1813:
+		;
+	}
+	for (int k = 1; k <= nhkl; ++k) {
+		if (somega[k - 1] == 0.0) {
+			goto L1816;
+		}
+		fobs[k - 1] /= somega[k - 1];
+		goto L1815;
+	L1816:
+		fobs[k - 1] = 0.0;
+	L1815:
+		;
+	}
+	for (j = 1; j <= nhkl; ++j) {
+		fcal[j - 1] = fobs[j - 1];
+	}
+
+/* ...  2 more iterations by Le Bail fit */
+
+	for (int kiter = 1; kiter <= 2; ++kiter) {
+	/*  Sum at each point */
+		for (int k = 1; k <= nhkl; ++k) {
+			somega[k - 1] = 0.0;
+	/* L1817: */
+			fobs[k - 1] = 0.0;
+		}
+		for (int k = 1; k <= n2; ++k) {
+			ycalc[k - 1] = 0.0;
+	/*  SUM on all hkl */
+			double omegt = 0.0;
+			for (int j = nha[k - 1]; j <= nhb[k - 1]; ++j) {
+				double deltap = pos[k - 1] - theta[j - 1];
+				if (fabs(deltap) > hw4[j - 1]) {
+					goto L1819;
+				}
+				double delt = deltap * deltap;
+				double omeg = exp(-delt / bbb[j - 1]) / hw[j - 1];
+				somega[j - 1] += omeg;
+				dump[j - 1] = fcal[j - 1] * omeg;
+				ycalc[k - 1] += dump[j - 1];
+		L1819:
+				;
+			}
+			if (ycalc[k - 1] == 0.0) {
+				goto L1820;
+			}
+			double yoy = yobs[k - 1] / ycalc[k - 1];
+			for (int j = nha[k - 1]; j <= nhb[k - 1]; ++j) {
+				fobs[j - 1] += dump[j - 1] * yoy;
+			}
+	L1820:
+			;
+		}
+		for (int k = 1; k <= nhkl; ++k) {
+			if (somega[k - 1] == 0.0) {
+				goto L1823;
+			}
+			fobs[k - 1] /= somega[k - 1];
+			goto L1822;
+	L1823:
+			fobs[k - 1] = 0.0;
+	L1822:
+			;
+		}
+		for (int j = 1; j <= nhkl; ++j) {
+			fcal[j - 1] = fobs[j - 1];
+		}
+	}
+
+
+	diff = 0.0;
+/*  Sum at each point */
+	for (int k = 1; k <= n2; ++k) {
+		ycalc[k - 1] = 0.0;
+		if (yobs[k - 1] == 0.0) {
+			goto L1824;
+		}
+	/*  SUM on all hkl */
+		double omegt = 0.0;
+		for (int j = nha[k - 1]; j <= nhb[k - 1]; ++j) {
+			double deltap = pos[k - 1] - theta[j - 1];
+			if (fabs(deltap) > hw4[j - 1]) {
+				goto L1825;
+			}
+			double delt = deltap * deltap;
+			double omeg = exp(-delt / bbb[j - 1]) / hw[j - 1];
+			ycalc[k - 1] += fcal[j - 1] * omeg;
+	L1825:
+			;
+		}
+	L1824:
+		;
+	}
+	double sum_y = 0.0;
+	for (int k = 1; k <= n2; ++k) {
+		diff += (r1 = yobs[k - 1] - ycalc[k - 1], fabs(r1));
+		sum_y += yobs[k - 1];
+	}
+	diff /= sum_y;
+
+	writeFormattedInFile(imp_file, "\n Final Rp on the .prf = %d\n\n", 1, diff);
+
+/*     Make the .prf */
+
+/* Writing concatenation */
+	FILE *prf_file = openFile(file_name, ".prf", "w+");
+
+	int ivers = 8;
+	zero = 0.0;
+
+	writeFormattedInFile(prf_file, "%s\n3111   1.0000    %.4lf", 2, text, zero);
+
+	double thmax = pos[n2 - 1];
+	double thmin = pos[n1 - 1];
+	int icn = nhkl;
+	for (i = 1; i <= nhkl; ++i) {
+		int i1 = jhh[i * 3 - 3];
+		int i2 = jhh[i * 3 - 2];
+		int i3 = jhh[i * 3 - 1];
+
+		irefs[i - 1] = ((((i1 + 2432) << 8) + 128 + i2) << 8) + 128 + i3;
+	}
+	int icz = nhkl;
+	npts = n2 - n1 + 1;
+
+	writeFormattedInFile(prf_file, "%.3lf %.3lf %.5lf %d\n", 4, thmax, thmin, step, ivers);
+
+	double amda1 = slabda;
+	double amda2 = slabda;
+	int npat1 = 1;
+	int nvk = 0;
+
+	int nexcrg = 0;
+	double excrg = 0.0;
+
+	{
+		char *temp_yobs = doubleArrayToString(" %.0lf", yobs, n1-1, n2);
+		char *temp_ycalc = doubleArrayToString(" %.0lf", ycalc, n1-1, n2);
+		char *temp_irefs = intArrayToString(" %d", irefs, 0, icz);
+		char *temp_theta = doubleArrayToString(" %.3lf", theta, 0, icz);
+
+		writeFormattedInFile(prf_file, "%d %d %.5lf %.5lf %.5lf %.5lf %.5lf\n%d %d\n%s\n%s\n%s\n%s\n%d\n%.2lf %.2lf\n", 14, npat1, npts, amda1, amda2, zero, icn, nvk, temp_yobs, temp_ycalc, temp_irefs, temp_theta, nexcrg, excrg, excrg);
+
+		free(temp_yobs);
+		free(temp_ycalc);
+		free(temp_irefs);
+		free(temp_theta);
+
+	}
+
+	fclose(prf_file);
+
+
+
+	if (igc == 1) {
+		goto L6000;
+	}
+
+	/*   Sort cells by volume */
+
+	writeInFile("\n===============================================================================\n       CELL PROPOSALS sorted by increasing volume :\n===============================================================================\n\n\n", imp_file);
+
+	sort(&igc, vgc, ll);
+	++imem;
+	im[imem - 1] = ll[0];
+
+	writeInFile("    Rp     Vol     Vol/V1 Ind Nsol    a        b         c      alpha  beta  gamma\n", imp_file);
+
+	for (int i = 1; i <= igc; ++i) {
+		if (i > 20) {
+			goto L20030;
+		}
+		j = ll[i - 1];
+		if (rp[j - 1] < .001f) {
+			rp[j - 1] = .001f;
+		}
+		double vr = vgc[j - 1] / vgc[ll[0] - 1];
+		char *temp = doubleArrayToString(" %.4lf", cel, 0, 6);
+
+		writeFormattedInFile(imp_file, "%.3lf %.3lf %.2lf %d %d %s\n", 6, rp[j - 1], vgc[j - 1], vr, km[j - 1], nsol[j - 1], temp);
+
+		free(temp);
+
+	}
+L20030:
+	;
+	int nsolmax = nsol[ll[0] - 1];
+	if (nsolmax > 5) {
+		writeFormattedInFile(imp_file, "\nWARNING - WARNING - WARNING :\nSame solution found Nsol = %d times,\nyou should probably reduce the test numbers...\n\n", 1, nsolmax);
+	}
+
+/* ... Refine the "best" cell if this was not already done */
+/*          this time with smallest volume and if Rp < 10% */
+
+	if (iref == 1) {
+	goto L5901;
+	}
+	j = ll[0];
+	if (rp[j - 1] > .1f) {
+	goto L5901;
+	}
+
+/*     READ hkl Miller indices in *.hkl */
+
+	ifile = ifi[ll[0] - 1];
+	switch (ifile) {
+	case 1:  readHklFile("cub", 6, 400, ihh);
+	case 2:  readHklFile("hex", 12, 800, ihh);
+	case 3:  readHklFile("tet", 12, 800, ihh);
+	case 4:  readHklFile("ort", 20, 1000, ihh);
+	case 5:  readHklFile("mon", 20, 1000, ihh);
+	case 6:  readHklFile("tri", 20, 1000, ihh);
+	case 7:  readHklFile("rho", 12, 600, ihh);
+	}
+
+L1750:
+
+	writeInFile("\n    \"Best\" cell with smallest volume :\n    ---------------------------------\n\n", imp_file);
+
+	ifile = ifi[j - 1];
+	indic = 0;
+	if (ifile == 1) {
+		indic = 1;
+	}
+	if (ifile == 2) {
+		indic = 2;
+	}
+	if (ifile == 3) {
+		indic = 2;
+	}
+	if (ifile == 7) {
+		indic = 2;
+	}
+	bb[2] = cel[j * 6 - 6];
+	bb[3] = cel[j * 6 - 5];
+	bb[4] = cel[j * 6 - 4];
+	bb[5] = cel[j * 6 - 3];
+	bb[6] = cel[j * 6 - 2];
+	bb[7] = cel[j * 6 - 1];
+	afi[2] = 1.0;
+	afi[3] = 1.0;
+	afi[4] = 1.0;
+	afi[5] = 1.0;
+	afi[6] = 1.0;
+	afi[7] = 1.0;
+	if (ifile == 1) {
+		afi[5] = 0.0;
+	}
+	if (ifile == 1) {
+		afi[6] = 0.0;
+	}
+	if (ifile == 1) {
+		afi[7] = 0.0;
+	}
+	if (ifile == 2) {
+		afi[5] = 0.0;
+	}
+	if (ifile == 2) {
+		afi[6] = 0.0;
+	}
+	if (ifile == 2) {
+		afi[7] = 0.0;
+	}
+	if (ifile == 3) {
+		afi[5] = 0.0;
+	}
+	if (ifile == 3) {
+		afi[6] = 0.0;
+	}
+	if (ifile == 3) {
+		afi[7] = 0.0;
+	}
+	if (ifile == 4) {
+		afi[5] = 0.0;
+	}
+	if (ifile == 4) {
+		afi[6] = 0.0;
+	}
+	if (ifile == 4) {
+		afi[7] = 0.0;
+	}
+	if (ifile == 5) {
+		afi[5] = 0.0;
+	}
+	if (ifile == 5) {
+		afi[7] = 0.0;
+	}
+	if (ifile == 7) {
+		afi[5] = 0.0;
+	}
+	if (ifile == 7) {
+		afi[6] = 0.0;
+	}
+	if (ifile == 7) {
+		afi[7] = 0.0;
+	}
+	celpre[0] = bb[2];
+	celpre[1] = bb[3];
+	celpre[2] = bb[4];
+	celpre[3] = bb[5];
+	celpre[4] = bb[6];
+	celpre[5] = bb[7];
+	bb[0] = 0.0;
+/* zeropoint after correction... = 0. */
+	for (int i = 1; i <= 3; ++i) {
+		for (int jj = 1; jj <= 3; ++jj) {
+			al[i + jj * 3 - 4] = 0.0;
+		}
+	}
+	dcell(celpre, al, &v1);
+	calcul2(&diff, ihkl, th3, &ncalc, &j);
+	celref(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq, imp_file);
+	if (ndat >= 20) {
+		cncalc[j - 1] = (double) ncalc;
+		fm20[j - 1] = qo[19] / (cncalc[j - 1] * 2.0 * ddq);
+		ff20[j - 1] = 20.0 / (cncalc[j - 1] * ddt);
+		saveFMFF20(fm20[j-1], ff20[j-1], ddt, ncalc, imp_file);
+	}
+L5901:
+
+	if (igc == 1) {
+		goto L6000;
+	}
+
+/*   Sort cells, the most frequently found first */
+
+	writeInFile("\n===============================================================================\n       CELL PROPOSALS most frequently found :\n===============================================================================\n\n", imp_file);
+
+	++imem;
+	im[imem - 1] = ll[igc - 1];
+
+	writeInFile("    Rp     Vol     Vol/V1 Ind Nsol    a        b         c      alpha  beta  gamma\n", imp_file);
+
+	for (int i = 1; i <= igc; ++i) {
+		if (i > 20) {
+			goto L20040;
+		}
+		j = ll[igc + 1 - i - 1];
+		if (nsol[j - 1] < 2) {
+			goto L2004;
+		}
+		if (rp[j - 1] < .001f) {
+			rp[j - 1] = .001f;
+		}
+		double vr = vgc[j - 1] / vgc[ll[igc - 1] - 1];
+
+		char *temp = doubleArrayToString(" %.4lf", cel, 0, 6);
+
+		writeFormattedInFile(imp_file, "%.3lf %.3lf %.2lf %d %d %s\n", 6, rp[j - 1], vgc[j - 1], vr, km[j - 1], nsol[j - 1], temp);
+
+		free(temp);
+	L2004:
+		;
+	}
+L20040:
+
+
+/*   Sort cells with largest number of peak indexed + small Rp2 */
+
+	writeInFile("\n===============================================================================\nCELLS with small Rp2 + largest number of peak indexed\n===============================================================================\n\nRp2 is on peak indexed only, and width divided by 2,\nwhile Rp is on all peaks, and large width.\n\n", imp_file);
+
+/*      CALL SORT2(IGC,RP2,LL) */
+
+	sort2(&igc, rp2, ll);
+
+	++imem;
+	im[imem - 1] = ll[i - 1];
+	writeInFile("    Rp     Vol     Vol/V1 Ind Nsol    a        b         c      alpha  beta  gamma\n", imp_file);
+
+	for (int i = 1; i <= igc; ++i) {
+		if (i > 20) {
+			goto L20050;
+		}
+		j = ll[i - 1];
+		if (rp2[j - 1] < .001f) {
+			rp2[j - 1] = .001f;
+		}
+		if (rp2[j - 1] > .3f) {
+			goto L2005;
+		}
+		if (km2[j - 1] < nmax) {
+			goto L2005;
+		}
+		double vr = vgc[j - 1] / vgc[ll[igc - 1] - 1];
+
+		char *temp = doubleArrayToString(" %.4lf", cel, 0, 6);
+
+		writeFormattedInFile(imp_file, "%.3lf %.3lf %.2lf %d %d %s\n", 6, rp[j - 1], vgc[j - 1], vr, km[j - 1], nsol[j - 1], temp);
+
+		free(temp);
+	L2005:
+		;
+		}
+L20050:
+
+/*   Sort associations of two cells with largest number of peak indexed */
+
+	if (rmax0[0] < .5f) {
+		goto L6000;
+	}
+
+	writeInFile("\n===============================================================================\nDouble cells with largest number of peak indexed\n===============================================================================\n\nWARNING - WARNING - WARNING - WARNING - WARNING\n           This is the two-phase mode\n    It could be better to go back to the lab\n         and try and make a pure sample\n\n", imp_file);
+
+	int ii = 0;
+	for (int i = 1; i < igc; ++i) {
+		if (rp2[i - 1] > .3f) {
+			goto L2009;
+		}
+		if (km2[i - 1] < nmax) {
+			goto L2009;
+		}
+		for (j = i + 1; j <= igc; ++j) {
+			if (rp2[j - 1] > .3f) {
+			goto L2008;
+			}
+			if (rp2[i - 1] + rp2[j - 1] > .4f) {
+			goto L2008;
+			}
+			if (km2[j - 1] < nmax) {
+			goto L2008;
+			}
+			++ii;
+			if (ii > 99999) {
+			goto L2011;
+			}
+			km3[ii - 1] = 0;
+			for (int k = 1; k <= ndat; ++k) {
+					km3[ii - 1] = km3[ii - 1] + ind[k + i * 100 - 101] + ind[k + j * 100 - 101];
+				if (ind[k + i * 100 - 101] * ind[k + j * 100 - 101] == 1) {
+					--km3[ii - 1];
+				}
+			}
+			if (km3[ii - 1] < ndat - 10) {
+				--ii;
+				goto L2008;
+			}
+			id1[ii - 1] = i;
+			id2[ii - 1] = j;
+	L2008:
+			;
+		}
+	L2009:
+		;
+		}
+L2011:
+	;
+	int igc2 = ii;
+	sort3(&igc2, km3, ll2);
+
+	writeInFile("    Rp     Vol     Vol/V1 Ind Nsol    a        b         c      alpha  beta  gamma\n", imp_file);
+
+	double vr = 1.0;
+
+	FILE *two_ckm_file = openFile("two", ".ckm", "w+");
+
+	for (int i = 1; i <= igc2; ++i) {
+		if (i > 1000) {
+			goto L2012;
+		}
+		double jj = ll2[igc2 + 1 - i - 1];
+		j = id1[ll2[igc2 + 1 - i - 1] - 1];
+		if (rp2[j - 1] < .001f) {
+			rp2[j - 1] = .001f;
+		}
+		x = 1.0 / rp2[j - 1] * 5.0;
+
+		char *temp_cel = doubleArrayToString(" %.4lf", cel, 0, 6);
+
+		writeFormattedInFile(imp_file, "%.3lf %.3lf %.2lf %d %d %s\n", 6, rp2[j - 1], vgc[j - 1], vr, km3[j - 1], nsol[j - 1], temp_cel);
+
+		writeFormattedInFile(two_ckm_file, "%d %.2lf %.3lf %.2lf                                       %s\n", 5, km3[j - 1], x, vgc[j - 1], vr, temp_cel);
+
+
+		j = id2[ll2[igc2 + 1 - i - 1] - 1];
+		if (rp2[j - 1] < .001f) {
+			rp2[j - 1] = .001f;
+		}
+		x = 1.0 / rp2[j - 1] * 5.0;
+
+		writeFormattedInFile(imp_file, "%.3lf %.3lf %.2lf %d %d %s\n", 6, rp2[j - 1], vgc[j - 1], vr, km2[j - 1], nsol[j - 1], temp_cel);
+
+		writeFormattedInFile(two_ckm_file, "%d %.2lf %.3lf %.2lf                                       %s\n", 5, km2[j - 1], x, vgc[j - 1], vr, temp_cel);
+
+		free(temp_cel);
+
+	/* L2010: */
+	}
+L2012:
+	fclose(two_ckm_file);
+
+
+L6000:
+	writeInFile("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n===============================================================================         THE SELECTION OF THE \"BEST\" CELL\nbased on McM20, Rp, F(20), M(20), V, high symmetry ?\n           DEPENDS ON YOU, EXCLUSIVELY.\n\n                    However...\n  It is suggested that the correct cell could be :\n===============================================================================\n\nIN  F.o.M.    Volume             a        b        c       alpha   beta    gamma   Bravais lattice\n", imp_file);
+
+/*  Ultimate analysis... */
+
+	for (i = 1; i <= imem; ++i) {
+		imn[i - 1] = 1;
+	}
+	if (imem > 1) {
+		int i3 = imem - 1;
+		for (i = 1; i <= i3; ++i) {
+			if (imn[i - 1] == 0) {
+			goto L20008;
+			}
+			for (int k = i + 1; k <= imem; ++k) {
+			if (imn[k - 1] == 0) {
+				goto L30008;
+			}
+			if (im[k - 1] == im[i - 1]) {
+				++imn[i - 1];
+				imn[k - 1] = 0;
+			}
+	L30008:
+			;
+			}
+	L20008:
+			;
+		}
+	}
+	j = im[0];
+	char bl = getBL(ib, ifi, j);
+	{
+		char *temp_cel = doubleArrayToString(" %.4lf", cel, 0, 6);
+
+		writeFormattedInFile(imp_file, "%d %.2lf %.3lf   %s    %c  %s\nFound %d time(s) head of the best lists\n", 7, km[j - 1], xfom[j - 1], vgc[j - 1], temp_cel, bl, getMore(ifi, j), imn[0]);
+
+		free(temp_cel);
+	}
+
+	if (imem > 1) {
+		double xf1 = xfom[im[0] - 1] / 2.0;
+		double imemt = imem;
+		for (i = 2; i <= imem; ++i) {
+			if (imn[i - 1] == 0) {
+			--imemt;
+			goto L20011;
+			}
+			j = im[i - 1];
+			if (xfom[j - 1] < xf1) {
+			--imemt;
+			imn[i - 1] = 0;
+			}
+	L20011:
+			;
+		}
+		if (imemt > 1) {
+			writeInFile("\n\n   Other(s) having some chance :\n", imp_file);
+
+				for (i = 2; i <= imem; ++i) {
+				if (imn[i - 1] == 0) {
+					goto L20009;
+				}
+				j = im[i - 1];
+
+				char bl = getBL(ib, ifi, j);
+				{
+					char *temp_cel = doubleArrayToString(" %.4lf", cel, 0, 6);
+
+					writeFormattedInFile(imp_file, "%d %.2lf %.3lf   %s    %c  %s\nFound %d time(s) head of the best lists\n", 7, km[j - 1], xfom[j - 1], vgc[j - 1], temp_cel, bl, getMore(ifi, j), imn[0]);
+
+					free(temp_cel);
+				}
+		L20009:
+				;
+			}
+		}
+	}
+	writeInFile("\n===============================================================================\n\n\n\n\n\n", imp_file);
+
+
 
 //==============================================================================
 	free(file_name);
 	fclose(imp_file);
+	fclose(new_dat_file);
 
 	return 0;
 }
