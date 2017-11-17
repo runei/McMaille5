@@ -117,6 +117,60 @@ int npaf2;
 //troc
 int iwr, irid;
 
+//==============================================================================
+
+void writeInFile(const char *temp, FILE* file)
+{
+	fwrite(temp, strlen(temp), 1, file);
+}
+
+//==============================================================================
+
+void writeFormattedInFile(FILE *file, const char* format, const int num, ...)
+{
+	va_list valist;
+	va_start(valist, num);
+
+	static char temp[512] = "";
+
+	snprintf(temp, sizeof(temp), format, valist);
+
+	writeInFile(temp, file);
+
+	va_end(valist);
+}
+
+//==============================================================================
+
+char *intArrayToString(const char* format, const int *array, const int init, const int end)
+{
+	char *temp;
+	temp = (char *)malloc(strlen(format) * (end - init) * 5);
+
+	char *cur = temp, *const end_str = temp - sizeof(temp);
+	for (int i = init; i < end; ++i)
+	{
+		cur += snprintf(cur, end_str - cur, format, array[i]);
+	}
+	return temp;
+}
+
+//==============================================================================
+
+char *doubleArrayToString(const char* format, const double *array, const int init, const int end)
+{
+	char *temp;
+	temp = (char *)malloc(strlen(format) * (end - init) * 10);
+
+	char *cur = temp, *const end_str = temp - sizeof(temp);
+	for (int i = init; i < end; ++i)
+	{
+		cur += snprintf(cur, end_str - cur, format, array[i]);
+	}
+	return temp;
+}
+
+//==============================================================================
 
 /* ... Here is the program heart... */
 
@@ -1429,36 +1483,6 @@ int fonc(double *theta, double *r, double *rr)
 
 int celref(int *indi, double *bbb, double *afin, int *nhkl, double *theta, int *jhkl, double *ddt, double *ddq, FILE *imp_file)
 {
-	/* Initialized data */
-
-	/* Format strings */
-	/*static char fmt_60[] = "(\002 \002,/\002 OBSERVABLE NUMBER    : \002,i5"
-		"/\002 ITERATION NUMBER : \002,i5/\002 REFINEMENT CONSTRAINTS :"
-		" \002,a5)";
-	
-	static char fmt_80[] = "(\002 INITIAL VALUES :\002)";
-	static char fmt_90[] = "(\002 FINAL VALUES   : (STANDARD DEVIATIONS : 2n"
-		"d LINE)\002)";
-	static char fmt_100[] = "(4x,\002ZERO\002,4x,\002LAMBDA\002,6x,\002A\002"
-		",8x,\002B\002,8x,\002C\002,6x,\002ALPHA\002,5x,\002BETA\002,4x"
-		",\002GAMMA\002)";
-	static char fmt_110[] = "(2x,f6.3,3x,f7.4,3(2x,f7.4),3(2x,f7.3))";
-	static char fmt_120[] = "(\002 RECIPROCAL CELL : \002,3(2x,f7.5),3(2x,f7"
-		".3)/\002 VOLUME (A**3)  : \002,f12.3/)";
-	static char fmt_130[] = "(6x,f2.0,7(7x,f2.0))";
-	static char fmt_140[] = "(\002 \002,3x,\002H\002,5x,\002K\002,5x,\002"
-		"L\002,2x,\002TH(OBS)\002,4x,\002TH-ZERO\002,4x,\002TH(CALC)\002,"
-		"5x,\002DIFF.\002/)";
-	static char fmt_150[] = "(2x,3(i3,3x),4(f7.3,4x))";
-	static char fmt_170[] = "(\002 ##### ERROR REFLEXION : \002,3i4,f8.3)";
-	static char fmt_180[] = "(\002 ##### DATA NUMBER GREATER THAN \002,i4"
-		",\002 #####\002)";
-	static char fmt_190[] = "(\002 ##### IMPOSSIBLE TO REFINE ALL PARAMETERS"
-		" TOGETHER##### THINK, PLEASE ! #####\002)";
-	static char fmt_366[] = "(\002 \002,3x,\002H\002,5x,\002K\002,5x,\002"
-		"L\002,5x,\002D(OBS)\002,4x,\002D(CALC)\002/)";
-	static char fmt_368[] = "(2x,3(i3,3x),2(f7.4,5x))";
-*/
 
 
 /* .....****************************************************************** */
@@ -1521,7 +1545,7 @@ int celref(int *indi, double *bbb, double *afin, int *nhkl, double *theta, int *
 	static double volum;
 	static int npour;
 
-	char *cur, *end;
+	char *temp_b, *cur, *end;
 
 
 /* $OMP THREADPRIVATE(/TROC/,/TRUC/) */
@@ -1609,23 +1633,20 @@ L230:
 L260:
 	nr = *nhkl;
 
-	static char temp_100[] = "    ZERO    LAMBDA      A        B        C      ALPHA     BETA    GAMMA\n";
+	char *temp_afi = doubleArrayToString("%.0lf       ", afi, 0, 8);
+	temp_b = doubleArrayToString("%.4lf       ", afi, 0, 8);
 
-	char temp_60[350] = "";
-	cur = temp_60, end = temp_60 - sizeof(temp_60);
-	cur += snprintf(cur, end - cur, " OBSERVABLE NUMBER    : %d ITERATION NUMBER : %d REFINEMENT CONSTRAINTS : %s\n INITIAL VALUES :\n%s      ", nr, ifin, icle[indic - 1], temp_100);
+	/*char temp[103];
+	snprintf(temp, sizeof(temp), " OBSERVABLE NUMBER    : %d ITERATION NUMBER : %d REFINEMENT CONSTRAINTS : %s\n INITIAL VALUES :\n%s      %s\n  %s\n", nr, ifin, icle[indic - 1], temp_100, temp_afi, temp_b);
 
-	//130
-	for (int i = 0; i < 8; ++i) {
-		cur += snprintf(cur, end - cur, "%.0lf       ", afi[i]);
-	}
-	//110
-	cur += snprintf(cur, end - cur, "\n  ");
-	for (int i = 0; i < 8; ++i) {
-		cur += snprintf(cur, end - cur, "%.4lf    ", b[i]);
-	}
-	cur += snprintf(cur, end - cur, "\n");
-	fwrite(temp_60, strlen(temp_60), 1, imp_file);
+	printf("%s\n", temp);
+*/
+	writeFormattedInFile(imp_file, " OBSERVABLE NUMBER    : %d ITERATION NUMBER : %d REFINEMENT CONSTRAINTS : %s\n INITIAL VALUES :\n", 3, nr, ifin, icle[indic - 1]);
+
+	writeFormattedInFile(imp_file, "    ZERO    LAMBDA      A        B        C      ALPHA     BETA    GAMMA\n      %s\n  %s\n", 2, temp_afi, temp_b);
+
+	free(temp_afi);
+	free(temp_b);
 
 	b[0] /= rd;
 	b[1] *= 0.5;
@@ -1640,18 +1661,11 @@ L260:
 		dum[i - 1] = b[i + 4] * rd;
 	}
 
-	char temp_120[90] = "";
-	cur = temp_120;
-	end = temp_120 - sizeof(temp_120);
-	cur += snprintf(cur, end-cur, " RECIPROCAL CELL : ");
-	for (int i = 2; i < 5; ++i) {
-		cur += snprintf(cur, end-cur, "  %.5lf", b[i]);
-	}
-	for (int i = 0; i < 3; ++i) {
-		cur += snprintf(cur, end-cur, "  %.5lf", dum[0]);
-	}
-	cur += snprintf(cur, end-cur, "\n VOLUME (A**3)   : %.3lf\n", volum);
-	fwrite(temp_120, strlen(temp_120), 1, imp_file);
+	temp_b = doubleArrayToString("  %.5lf", b, 2, 5);
+
+	writeFormattedInFile(imp_file, " RECIPROCAL CELL : %s  %.5lf  %.5lf  %.5lf\n VOLUME (A**3)   : %.3lf\n", 5, temp_b, dum[0], dum[0], dum[0], volum);
+
+	free(temp_b);
 
 /* ....."NPAF" : NOMBRE DE PARAMETRES A AFFINER */
 /* ....."BB()" : TABLEAU DES PARAMETRES A AFFINER */
@@ -1666,9 +1680,7 @@ L260:
 		;
 	}
 	npaf = j;
-	char temp_70[39] = "";
-	snprintf(temp_70, sizeof(temp_70), " NUMBER OF INDEPENDENT PARAMETERS : %d\n", npaf);
-	fwrite(temp_70, strlen(temp_70), 1, imp_file);
+	writeFormattedInFile(imp_file, " NUMBER OF INDEPENDENT PARAMETERS : %d\n", 1, npaf);
 
 	if (npaf == 8) {
 		goto L390;
@@ -1739,31 +1751,21 @@ L260:
 	sig[0] *= 2.0;
 
 	b[1] *= 2.0;
-	for (i = 6; i <= 8; ++i) {
-		sig[i - 1] *= rd;
-		b[i - 1] *= rd;
+	for (int i = 5; i < 8; ++i) {
+		sig[i] *= rd;
+		b[i] *= rd;
 	}
 
-	char temp_90[350];
-	cur = temp_90;
-	end = temp_90 - sizeof(temp_90);
-	cur += snprintf(cur, end-cur, " FINAL VALUES   : (STANDARD DEVIATIONS : 2nd LINE)\n\n%s", temp_100);
-	//110
-	for (int i = 0; i < 8; ++i) {
-		cur += snprintf(cur, end - cur, "%.4lf    ", b[i]);
-	}
-	cur += snprintf(cur, end - cur, "\n  ");
-	//110
-	for (int i = 0; i < 8; ++i) {
-		cur += snprintf(cur, end - cur, "%.4lf    ", sig[i]);
-	}
-	//120
-	cur += snprintf(cur, end - cur, "\n   RECIPROCAL CELL : ");
-	for (int i = 0; i < 5; ++i) {
-		cur += snprintf(cur, end-cur, "  %.5lf", bb[i]);
-	}
-	cur += snprintf(cur, end - cur, "  %.5lf\n    H     K     L  TH(OBS)    TH-ZERO    TH(CALC)     DIFF.\n", volum);
-	fwrite(temp_90, strlen(temp_90), 1, imp_file);
+	temp_b = doubleArrayToString("%.4lf    ", b, 0, 8);
+	char *temp_sig = doubleArrayToString("%.4lf    ", sig, 0, 8);
+	char *temp_bb = doubleArrayToString("%.5lf    ", bb, 0, 5);
+
+	writeFormattedInFile(imp_file, " FINAL VALUES   : (STANDARD DEVIATIONS : 2nd LINE)\n\n    ZERO    LAMBDA      A        B        C      ALPHA     BETA    GAMMA\n%s\n%s\n   RECIPROCAL CELL : %s  %.5lf\n    H     K     L  TH(OBS)    TH-ZERO    TH(CALC)     DIFF.\n", 4, temp_b, temp_sig, temp_bb, volum);
+
+
+	free(temp_b);
+	free(temp_sig);
+	free(temp_bb);
 
 	for (i = 1; i <= 8; ++i) {
 		bbb[i] = b[i - 1];
@@ -3001,61 +3003,6 @@ char getBL(const int *ib, const int *ifi, int j)
 		bl = 'R';
 	}
 	return bl;
-}
-
-//==============================================================================
-
-void writeInFile(const char *temp, FILE* file)
-{
-	fwrite(temp, strlen(temp), 1, file);
-}
-
-//==============================================================================
-
-void writeFormattedInFile(FILE *file, const char* format, const int num, ...)
-{
-	va_list valist;
-	va_start(valist, num);
-
-	char *temp;
-	temp = (char *)malloc(sizeof(format) + num*8);
-
-	snprintf(temp, sizeof(temp), format, valist);
-
-	writeInFile(temp, file);
-
-	va_end(valist);
-	free(temp);
-}
-
-//==============================================================================
-
-char *intArrayToString(const char* format, const int *array, const int init, const int end)
-{
-	char *temp;
-	temp = (char *)malloc(sizeof(format) * (end - init) * 5);
-
-	char *cur = temp, *const end_str = temp - sizeof(temp);
-	for (int i = init; i < end; ++i)
-	{
-		cur += snprintf(cur, end_str - cur, format, array[i]);
-	}
-	return temp;
-}
-
-//==============================================================================
-
-char *doubleArrayToString(const char* format, const double *array, const int init, const int end)
-{
-	char *temp;
-	temp = (char *)malloc(sizeof(format) * (end - init) * 10);
-
-	char *cur = temp, *const end_str = temp - sizeof(temp);
-	for (int i = init; i < end; ++i)
-	{
-		cur += snprintf(cur, end_str - cur, format, array[i]);
-	}
-	return temp;
 }
 
 //==============================================================================
@@ -9244,10 +9191,7 @@ L20002:
 	}
 L20004:
 
-	{
-		char temp[] = "\n===============================================================================\n  See for the highest F.o.M. above the cell(s) with highest symmetry, if any\n  (Cubic, hexagonal, etc), they could correspond to the the right solution\n===============================================================================\n\n";
-		fwrite(temp, strlen(temp), 1, imp_file);
-	}
+	writeInFile("\n===============================================================================\n  See for the highest F.o.M. above the cell(s) with highest symmetry, if any\n  (Cubic, hexagonal, etc), they could correspond to the the right solution\n===============================================================================\n\n", imp_file);
 
 /*   Make output for cells sorted by symmetry */
 
@@ -9257,10 +9201,8 @@ L20004:
 
 	/*   Make output for cells sorted by symmetry */
 
-	{
-		char temp[] = "\n  Cells sorted by symmetry\n\n    Rp     Vol     Vol/V1 Ind Nsol    a        b         c      alpha  beta  gamma\n";
-		fwrite(temp, strlen(temp), 1, imp_file);
-	}
+	writeInFile("\n  Cells sorted by symmetry\n\n    Rp     Vol     Vol/V1 Ind Nsol    a        b         c      alpha  beta  gamma\n", imp_file);
+
 	for (int i = 1; i < 7; ++i) {
 		isyst[i] = 0;
 	}
@@ -9293,43 +9235,36 @@ L20004:
 		}
 		FILE *general_ckm_file;
 		switch (jifi) {
-			case 1:  goto L2021;
-			case 2:  goto L2022;
-			case 3:  goto L2023;
-			case 4:  goto L2024;
-			case 5:  goto L2025;
-			case 6:  goto L2026;
-			case 7:  goto L2027;
+			case 1:
+				writeInFile("\n   Cubic cells\n\n", imp_file);
+				general_ckm_file = openFile(file_name, "_cub.ckm", "w+");
+				break;
+			case 2:
+				writeInFile("\n   Hexagonal/trigonal cells\n\n", imp_file);
+				general_ckm_file = openFile(file_name, "_hex.ckm", "w+");
+				break;
+			case 3:
+				writeInFile("\n   Tetragonal cells\n\n", imp_file);
+				general_ckm_file = openFile(file_name, "_tet.ckm", "w+");
+				break;
+			case 4:
+				writeInFile("\n   Orthorhombic cells\n\n", imp_file);
+				general_ckm_file = openFile(file_name, "_ort.ckm", "w+");
+				break;
+			case 5:
+				writeInFile("\n   Monoclinic cells\n\n", imp_file);
+				general_ckm_file = openFile(file_name, "_mon.ckm", "w+");
+				break;
+			case 6:
+				writeInFile("\n   Triclinic cells\n\n", imp_file);
+				general_ckm_file = openFile(file_name, "_tri.ckm", "w+");
+				break;
+			case 7:
+				writeInFile("\n   Rhombohedral cells\n\n", imp_file);
+				general_ckm_file = openFile(file_name, "_rho.ckm", "w+");
+				break;
 		}
-	L2021:
-		writeInFile("\n   Cubic cells\n\n", imp_file);
-		general_ckm_file = openFile(file_name, "_cub.ckm", "w+");
-		goto L2028;
-	L2022:
-		writeInFile("\n   Hexagonal/trigonal cells\n\n", imp_file);
-		general_ckm_file = openFile(file_name, "_hex.ckm", "w+");
-		goto L2028;
-	L2023:
-		writeInFile("\n   Tetragonal cells\n\n", imp_file);
-		general_ckm_file = openFile(file_name, "_tet.ckm", "w+");
-		goto L2028;
-	L2024:
-		writeInFile("\n   Orthorhombic cells\n\n", imp_file);
-		general_ckm_file = openFile(file_name, "_ort.ckm", "w+");
-		goto L2028;
-	L2025:
-		writeInFile("\n   Monoclinic cells\n\n", imp_file);
-		general_ckm_file = openFile(file_name, "_mon.ckm", "w+");
-		goto L2028;
-	L2026:
-		writeInFile("\n   Triclinic cells\n\n", imp_file);
-		general_ckm_file = openFile(file_name, "_tri.ckm", "w+");
-		goto L2028;
-	L2027:
-		writeInFile("\n   Rhombohedral cells\n\n", imp_file);
-		general_ckm_file = openFile(file_name, "_rho.ckm", "w+");
-	L2028:
-		;
+
 		int jjj = 0;
 		for (int i = 1; i <= igc; ++i) {
 			if (i > 20) {
@@ -9367,14 +9302,12 @@ L20004:
 		;
 		int nsolmax = nsol[lll[0] - 1];
 		if (nsolmax > 5) {
-			char temp[126];
-			snprintf(temp, sizeof(temp), "\nWARNING - WARNING - WARNING :\nSame solution found Nsol = %d times,\nyou should probably reduce the test numbers...\n\n", nsolmax);
-			writeInFile(temp, imp_file);
+			writeFormattedInFile(imp_file, "\nWARNING - WARNING - WARNING :\nSame solution found Nsol = %d times,\nyou should probably reduce the test numbers...\n\n", 1, nsolmax);
 		}
-		fclose(imp_file);
+		fclose(general_ckm_file);
 	L2020:
 		;
-		}
+	}
 
 /* ... Refine the "best" cell if this was not already done */
 
@@ -9396,7 +9329,6 @@ L50:
 
 /*      IF(IREF.EQ.1)GO TO 5900 */
 	writeInFile("\n    \"Best\" cell with largest McM20 :\n    --------------------------------\n\n", imp_file);
-
 	int j = ibest;
 	ifile = ifi[j - 1];
 	indic = 0;
@@ -9852,7 +9784,14 @@ L1808:
 		char *temp_irefs = intArrayToString(" %d", irefs, 0, icz);
 		char *temp_theta = doubleArrayToString(" %.3lf", theta, 0, icz);
 
-		writeFormattedInFile(prf_file, "%d %d %.5lf %.5lf %.5lf %.5lf %.5lf\n%d %d\n%s\n%s\n%s\n%s\n%d\n%.2lf %.2lf\n", 14, npat1, npts, amda1, amda2, zero, icn, nvk, temp_yobs, temp_ycalc, temp_irefs, temp_theta, nexcrg, excrg, excrg);
+
+		char temp[100];
+		snprintf(temp, sizeof(temp), "%d %d %.5lf %.5lf %.5lf\n%d %d\n%s\n%s\n%s\n%s\n%d\n%.2lf %.2lf\n", npat1, npts, amda1, amda2, zero, icn, nvk, temp_yobs, temp_ycalc, temp_irefs, temp_theta, nexcrg, excrg, excrg);
+
+		writeInFile(temp, prf_file);
+
+		// writeFormattedInFile(prf_file, "%d %d %.5lf %.5lf %.5lf\n%d %d\n%s\n%s\n%s\n%s\n%d\n%.2lf %.2lf\n", 14, npat1, npts, amda1, amda2, zero, icn, nvk, temp_yobs, temp_ycalc, temp_irefs, temp_theta, nexcrg, excrg, excrg);
+		// writeFormattedInFile(prf_file, "%d %d %.5lf %.5lf %.5lf\n%d %d\n%s", 7, npat1, npts, amda1, amda2, zero, icn, nvk, temp_yobs);
 
 		free(temp_yobs);
 		free(temp_ycalc);
@@ -10286,7 +10225,7 @@ L6000:
 //==============================================================================
 	free(file_name);
 	fclose(imp_file);
-	fclose(new_dat_file);
+	// fclose(new_dat_file);
 
 	return 0;
 }
