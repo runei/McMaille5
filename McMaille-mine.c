@@ -81,6 +81,7 @@
 #include <unistd.h>
 #include <math.h>
 #include <stdarg.h>
+#include <complex.h>
 
 #define VERSION "4.00"
 #define FILENAME_SIZE 20
@@ -172,6 +173,14 @@ char *doubleArrayToString(const char* format, const double *array, const int ini
 
 //==============================================================================
 
+double div_number(const double a, const double b)
+{
+	if (b == 0.0) return 0.0;
+	return a / b;
+}
+
+//==============================================================================
+
 /* ... Here is the program heart... */
 
 int calcul1(double *diff, double *diff2)
@@ -197,8 +206,7 @@ int calcul1(double *diff, double *diff2)
 	x = 0.0;
 	for (j = 1; j <= 3; ++j) {
 		for (k = j; k <= 3; ++k) {
-			x = al[j + k * 3 - 4] * ihh[j + i * 3 - 4] *
-			ihh[k + i * 3 - 4] + x;
+			x = al[j + k * 3 - 4] * ihh[j + i * 3 - 4] * ihh[k + i * 3 - 4] + x;
 		}
 	}
 	if (x > dmin) {
@@ -237,7 +245,7 @@ L109:
 			goto L111;
 		}
 		if (theta[k - 1] <= difp[j - 1] && theta[k - 1] >= difm[j - 1]) {
-			de[k - 1] = (r1 = theta[k - 1] - th2[j - 1], abs(r1));
+			de[k - 1] = (r1 = theta[k - 1] - th2[j - 1], fabs(r1));
 			if (de[k - 1] <= demax) {
 				l = k;
 				demax = de[k - 1];
@@ -255,7 +263,7 @@ L111:
 /*  included (if CRI =1)... */
 
 	if (cri[j - 1] == 1.0) {
-		perc[j - 1] = 1.0 - de[l - 1] / w2[j - 1];
+		perc[j - 1] = 1.0 - div_number(de[l - 1], w2[j - 1]);
 		++lhkl;
 		cr[l - 1] = 1.0;
 	}
@@ -272,8 +280,8 @@ L111:
 /* L1122: */
 	diff1 += cri[k - 1] * fobs[k - 1] * perc[k - 1];
 	}
-	*diff = 1.0 - diff1 / sum_f;
-	*diff2 = 1.0 - diff1 / sum_f2;
+	*diff = 1.0 - div_number(diff1, sum_f);
+	*diff2 = 1.0 - div_number(diff1, sum_f2);
 	return 0;
 } /* calcul1_ */
 
@@ -356,17 +364,15 @@ L109:
 	i2 = nhkl;
 	for (k = 1; k <= i2; ++k) {
 		if (cr[k - 1] == 1.0) {
-		goto L111;
+			goto L111;
 		}
-		if (theta[k - 1] <= difp[j - 1] && theta[k - 1] >=
-			difm[j - 1]) {
-		de[k - 1] = (r1 = theta[k - 1] - th2[j - 1], abs(
-			r1));
-		if (de[k - 1] <= demax) {
-			l = k;
-			demax = de[k - 1];
-			cri[j - 1] = 1.0;
-		}
+		if (theta[k - 1] <= difp[j - 1] && theta[k - 1] >= difm[j - 1]) {
+			de[k - 1] = (r1 = theta[k - 1] - th2[j - 1], fabs(r1));
+			if (de[k - 1] <= demax) {
+				l = k;
+				demax = de[k - 1];
+				cri[j - 1] = 1.0;
+			}
 		}
 L111:
 		;
@@ -379,7 +385,8 @@ L111:
 /*  included (if CRI =1)... */
 
 	if (cri[j - 1] == 1.0) {
-		perc[j - 1] = 1.0 - de[l - 1] / (w2[j - 1] * .33333f);
+		double w2_temp = w2[j - 1] * .33333f;
+		perc[j - 1] = 1.0 - div_number(de[l - 1], w2_temp);
 		++lhkl;
 		cr[l - 1] = 1.0;
 		for (l2 = 1; l2 <= 3; ++l2) {
@@ -389,7 +396,7 @@ L111:
 		th3[lhkl] = th2[j - 1];
 		jj += cri[j - 1];
 		if (jj <= 20) {
-		jjj = j;
+			jjj = j;
 		}
 	}
 /* L113: */
@@ -412,12 +419,11 @@ L111:
 	sum_f2 = 0.0;
 	i1 = ndat;
 	for (k = 1; k <= i1; ++k) {
-	ind[k + *igc * 100 - 101] = cri[k - 1];
-	sum_f2 += fobs[k - 1] * cri[k - 1];
-/* L1122: */
-	*diff += cri[k - 1] * fobs[k - 1] * perc[k - 1];
+		ind[k + *igc * 100 - 101] = cri[k - 1];
+		sum_f2 += fobs[k - 1] * cri[k - 1];
+		*diff += cri[k - 1] * fobs[k - 1] * perc[k - 1];
 	}
-	*diff = 1.0 - *diff / sum_f2;
+	*diff = 1.0 - div_number(*diff, sum_f2);
 	return 0;
 } /* calcul2_ */
 
@@ -987,13 +993,12 @@ int inver(double *b, double *db, double *volum, int *iv)
 /* L10: */
 	}
 	for (i = 1; i <= 3; ++i) {
-	j = i % 3 + 1;
-	k = (i + 1) % 3 + 1;
-	dqd[i - 1] = cosp[i - 1] - cosp[j - 1] * cosp[k - 1];
-	ss[i - 1] = sinp[j - 1] * sinp[k - 1];
-	cc[i - 1] = -dqd[i - 1] / ss[i - 1];
-	cabc2 += cosp[i - 1] * cosp[i - 1];
-/* L15: */
+		j = i % 3 + 1;
+		k = (i + 1) % 3 + 1;
+		dqd[i - 1] = cosp[i - 1] - cosp[j - 1] * cosp[k - 1];
+		ss[i - 1] = sinp[j - 1] * sinp[k - 1];
+		cc[i - 1] = div_number(-dqd[i - 1], ss[i - 1]);
+		cabc2 += cosp[i - 1] * cosp[i - 1];
 	}
 
 	q2 = 1.0 - cabc2 + cosp[0] * 2.0 * cosp[1] * cosp[2];
@@ -1001,7 +1006,7 @@ int inver(double *b, double *db, double *volum, int *iv)
 	*volum = ad[0] * ad[1] * ad[2] * q;
 
 	for (i = 1; i <= 3; ++i) {
-	b[i + 2] = sinp[i - 1] / (ad[i - 1] * q);
+	b[i + 2] = div_number(sinp[i - 1], (ad[i - 1] * q));
 	b[i + 5] = acos(cc[i - 1]);
 	sp[i - 1] = sin(b[i + 5]);
 /* L20: */
@@ -1013,41 +1018,34 @@ int inver(double *b, double *db, double *volum, int *iv)
 
 /* .....DERIVEES DES PARAMETRES A , B , C */
 	for (i = 1; i <= 3; ++i) {
-	j = i % 3 + 1;
-	k = (i + 1) % 3 + 1;
-	d[i - 1] = -sinp[i - 1] / ad[i - 1];
-	d[j - 1] = 0.0;
-	d[k - 1] = 0.0;
-	d[i + 2] = cosp[i - 1] - sinp[i - 1] * sinp[i - 1] * dqd[
-		i - 1] / (q * q);
-	d[j + 2] = -ss[k - 1] * dqd[j - 1] / q2;
-	d[k + 2] = -ss[j - 1] * dqd[k - 1] / q2;
-	sigma(d, &db[1], &r);
-/* L30: */
-	sig[i - 1] = sqrt(r) / (q * ad[i - 1]);
+		j = i % 3 + 1;
+		k = (i + 1) % 3 + 1;
+		d[i - 1] = div_number(-sinp[i - 1], ad[i - 1]);
+		d[j - 1] = 0.0;
+		d[k - 1] = 0.0;
+		d[i + 2] = cosp[i - 1] - div_number(sinp[i - 1] * sinp[i - 1] * dqd[i - 1], (q * q));
+		d[j + 2] = div_number(-ss[k - 1] * dqd[j - 1], q2);
+		d[k + 2] = div_number(-ss[j - 1] * dqd[k - 1], q2);
+		sigma(d, &db[1], &r);
+		sig[i - 1] = div_number(sqrt(r), (q * ad[i - 1]));
 	}
 
 /* .....DERIVEES DES ANGLES DE LA MAILLE */
 	for (i = 1; i <= 3; ++i) {
-	for (jj = 1; jj <= 3; ++jj) {
-/* L40: */
-		d[jj - 1] = 0.0;
-	}
-	j = i % 3 + 1;
-	k = (i + 1) % 3 + 1;
-	d[i + 2] = sinp[i - 1] / ss[i - 1];
-	d[j + 2] = cosp[k - 1] / sinp[k - 1] + cosp[j - 1] * cc[i - 1] /
-		sinp[j - 1];
-	d[k + 2] = cosp[j - 1] / sinp[j - 1] + cosp[k - 1] * cc[i - 1] /
-		sinp[k - 1];
-	sigma(d, &db[1], &r);
-/* L50: */
-	sig[i + 2] = sqrt(r) / sp[i - 1];
+		for (jj = 1; jj <= 3; ++jj) {
+			d[jj - 1] = 0.0;
+		}
+		j = i % 3 + 1;
+		k = (i + 1) % 3 + 1;
+		d[i + 2] = div_number(sinp[i - 1], ss[i - 1]);
+		d[j + 2] = div_number(cosp[k - 1], sinp[k - 1]) + div_number(cosp[j - 1] * cc[i - 1],			sinp[j - 1]);
+		d[k + 2] = div_number(cosp[j - 1], sinp[j - 1]) + div_number(cosp[k - 1] * cc[i - 1], sinp[k - 1]);
+		sigma(d, &db[1], &r);
+		sig[i + 2] = div_number(sqrt(r), sp[i - 1]);
 	}
 
 	for (i = 1; i <= 6; ++i) {
-/* L60: */
-	db[i + 2] = sig[i - 1];
+		db[i + 2] = sig[i - 1];
 	}
 
 L70:
@@ -1075,135 +1073,122 @@ int matinv(double *am, int *n, int *nfail)
 	/* Function Body */
 	k = 1;
 	if ((i1 = *n - 1) < 0) {
-	goto L8;
+		goto L8;
 	} else if (i1 == 0) {
-	goto L10;
+		goto L10;
 	} else {
-	goto L20;
+		goto L20;
 	}
 L8:
 	*nfail = k;
 	goto L210;
 L10:
-	am[1] = 1.0 / am[1];
+	am[1] = div_number(1.0, am[1]);
 	goto L200;
 /*     ***** LOOP M OF A(L,M) ***** */
 L20:
-	i1 = *n;
-	for (m = 1; m <= i1; ++m) {
-	imax = m - 1;
-/*     ***** LOOP L OF A(L,M) ***** */
-	i2 = *n;
-	for (l = m; l <= i2; ++l) {
-		suma = 0.0;
-		kli = l;
-		kmi = m;
-		if (imax <= 0) {
-		goto L50;
-		} else {
-		goto L30;
+	for (m = 1; m <= *n; ++m) {
+		imax = m - 1;
+	/*     ***** LOOP L OF A(L,M) ***** */
+		for (l = m; l <= *n; ++l) {
+			suma = 0.0;
+			kli = l;
+			kmi = m;
+			if (imax <= 0) {
+				goto L50;
+			} else {
+				goto L30;
+			}
+	/*     *****SUM OVER I=1,M-1 A(L,I)*A(M,I) ***** */
+	L30:
+			for (i = 1; i <= imax; ++i) {
+				suma += am[kli] * am[kmi];
+				j = *n - i;
+				kli += j;
+				kmi += j;
+			}
+	/*     *****TERM=C(L,M)-SUM ***** */
+	L50:
+			term = am[k] - suma;
+			if (l - m <= 0) {
+				goto L60;
+			} else {
+				goto L90;
+			}
+	L60:
+			if (term <= 0.0) {
+				goto L80;
+			} else {
+				goto L70;
+			}
+	/*     ***** A(M,M)=SQRT(TERM) ***** */
+	L70:
+			denom = sqrt(term);
+			am[k] = denom;
+			goto L100;
+	L80:
+			*nfail = k;
+			goto L210;
+	/*     ***** A(L,M)=TERM/A(M,M) ***** */
+	L90:
+			am[k] = div_number(term, denom);
+	L100:
+			++k;
 		}
-/*     *****SUM OVER I=1,M-1 A(L,I)*A(M,I) ***** */
-L30:
-		i3 = imax;
-		for (i = 1; i <= i3; ++i) {
-		suma += am[kli] * am[kmi];
-		j = *n - i;
-		kli += j;
-/* L40: */
-		kmi += j;
-		}
-/*     *****TERM=C(L,M)-SUM ***** */
-L50:
-		term = am[k] - suma;
-		if (l - m <= 0) {
-		goto L60;
-		} else {
-		goto L90;
-		}
-L60:
-		if (term <= 0.0) {
-		goto L80;
-		} else {
-		goto L70;
-		}
-/*     ***** A(M,M)=SQRT(TERM) ***** */
-L70:
-		denom = sqrt(term);
-		am[k] = denom;
-		goto L100;
-L80:
-		*nfail = k;
-		goto L210;
-/*     ***** A(L,M)=TERM/A(M,M) ***** */
-L90:
-		am[k] = term / denom;
-L100:
-		++k;
-	}
-/* L110: */
 	}
 /*     ********** SEGMENT 2 OF CHOLESKI INVERSION ********** */
 /*     *****INVERSION OF TRIANGULAR MATRIX***** */
 /* L120: */
-	am[1] = 1.0 / am[1];
+	am[1] = div_number(1.0, am[1]);
 	kdm = 1;
 /*     ***** STEP L OF B(L,M) ***** */
 	i1 = *n;
 	for (l = 2; l <= i1; ++l) {
-	kdm = kdm + *n - l + 2;
-/*     ***** RECIPROCAL OF DIAGONAL TERM ***** */
-	term = 1.0 / am[kdm];
-	am[kdm] = term;
-	kmi = 0;
-	kli = l;
-	imax = l - 1;
-/*     ***** STEP M OF B(L,M) ***** */
-	i2 = imax;
-	for (m = 1; m <= i2; ++m) {
-		k = kli;
-/*     ***** SUM TERMS ***** */
-		suma = 0.0;
-		i3 = imax;
-		for (i = m; i <= i3; ++i) {
-		ii = kmi + i;
-		suma -= am[kli] * am[ii];
-/* L130: */
-		kli = kli + *n - i;
+		kdm = kdm + *n - l + 2;
+	/*     ***** RECIPROCAL OF DIAGONAL TERM ***** */
+		term = div_number(1.0, am[kdm]);
+		am[kdm] = term;
+		kmi = 0;
+		kli = l;
+		imax = l - 1;
+	/*     ***** STEP M OF B(L,M) ***** */
+		i2 = imax;
+		for (m = 1; m <= i2; ++m) {
+			k = kli;
+	/*     ***** SUM TERMS ***** */
+			suma = 0.0;
+			i3 = imax;
+			for (i = m; i <= i3; ++i) {
+				ii = kmi + i;
+				suma -= am[kli] * am[ii];
+				kli = kli + *n - i;
+			}
+	/*     ***** MULT SUM * RECIP OF DIAGONAL ***** */
+			am[k] = suma * term;
+			j = *n - m;
+			kli = k + j;
+			kmi += j;
 		}
-/*     ***** MULT SUM * RECIP OF DIAGONAL ***** */
-		am[k] = suma * term;
-		j = *n - m;
-		kli = k + j;
-/* L140: */
-		kmi += j;
-	}
 /* L150: */
 	}
 /*     ********** SEGMENT 3 OF CHOLESKI INVERSION ********** */
 /*     *****PREMULTIPLY LOWER TRIANGLE BY TRANSPOSE***** */
 /* L160: */
 	k = 1;
-	i1 = *n;
-	for (m = 1; m <= i1; ++m) {
-	kli = k;
-	i2 = *n;
-	for (l = m; l <= i2; ++l) {
-		kmi = k;
-		imax = *n - l + 1;
-		suma = 0.0;
-		i3 = imax;
-		for (i = 1; i <= i3; ++i) {
-		suma += am[kli] * am[kmi];
-		++kli;
-/* L170: */
-		++kmi;
+	for (m = 1; m <= *n; ++m) {
+		kli = k;
+		for (l = m; l <= *n; ++l) {
+			kmi = k;
+			imax = *n - l + 1;
+			suma = 0.0;
+			for (i = 1; i <= imax; ++i) {
+				suma += am[kli] * am[kmi];
+				++kli;
+				++kmi;
+			}
+			am[k] = suma;
+			++k;
 		}
-		am[k] = suma;
-/* L180: */
-		++k;
-	}
-/* L190: */
 	}
 L200:
 	*nfail = 0;
@@ -1213,7 +1198,7 @@ L210:
 
 //==============================================================================
 
-int calc(void)
+int calc(double *qq)
 {
 	/* System generated locals */
 	int i1;
@@ -1224,7 +1209,8 @@ int calc(void)
 	static int i, j;
 	static double q[2000]	/* was [200][10] */, ae, be, ce, dd;
 	static int ir;
-	static double cae, cbe, cce, rad;
+	static double cae, cbe, cce;
+	static double _Complex rad;
 
 /* .....-------------- */
 /* $OMP THREADPRIVATE(/TROC/,/TRUC/) */
@@ -1239,10 +1225,10 @@ L1:
 	;
 	}
 	if (indic == 1 || indic == 2) {
-	b[3] = b[2];
+		b[3] = b[2];
 	}
 	if (indic == 1) {
-	b[4] = b[2];
+		b[4] = b[2];
 	}
 	ae = b[2];
 	be = b[3];
@@ -1250,55 +1236,41 @@ L1:
 	cae = cos(b[5]);
 	cbe = cos(b[6]);
 	cce = cos(b[7]);
-	i1 = nr;
-	for (i = 1; i <= i1; ++i) {
-/* Computing 2nd power */
-	r1 = ae * h[i - 1];
-/* Computing 2nd power */
-	r2 = be * k[i - 1];
-/* Computing 2nd power */
-	r3 = ce * l[i - 1];
-	dd = r1 * r1 + r2 * r2 + r3 * r3 + (h[i - 1] *
-		k[i - 1] * ae * be * cce + k[i - 1] *
-		l[i - 1] * be * ce * cae + l[i - 1] *
-		h[i - 1] * ce * ae * cbe) * 2.0;
-	d = 1.0 / sqrt(dd);
-/* Computing 2nd power */
-	r1 = b[1];
-	rad = sqrt(1.0 - r1 * r1 * dd);
-	f = b[1] * d / rad;
-	q[i - 1] = 1.0;
-	q[i + 199] = 1.0 / (d * rad);
-	q[i + 399] = f * h[i - 1] * (h[i - 1] * ae +
-		k[i - 1] * be * cce + l[i - 1] * ce * cbe);
-	q[i + 599] = f * k[i - 1] * (k[i - 1] * be +
-		l[i - 1] * ce * cae + h[i - 1] * ae * cce)
-		;
-	q[i + 799] = f * l[i - 1] * (l[i - 1] * ce +
-		h[i - 1] * ae * cbe + k[i - 1] * be * cae)
-		;
-	q[i + 999] = -f * k[i - 1] * l[i - 1] * be * ce *
-		sin(b[5]);
-	q[i + 1199] = -f * l[i - 1] * h[i - 1] * ce *
-		ae * sin(b[6]);
-	q[i + 1399] = -f * h[i - 1] * k[i - 1] * ae *
-		be * sin(b[7]);
-/* L2: */
-	qq[i + npaf2 * 200 - 201] = b[0] + asin(
-		b[1] / d);
+
+	for (i = 1; i <= nr; ++i) {
+	/* Computing 2nd power */
+		r1 = ae * h[i - 1];
+	/* Computing 2nd power */
+		r2 = be * k[i - 1];
+	/* Computing 2nd power */
+		r3 = ce * l[i - 1];
+		dd = r1 * r1 + r2 * r2 + r3 * r3 + (h[i - 1] * k[i - 1] * ae * be * cce + k[i - 1] * l[i - 1] * be * ce * cae + l[i - 1] * h[i - 1] * ce * ae * cbe) * 2.0;
+		d = div_number(1.0, csqrt(dd));
+	/* Computing 2nd power */
+		r1 = b[1];
+		rad = csqrt(1.0 - r1 * r1 * dd);
+		f = b[1] * d / rad;
+		q[i - 1] = 1.0;
+		q[i + 199] = 1.0 / (d * rad);
+		q[i + 399] = f * h[i - 1] * (h[i - 1] * ae + k[i - 1] * be * cce + l[i - 1] * ce * cbe);
+		q[i + 599] = f * k[i - 1] * (k[i - 1] * be + l[i - 1] * ce * cae + h[i - 1] * ae * cce);
+		q[i + 799] = f * l[i - 1] * (l[i - 1] * ce + h[i - 1] * ae * cbe + k[i - 1] * be * cae);
+		q[i + 999] = -f * k[i - 1] * l[i - 1] * be * ce * sin(b[5]);
+		q[i + 1199] = -f * l[i - 1] * h[i - 1] * ce * ae * sin(b[6]);
+		q[i + 1399] = -f * h[i - 1] * k[i - 1] * ae * be * sin(b[7]);
+		qq[i + npaf2 * 200 - 201] = b[0] + asin(div_number(b[1], d));
 	}
-	i1 = nr;
-	for (ir = 1; ir <= i1; ++ir) {
-	j = 0;
-	for (i = 1; i <= 8; ++i) {
-		if (afi[i - 1] == 0.0) {
-		goto L3;
+	for (ir = 1; ir <= nr; ++ir) {
+		j = 0;
+		for (i = 1; i <= 8; ++i) {
+			if (afi[i - 1] == 0.0) {
+				goto L3;
+			}
+			++j;
+			qq[ir + j * 200 - 201] = q[ir + i * 200 - 201];
+	L3:
+			;
 		}
-		++j;
-		qq[ir + j * 200 - 201] = q[ir + i * 200 - 201];
-L3:
-		;
-	}
 	}
 /*      WRITE(IWR,5)(BB(I),I=1,NPAF) */
 /* L5: */
@@ -1307,8 +1279,7 @@ L3:
 
 //==============================================================================
 
-int mcrnl(double *q, int *id, double *y, double *b, int *
-	m, int *n, double *p, int *ifin)
+int mcrnl(double *q, int *id, double *y, double *b, int *m, int *n, double *p, int *ifin)
 {
 	/* System generated locals */
 	int q_dim1, q_offset, i1, i2, i3;
@@ -1345,81 +1316,60 @@ L10:
 	--(*ifin);
 
 /* -----CALCUL DES DERIVEES PARTIELLES ET DES Y */
-	calc();
+	calc(q);
 
 /* -----LES Y CALCULES SONT DANS LA COLONNE M+2 */
-	i1 = *m;
-	for (j = 1; j <= i1; ++j) {
-	r = 0.0;
-	i2 = *n;
-	for (i = 1; i <= i2; ++i) {
-/* L20: */
-		r += (y[i] - q[i + m2 * q_dim1]) * q[i + j * q_dim1] * p[
-			i];
-	}
-/* L30: */
-	q[j + m1 * q_dim1] = r;
+	for (j = 1; j <= *m; ++j) {
+		r = 0.0;
+		for (i = 1; i <= *n; ++i) {
+			r += (y[i] - q[i + m2 * q_dim1]) * q[i + j * q_dim1] * p[i];
+		}
+		q[j + m1 * q_dim1] = r;
 	}
 
 /* -----CONSTRUCTION DE LA MATRICE SYMETRIQUE A=Q*QT */
 	no = 0;
-	i1 = *m;
-	for (iq = 1; iq <= i1; ++iq) {
-	i2 = *m;
-	for (il = iq; il <= i2; ++il) {
-		++no;
-		r = 0.0;
-		i3 = *n;
-		for (i = 1; i <= i3; ++i) {
-/* L40: */
-		r += q[i + iq * q_dim1] * q[i + il * q_dim1] * p[i];
+	for (iq = 1; iq <= *m; ++iq) {
+		for (il = iq; il <= *m; ++il) {
+			++no;
+			r = 0.0;
+			for (i = 1; i <= *n; ++i) {
+				r += q[i + iq * q_dim1] * q[i + il * q_dim1] * p[i];
+			}
+			a[no - 1] = r;
 		}
-/* L50: */
-		a[no - 1] = r;
-	}
 	}
 
 /* -----INVERSION DE LA MATRICE A */
 	matinv(a, m, &ier);
 	if (*ifin <= 0) {
-	goto L110;
+		goto L110;
 	} else {
-	goto L60;
+		goto L60;
 	}
 
 /* -----CALCUL DES NOUVEAUX PARAMETRES */
 L60:
-	i2 = *m;
-	for (i = 1; i <= i2; ++i) {
-	r = 0.0;
-	imm = (i - 1) * (mm - i) / 2;
-	i1 = *m;
-	for (j = 1; j <= i1; ++j) {
-		if (j - i >= 0) {
-		goto L70;
-		} else {
-		goto L80;
+	for (i = 1; i <= *m; ++i) {
+		r = 0.0;
+		imm = (i - 1) * (mm - i) / 2;
+		for (j = 1; j <= *m; ++j) {
+			if (j - i >= 0) {
+				l = imm + j;
+			} else {
+				l = (j - 1) * (mm - j) / 2 + i;
+			}
+			r += a[l - 1] * q[j + m1 * q_dim1];
 		}
-L70:
-		l = imm + j;
-		goto L90;
-L80:
-		l = (j - 1) * (mm - j) / 2 + i;
-L90:
-		r += a[l - 1] * q[j + m1 * q_dim1];
-	}
-/* L100: */
-	b[i] += r;
+		b[i] += r;
 	}
 	goto L10;
 
 /* -----REMISE DES ELEMENTS DIAGONAUX DANS Q(I,I),APRES LE DERNIER CYCLE */
 L110:
-	i2 = *m;
-	for (i = 1; i <= i2; ++i) {
-	l = (i - 1) * (mm - i) / 2 + i;
-/* L120: */
-	q[i + i * q_dim1] = a[l - 1];
+	for (i = 1; i <= *m; ++i) {
+		l = (i - 1) * (mm - i) / 2 + i;
+		q[i + i * q_dim1] = a[l - 1];
 	}
 	return 0;
 }
@@ -1453,29 +1403,29 @@ int fonc(double *theta, double *r, double *rr)
 	cce = cos(b[7]);
 	i1 = nr;
 	for (i = 1; i <= i1; ++i) {
-/* Computing 2nd power */
-	r1l = ae * h[i - 1];
-/* Computing 2nd power */
-	r2l = be * k[i - 1];
-/* Computing 2nd power */
-	r3l = ce * l[i - 1];
-	dd = r1l * r1l + r2l * r2l + r3l * r3l + (h[i - 1] *
-		k[i - 1] * ae * be * cce + k[i - 1] *
-		l[i - 1] * be * ce * cae + l[i - 1] *
-		h[i - 1] * ce * ae * cbe) * 2.0;
-	d = 1.0 / sqrt(dd);
-	yc = b[0] + asin(b[1] / d);
-/* Computing 2nd power */
-	r1l = yc - theta[i];
-	r1 += r1l * r1l;
-/* Computing 2nd power */
-	r1l = theta[i];
-	r2 += r1l * r1l;
-/* L2: */
-	qq[i + npaf2 * 200 - 201] = yc;
+	/* Computing 2nd power */
+		r1l = ae * h[i - 1];
+	/* Computing 2nd power */
+		r2l = be * k[i - 1];
+	/* Computing 2nd power */
+		r3l = ce * l[i - 1];
+		dd = r1l * r1l + r2l * r2l + r3l * r3l + (h[i - 1] *
+			k[i - 1] * ae * be * cce + k[i - 1] *
+			l[i - 1] * be * ce * cae + l[i - 1] *
+			h[i - 1] * ce * ae * cbe) * 2.0;
+		d = div_number(1.0, sqrt(dd));
+		yc = b[0] + asin(div_number(b[1], d));
+	/* Computing 2nd power */
+		r1l = yc - theta[i];
+		r1 += r1l * r1l;
+	/* Computing 2nd power */
+		r1l = theta[i];
+		r2 += r1l * r1l;
+	/* L2: */
+		qq[i + npaf2 * 200 - 201] = yc;
 	}
-	*r = r1 / (nr - npaf);
-	*rr = sqrt(r1 / r2);
+	*r = div_number(r1, (nr - npaf));
+	*rr = sqrt(div_number(r1, r2));
 	return 0;
 } /* fonc */
 
@@ -1547,6 +1497,7 @@ int celref(int *indi, double *bbb, double *afin, int *nhkl, double *theta, int *
 
 	char *temp_b, *cur, *end;
 
+	static char temp[512] = "";
 
 /* $OMP THREADPRIVATE(/TROC/,/TRUC/) */
 /*      DATA IWR/20/,ICLE/'A=B=C','A=B  ','NO   '/ */
@@ -1564,7 +1515,7 @@ int celref(int *indi, double *bbb, double *afin, int *nhkl, double *theta, int *
 /* ----- A MODIFIER EN CAS DE CHANGEMENT DES DIMENSIONS */
 	ndmax = 200;
 /* ----- */
-	rd = 180.0 / acos(-1.0);
+	rd = div_number(180.0, acos(-1.0));
 /* ..... */
 /* .....ENTREE DES DONNEES */
 
@@ -1626,7 +1577,7 @@ L230:
 			goto L370;
 		}
 		pds[nr - 1] = 1.0;
-		theta[nr] = theta[nr] / rd / 2.0;
+		theta[nr] = div_number(theta[nr], rd) / 2.0;
 	}
 /* ..... */
 /* !!!! 2*THETA EN THETA */
@@ -1664,33 +1615,24 @@ L260:
 
 	temp_b = doubleArrayToString("  %.5lf", b, 2, 5);
 
-	{
-		char temp[128] = "";
-		snprintf(temp, sizeof(temp), " RECIPROCAL CELL : %s  %.5lf  %.5lf  %.5lf\n VOLUME (A**3)   : %.3lf\n", temp_b, dum[0], dum[0], dum[0], volum);
-		writeInFile(temp, imp_file);
-	}
+	snprintf(temp, sizeof(temp), " RECIPROCAL CELL : %s  %.5lf  %.5lf  %.5lf\n VOLUME (A**3)   : %.3lf\n", temp_b, dum[0], dum[0], dum[0], volum);
+	writeInFile(temp, imp_file);
 
 	free(temp_b);
 
 /* ....."NPAF" : NOMBRE DE PARAMETRES A AFFINER */
 /* ....."BB()" : TABLEAU DES PARAMETRES A AFFINER */
 	j = 0;
-	for (int i = 1; i <= 8; ++i) {
-		if (afi[i - 1] == 0.0) {
-			goto L290;
+	for (int i = 0; i < 8; ++i) {
+		if (afi[i] != 0.0) {
+			bb[j] = b[i];
+			++j;
 		}
-		++j;
-		bb[j - 1] = b[i - 1];
-	L290:
-		;
 	}
 	npaf = j;
 
-	{
-		char temp[50] = "";
-		snprintf(temp, sizeof(temp), " NUMBER OF INDEPENDENT PARAMETERS : %d\n", npaf);
-		writeInFile(temp, imp_file);
-	}
+	snprintf(temp, sizeof(temp), " NUMBER OF INDEPENDENT PARAMETERS : %d\n", npaf);
+	writeInFile(temp, imp_file);
 
 	if (npaf == 8) {
 		goto L390;
@@ -1702,14 +1644,11 @@ L260:
 
 /* .....NOUVELLES VALEURS DES PARAMETRES */
 	j = 0;
-	for (i = 1; i <= 8; ++i) {
-		if (afi[i - 1] == 0.0) {
-			goto L300;
+	for (i = 0; i < 8; ++i) {
+		if (afi[i] != 0.0) {
+			b[i] = bb[j];
+			++j;
 		}
-		++j;
-		b[i - 1] = bb[j - 1];
-	L300:
-		;
 	}
 /*   ......VALEURS DES ANGLES THETA CALCULES */
 	fonc(&theta[1], &r, &rr);
@@ -1770,11 +1709,8 @@ L260:
 	char *temp_sig = doubleArrayToString("%.4lf    ", sig, 0, 8);
 	char *temp_bb = doubleArrayToString("%.5lf    ", bb, 0, 5);
 
-	{
-		char temp[350] = "";
-		snprintf(temp, sizeof(temp), " FINAL VALUES   : (STANDARD DEVIATIONS : 2nd LINE)\n\n    ZERO    LAMBDA      A        B        C      ALPHA     BETA    GAMMA\n%s\n%s\n   RECIPROCAL CELL : %s  %.5lf\n    H     K     L  TH(OBS)    TH-ZERO    TH(CALC)     DIFF.\n", temp_b, temp_sig, temp_bb, volum);
-		writeInFile(temp, imp_file);
-	}
+	snprintf(temp, sizeof(temp), " FINAL VALUES   : (STANDARD DEVIATIONS : 2nd LINE)\n\n    ZERO    LAMBDA      A        B        C      ALPHA     BETA    GAMMA\n%s\n%s\n   RECIPROCAL CELL : %s  %.5lf\n    H     K     L  TH(OBS)    TH-ZERO    TH(CALC)     DIFF.\n", temp_b, temp_sig, temp_bb, volum);
+	writeInFile(temp, imp_file);
 
 	// writeFormattedInFile(imp_file, " FINAL VALUES   : (STANDARD DEVIATIONS : 2nd LINE)\n\n    ZERO    LAMBDA      A        B        C      ALPHA     BETA    GAMMA\n%s\n%s\n   RECIPROCAL CELL : %s  %.5lf\n    H     K     L  TH(OBS)    TH-ZERO    TH(CALC)     DIFF.\n", 4, temp_b, temp_sig, temp_bb, volum);
 
@@ -1799,10 +1735,10 @@ L260:
 		if (i <= 20) {
 			*ddt += fabs(y4);
 	/* Computing 2nd power */
-			double r1 = sin(y2 / 2.0 * 3.141593f / 180.0) * 2.0 / bbb[2];
+			double r1 = div_number(sin(y2 / 2.0 * 3.141593f / 180.0) * 2.0, bbb[2]);
 			qo = r1 * r1;
 	/* Computing 2nd power */
-			r1 = sin(y3 / 2.0 * 3.141593f / 180.0) * 2.0 / bbb[2];
+			r1 = div_number(sin(y3 / 2.0 * 3.141593f / 180.0) * 2.0, bbb[2]);
 			qc = r1 * r1;
 			*ddq += (r1 = qo - qc, fabs(r1));
 		}
@@ -1834,8 +1770,8 @@ L260:
 
 	for (int i = 1; i <= nr; ++i) {
 		y0 = b[1] / 2.0;
-		y1 = y0 / sin(theta[i] - b[0] / rd);
-		y2 = y0 / sin(qq[i + npaf2 * 200 - 201] - b[0]	/ rd);
+		y1 = div_number(y0, sin(theta[i] - div_number(b[0], rd)));
+		y2 = div_number(y0, sin(qq[i + npaf2 * 200 - 201] - div_number(b[0], rd)));
 
 		char temp[33];
 		snprintf(temp, sizeof(temp), "  %d   %d   %d   %.4lf     %.4lf\n", h[i - 1], k[i - 1], l[i - 1], y1, y2);
@@ -2055,10 +1991,10 @@ L260:
 		if (i <= 20) {
 			*ddt += fabs(y4);
 	/* Computing 2nd power */
-			r1 = sin(y2 * pip) * 2.0 / bbb[2];
+			r1 = div_number(sin(y2 * pip) * 2.0, bbb[2]);
 			qo = r1 * r1;
 	/* Computing 2nd power */
-			r1 = sin(y3 * pip) * 2.0 / bbb[2];
+			r1 = div_number(sin(y3 * pip) * 2.0, bbb[2]);
 			qc = r1 * r1;
 			*ddq += (r1 = qo - qc, fabs(r1));
 		}
@@ -2576,7 +2512,7 @@ double randi(int *ix)
 /*     Put all the bits of the product together and subtract p */
 /*     (Must be in this form to prevent overflow. The ()'s are essential) */
 
-	*ix = xalo - (leftlo << 16) - 2147483647 + (xahi - (k << 15) << 16) + k;
+	*ix = xalo - (leftlo << 16) - 2147483647 + ((xahi - (k << 15)) << 16) + k;
 
 /*     If <0 add p back again */
 
@@ -3014,10 +2950,42 @@ char getBL(const int *ib, const int *ifi, int j)
 
 //==============================================================================
 
+double calcFM20(const double qo, const double cncalc, const double ddq)
+{
+	return div_number(qo, (cncalc * 2.0 * ddq));
+}
+
+//==============================================================================
+
+double calcFF20(const double pndat, const double cncalc, const double ddt)
+{
+	return div_number(pndat, (cncalc * ddt));
+}
+
+//==============================================================================
+
+void adjustFMFF(const int ndat, const double *qo, const double *cncalc, const int igc, const double ddq, const double ddt, double *fm20, double *ff20)
+{
+	if (ndat >= 20) {
+		fm20[igc - 1] = calcFM20(qo[19], cncalc[igc - 1], ddq);
+		ff20[igc - 1] = calcFF20(20.0, cncalc[igc - 1], ddt);
+		// fm20[igc - 1] = div_number(qo[19], (cncalc[igc - 1] * 2.0 * ddq));
+		// fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
+		// ff20[igc - 1] = div_number(20.0, (cncalc[igc - 1] * ddt));
+		// ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
+	} else {
+		double pndat = (double) ndat;
+		fm20[igc - 1] = calcFM20(qo[ndat - 1], cncalc[igc - 1], ddq);
+		ff20[igc - 1] = calcFF20(pndat, cncalc[igc - 1], ddt);
+	}
+}
+
+//==============================================================================
+
 int main(int argc, char *argv[])
 {
 
-	int nsys[6], ihkl[30000], nsol[N_HKL], nrun, ll[N_HKL], lll[N_HKL], km[N_HKL];
+	int nsys[6], ihkl[30000], nsol[N_HKL], ll[N_HKL], lll[N_HKL], km[N_HKL];
 	char text[20];
 	double pstartb[6],delta[3],pstart[3], rp2[N_HKL];
 	double celpre[6],celold[6],w1[N_HKL],fm20[N_HKL],ff20[N_HKL];
@@ -3036,6 +3004,7 @@ int main(int argc, char *argv[])
     const int procs = 1;  // 360./3.1415926
 
     int pressedk = 0;
+    int nrun = 0;
     double pndat, ddq, ddt, isee, v3, v2, a, rmax2, llhkl;
     double diff2, diff, v1, del, rmin, interest, tmax, ttmax, ncells, iiseed, ntried, ntriedt;
     double nout, ntriedb, vorth;
@@ -3044,6 +3013,8 @@ int main(int argc, char *argv[])
     double am, ap, adelt, vm, vp, vdelt, nglob, rglob, c, b, bdelt, bp, bm, nb, cdelt, cp, cm;
     double betp, deld, vmon, na, nc, bet, betdelt, betm, ang, alp, gam, vtric;
     int c2, ip, c4, c1, ip2;
+
+    char temp[512] = "";
 
     // const Parameters cubic_params = {"Cubic", 1, {"a"}};
 
@@ -3182,7 +3153,6 @@ C     values will be read later (triplets : 2-theta, I, Width)
 C          moreover, Width will be multiplied by -W
 C          (use W = -1 for no change...)
 C*/
-	nind;
 	double w;
 	if (ngrid == 3)
 	{
@@ -3927,13 +3897,12 @@ C*/
 				celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
 				cncalc[igc - 1] = (double) ncalc;
 				if (ndat >= 20) {
-					fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
-					ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
+					fm20[igc - 1] = div_number(qo[19], (cncalc[igc - 1] * 2.0 * ddq));
+					ff20[igc - 1] = div_number(20.0, (cncalc[igc - 1] * ddt));
 				} else {
 					pndat = (double) ndat;
-					fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1] *
-						2.0 * ddq);
-					ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
+					fm20[igc - 1] = div_number(qo[ndat - 1], (cncalc[igc - 1] * 2.0 * ddq));
+					ff20[igc - 1] = div_number(pndat, (cncalc[igc - 1] * ddt));
 				}
 				iref = 1;
 				goto L197;
@@ -3946,13 +3915,12 @@ C*/
 				celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
 				cncalc[igc - 1] = (double) ncalc;
 				if (ndat >= 20) {
-					fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
-					ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
+					fm20[igc - 1] = div_number(qo[19], (cncalc[igc - 1] * 2.0 * ddq));
+					ff20[igc - 1] = div_number(20.0, (cncalc[igc - 1] * ddt));
 				} else {
 					pndat = (double) ndat;
-					fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1] *
-						2.0 * ddq);
-					ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
+					fm20[igc - 1] = div_number(qo[ndat - 1], (cncalc[igc - 1] * 2.0 * ddq));
+					ff20[igc - 1] = div_number(pndat, (cncalc[igc - 1] * ddt));
 				}
 			}
 
@@ -4462,7 +4430,8 @@ L290:
 				calcul2(&diff, ihkl, th3, &ncalc, &igc);
 				celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
 				cncalc[igc - 1] = (double) ncalc;
-				if (ndat >= 20) {
+				adjustFMFF(ndat, qo, cncalc, igc, ddq, ddt, fm20, ff20);
+				/*if (ndat >= 20) {
 					fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
 					ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
 				} else {
@@ -4487,7 +4456,8 @@ L290:
 				calcul2(&diff, ihkl, th3, &ncalc, &igc);
 				celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
 				cncalc[igc - 1] = (double) ncalc;
-				if (ndat >= 20) {
+				adjustFMFF(ndat, qo, cncalc, igc, ddq, ddt, fm20, ff20);
+				/*if (ndat >= 20) {
 					fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
 					ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
 				} else {
@@ -4495,7 +4465,7 @@ L290:
 					fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1] *
 						2.0 * ddq);
 					ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
-				}
+				}*/
 			}
 
 	/* Test if cell already found */
@@ -4969,7 +4939,8 @@ C*/
 				calcul2(&diff, ihkl, th3, &ncalc, &igc);
 				celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
 				cncalc[igc - 1] = (double) ncalc;
-				if (ndat >= 20) {
+				adjustFMFF(ndat, qo, cncalc, igc, ddq, ddt, fm20, ff20);
+				/*if (ndat >= 20) {
 					fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
 					ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
 				} else {
@@ -4977,7 +4948,7 @@ C*/
 					fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1] *
 						2.0 * ddq);
 					ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
-				}
+				}*/
 				iref = 1;
 				goto L397;
 			} else {
@@ -4988,7 +4959,7 @@ C*/
 				calcul2(&diff, ihkl, th3, &ncalc, &igc);
 				celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
 				cncalc[igc - 1] = (double) ncalc;
-				if (ndat >= 20) {
+				/*if (ndat >= 20) {
 					fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
 					ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
 				} else {
@@ -4996,7 +4967,8 @@ C*/
 					fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1] *
 						2.0 * ddq);
 					ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
-				}
+				}*/
+				adjustFMFF(ndat, qo, cncalc, igc, ddq, ddt, fm20, ff20);
 			}
 
 	/* Test if cell already found */
@@ -5554,14 +5526,15 @@ C*/
 					calcul2(&diff, ihkl, th3, &ncalc, &igc);
 					celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
 					cncalc[igc - 1] = (double) ncalc;
-					if (ndat >= 20) {
+					adjustFMFF(ndat, qo, cncalc, igc, ddq, ddt, fm20, ff20);
+					/*if (ndat >= 20) {
 						fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
 						ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
 					} else {
 						pndat = (double) ndat;
 						fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1]	* 2.0 * ddq);
 						ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
-					}
+					}*/
 					iref = 1;
 					goto L497;
 				} else {
@@ -5572,7 +5545,8 @@ C*/
 					calcul2(&diff, ihkl, th3, &ncalc, &igc);
 					celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
 					cncalc[igc - 1] = (double) ncalc;
-					if (ndat >= 20) {
+					adjustFMFF(ndat, qo, cncalc, igc, ddq, ddt, fm20, ff20);
+					/*if (ndat >= 20) {
 						fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
 						ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
 					} else {
@@ -5580,7 +5554,7 @@ C*/
 						fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1]
 							* 2.0 * ddq);
 						ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
-					}
+					}*/
 				}
 
 		/* Test if cell already found */
@@ -6164,7 +6138,8 @@ C*/
 					calcul2(&diff, ihkl, th3, &ncalc, &igc);
 					celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
 					cncalc[igc - 1] = (double) ncalc;
-					if (ndat >= 20) {
+					adjustFMFF(ndat, qo, cncalc, igc, ddq, ddt, fm20, ff20);
+					/*if (ndat >= 20) {
 						fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
 						ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
 					} else {
@@ -6188,14 +6163,15 @@ C*/
 					calcul2(&diff, ihkl, th3, &ncalc, &igc);
 					celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
 					cncalc[igc - 1] = (double) ncalc;
-					if (ndat >= 20) {
+					adjustFMFF(ndat, qo, cncalc, igc, ddq, ddt, fm20, ff20);
+					/*if (ndat >= 20) {
 						fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
 						ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
 					} else {
 						pndat = (double) ndat;
 						fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1] * 2.0 * ddq);
 						ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
-					}
+					}*/
 				}
 
 		/* Test if cell already found */
@@ -6844,14 +6820,15 @@ C*/
 					calcul2(&diff, ihkl, th3, &ncalc, &igc);
 					celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
 					cncalc[igc - 1] = (double) ncalc;
-					if (ndat >= 20) {
+					adjustFMFF(ndat, qo, cncalc, igc, ddq, ddt, fm20, ff20);
+					/*if (ndat >= 20) {
 						fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
 						ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
 					} else {
 						pndat = (double) ndat;
 						fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1]	* 2.0 * ddq);
 						ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
-					}
+					}*/
 
 					iref = 1;
 					goto L697;
@@ -6863,14 +6840,15 @@ C*/
 					calcul2(&diff, ihkl, th3, &ncalc, &igc);
 					celref2(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq);
 					cncalc[igc - 1] = (double) ncalc;
-					if (ndat >= 20) {
+					adjustFMFF(ndat, qo, cncalc, igc, ddq, ddt, fm20, ff20);
+					/*if (ndat >= 20) {
 						fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
 						ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
 					} else {
 						pndat = (double) ndat;
 						fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1]	* 2.0 * ddq);
 						ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
-					}
+					}*/
 				}
 
 		/* Test if cell already found */
@@ -7261,8 +7239,10 @@ L1114:
 		celref(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq, imp_file);
 		if (ndat >= 20) {
 			cncalc[igc - 1] = (double) ncalc;
-			fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
-			ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
+			fm20[igc - 1] = calcFM20(qo[19], cncalc[igc - 1], ddq);
+			ff20[igc - 1] = calcFF20(20.0, cncalc[igc - 1], ddt);
+			// fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
+			// ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
 
 			saveFMFF20(fm20[igc - 1], ff20[igc - 1], ddt, ncalc, imp_file);
 		}
@@ -7656,8 +7636,8 @@ L1214:
 		celref(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq, imp_file);
 		if (ndat >= 20) {
 			cncalc[igc - 1] = (double) ncalc;
-			fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
-			ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
+			fm20[igc - 1] = calcFM20(qo[19], cncalc[igc - 1], ddq);
+			ff20[igc - 1] = calcFF20(20.0, cncalc[igc - 1], ddt);
 			saveFMFF20(fm20[igc - 1], ff20[igc - 1], ddt, ncalc, imp_file);
 		}
 		iref = 1;
@@ -8033,8 +8013,8 @@ L1314:
 		celref(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq, imp_file);
 		if (ndat >= 20) {
 			cncalc[igc - 1] = (double) ncalc;
-			fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
-			ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
+			fm20[igc - 1] = calcFM20(qo[19], cncalc[igc - 1], ddq);
+			ff20[igc - 1] = calcFF20(20.0, cncalc[igc - 1], ddt);
 			saveFMFF20(fm20[igc - 1], ff20[igc - 1], ddt, ncalc, imp_file);
 		}
 		iref = 1;
@@ -8434,8 +8414,8 @@ L1414:
 		celref(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq, imp_file);
 		if (ndat >= 20) {
 			cncalc[igc - 1] = (double) ncalc;
-			fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
-			ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
+			fm20[igc - 1] = calcFM20(qo[19], cncalc[igc - 1], ddq);
+			ff20[igc - 1] = calcFF20(20.0, cncalc[igc - 1], ddt);
 			saveFMFF20(fm20[igc - 1], ff20[igc - 1], ddt, ncalc, imp_file);
 		}
 		iref = 1;
@@ -8871,8 +8851,8 @@ L1514:
 		celref(&indic, bb, afi, &lhkl, th3, ihkl, &ddt, &ddq, imp_file);
 		if (ndat >= 20) {
 			cncalc[igc - 1] = (double) ncalc;
-			fm20[igc - 1] = qo[19] / (cncalc[igc - 1] * 2.0 * ddq);
-			ff20[igc - 1] = 20.0 / (cncalc[igc - 1] * ddt);
+			fm20[igc - 1] = calcFM20(qo[19], cncalc[igc - 1], ddq);
+			ff20[igc - 1] = calcFF20(20.0, cncalc[igc - 1], ddt);
 			saveFMFF20(fm20[igc - 1], ff20[igc - 1], ddt, ncalc, imp_file);
 		}
 		iref = 1;
@@ -9750,7 +9730,8 @@ L1808:
 	}
 	diff /= sum_y;
 
-	writeFormattedInFile(imp_file, "\n Final Rp on the .prf = %d\n\n", 1, diff);
+	snprintf(temp, sizeof(temp), "\n Final Rp on the .prf = %lf\n\n", diff);
+	writeInFile(temp, imp_file);
 
 /*     Make the .prf */
 
@@ -9760,7 +9741,8 @@ L1808:
 	int ivers = 8;
 	zero = 0.0;
 
-	writeFormattedInFile(prf_file, "%s\n3111   1.0000    %.4lf", 2, text, zero);
+	snprintf(temp, sizeof(temp), "%s\n3111   1.0000    %.4lf", text, zero);
+	writeInFile(temp, prf_file);
 
 	double thmax = pos[n2 - 1];
 	double thmin = pos[n1 - 1];
@@ -9775,7 +9757,8 @@ L1808:
 	int icz = nhkl;
 	npts = n2 - n1 + 1;
 
-	writeFormattedInFile(prf_file, "%.3lf %.3lf %.5lf %d\n", 4, thmax, thmin, step, ivers);
+	snprintf(temp, sizeof(temp), "%.3lf %.3lf %.5lf %d\n", thmax, thmin, step, ivers);
+	writeInFile(temp, prf_file);
 
 	double amda1 = slabda;
 	double amda2 = slabda;
