@@ -82,6 +82,7 @@
 #include <math.h>
 #include <stdarg.h>
 #include <complex.h>
+#include <gperftools/profiler.h>
 
 #define VERSION "4.00"
 #define FILENAME_SIZE 20
@@ -203,32 +204,32 @@ int calcul1(double *diff, double *diff2)
 	jh = 0;
 	i1 = nhkl0;
 	for (i = 1; i <= i1; ++i) {
-	x = 0.0;
-	for (j = 1; j <= 3; ++j) {
-		for (k = j; k <= 3; ++k) {
-			x = al[j + k * 3 - 4] * ihh[j + i * 3 - 4] * ihh[k + i * 3 - 4] + x;
+		x = 0.0;
+		for (j = 1; j <= 3; ++j) {
+			for (k = j; k <= 3; ++k) {
+				x = al[j + k * 3 - 4] * ihh[j + i * 3 - 4] * ihh[k + i * 3 - 4] + x;
+			}
 		}
-	}
-	if (x > dmin) {
-		goto L109;
-	}
-	++jh;
-/*     X IS 1/D(hkl)**2 FOR REFLECTION IHH */
+		if (x > dmin) {
+			goto L109;
+		}
+		++jh;
+	/*     X IS 1/D(hkl)**2 FOR REFLECTION IHH */
 
-/*     This should be optimized for speed : */
-/*     working only on X, not calculating 2-theta... */
-/*     - in fact, tests show that only 10-15% is gained - */
+	/*     This should be optimized for speed : */
+	/*     working only on X, not calculating 2-theta... */
+	/*     - in fact, tests show that only 10-15% is gained - */
 
-	sinth = slabda2 * x;
-	sinth = sqrt(sinth);
-	theta[jh - 1] = asin(sinth) * pi;
-	cr[jh - 1] = 0.0;
-L109:
-	;
+		sinth = slabda2 * x;
+		sinth = sqrt(sinth);
+		theta[jh - 1] = asin(sinth) * pi;
+		cr[jh - 1] = 0.0;
+	L109:
+		;
 	}
 	nhkl = jh;
 	if (nhkl > ndat10) {
-	return 0;
+		return 0;
 	}
 
 /* ...  Comparison with the data */
@@ -236,37 +237,37 @@ L109:
 	lhkl = 0;
 	i1 = ndat;
 	for (j = 1; j <= i1; ++j) {
-	cri[j - 1] = 0.0;
-	perc[j - 1] = 0.0;
-	demax = w2[j - 1];
-	i2 = nhkl;
-	for (k = 1; k <= i2; ++k) {
-		if (cr[k - 1] == 1.0) {
-			goto L111;
-		}
-		if (theta[k - 1] <= difp[j - 1] && theta[k - 1] >= difm[j - 1]) {
-			de[k - 1] = (r1 = theta[k - 1] - th2[j - 1], fabs(r1));
-			if (de[k - 1] <= demax) {
-				l = k;
-				demax = de[k - 1];
-				cri[j - 1] = 1.0;
+		cri[j - 1] = 0.0;
+		perc[j - 1] = 0.0;
+		demax = w2[j - 1];
+		i2 = nhkl;
+		for (k = 1; k <= i2; ++k) {
+			if (cr[k - 1] == 1.0) {
+				goto L111;
 			}
+			if (theta[k - 1] <= difp[j - 1] && theta[k - 1] >= difm[j - 1]) {
+				de[k - 1] = (r1 = theta[k - 1] - th2[j - 1], fabs(r1));
+				if (de[k - 1] <= demax) {
+					l = k;
+					demax = de[k - 1];
+					cri[j - 1] = 1.0;
+				}
+			}
+	L111:
+			;
 		}
-L111:
-		;
-	}
 
-/*  PERC = percentage of columnar overlap for that peak */
+	/*  PERC = percentage of columnar overlap for that peak */
 
-/*  Potential problem here because only one reflection */
-/*  overlapping the most closely with the column is */
-/*  included (if CRI =1)... */
+	/*  Potential problem here because only one reflection */
+	/*  overlapping the most closely with the column is */
+	/*  included (if CRI =1)... */
 
-	if (cri[j - 1] == 1.0) {
-		perc[j - 1] = 1.0 - div_number(de[l - 1], w2[j - 1]);
-		++lhkl;
-		cr[l - 1] = 1.0;
-	}
+		if (cri[j - 1] == 1.0) {
+			perc[j - 1] = 1.0 - div_number(de[l - 1], w2[j - 1]);
+			++lhkl;
+			cr[l - 1] = 1.0;
+		}
 /* L113: */
 	}
 
@@ -276,9 +277,9 @@ L111:
 	sum_f2 = 0.0;
 	i1 = ndat;
 	for (k = 1; k <= i1; ++k) {
-	sum_f2 += fobs[k - 1] * cri[k - 1];
-/* L1122: */
-	diff1 += cri[k - 1] * fobs[k - 1] * perc[k - 1];
+		sum_f2 += fobs[k - 1] * cri[k - 1];
+	/* L1122: */
+		diff1 += cri[k - 1] * fobs[k - 1] * perc[k - 1];
 	}
 	*diff = 1.0 - div_number(diff1, sum_f);
 	*diff2 = 1.0 - div_number(diff1, sum_f2);
@@ -1205,7 +1206,7 @@ int calc(double *qq)
 	double r1, r2, r3;
 
 	/* Local variables */
-	static double d, f;
+	static double _Complex d, f;
 	static int i, j;
 	static double q[2000]	/* was [200][10] */, ae, be, ce, dd;
 	static int ir;
@@ -1245,7 +1246,7 @@ L1:
 	/* Computing 2nd power */
 		r3 = ce * l[i - 1];
 		dd = r1 * r1 + r2 * r2 + r3 * r3 + (h[i - 1] * k[i - 1] * ae * be * cce + k[i - 1] * l[i - 1] * be * ce * cae + l[i - 1] * h[i - 1] * ce * ae * cbe) * 2.0;
-		d = div_number(1.0, csqrt(dd));
+		d = 1.0 / csqrt(dd);
 	/* Computing 2nd power */
 		r1 = b[1];
 		rad = csqrt(1.0 - r1 * r1 * dd);
@@ -1258,7 +1259,13 @@ L1:
 		q[i + 999] = -f * k[i - 1] * l[i - 1] * be * ce * sin(b[5]);
 		q[i + 1199] = -f * l[i - 1] * h[i - 1] * ce * ae * sin(b[6]);
 		q[i + 1399] = -f * h[i - 1] * k[i - 1] * ae * be * sin(b[7]);
-		qq[i + npaf2 * 200 - 201] = b[0] + asin(div_number(b[1], d));
+		// TODO AQUI TA A MERDA DO ERRO
+		// printf("%lf\t%lf\t\t%lf\t%lf\t%lf\t\n", b[0], b[1], d, b[1] / d, asin(b[1] / d));
+		qq[i + npaf2 * 200 - 201] = b[0] + casin(b[1] / d);
+		if (isnan(qq[i + npaf2 * 200 - 201]))
+		{
+			// exit(0);
+		}
 	}
 	for (ir = 1; ir <= nr; ++ir) {
 		j = 0;
@@ -1519,7 +1526,7 @@ int celref(int *indi, double *bbb, double *afin, int *nhkl, double *theta, int *
 /* ..... */
 /* .....ENTREE DES DONNEES */
 
-	static char temp_10[] = " PROGRAM *** CELREF ***  (J.LAUGIER & A.0ILHOL 10/78)\n\n";
+	static char temp_10[] = " PROGRAM *** CELREF ***  (J.LAUGIER & A.FILHOL 10/78)\n\n";
 	fwrite(temp_10, strlen(temp_10), 1, imp_file);
 
 /*      READ(IRID,20)ITITR */
@@ -1587,11 +1594,8 @@ L260:
 	char *temp_afi = doubleArrayToString("%.0lf       ", afi, 0, 8);
 	temp_b = doubleArrayToString("%.4lf       ", afi, 0, 8);
 
-	{
-		char temp[350] = "";
-		snprintf(temp, sizeof(temp), " OBSERVABLE NUMBER    : %d ITERATION NUMBER : %d REFINEMENT CONSTRAINTS : %s\n INITIAL VALUES :\n    ZERO    LAMBDA      A        B        C      ALPHA     BETA    GAMMA\n      %s\n  %s\n", nr, ifin, icle[indic - 1], temp_afi, temp_b);
-		writeInFile(temp, imp_file);
-	}
+	snprintf(temp, sizeof(temp), " OBSERVABLE NUMBER    : %d ITERATION NUMBER : %d REFINEMENT CONSTRAINTS : %s\n INITIAL VALUES :\n    ZERO    LAMBDA      A        B        C      ALPHA     BETA    GAMMA\n      %s\n  %s\n", nr, ifin, icle[indic - 1], temp_afi, temp_b);
+	writeInFile(temp, imp_file);
 
 	/*writeFormattedInFile(imp_file, " OBSERVABLE NUMBER    : %d ITERATION NUMBER : %d REFINEMENT CONSTRAINTS : %s\n INITIAL VALUES :\n", 3, nr, ifin, icle[indic - 1]);
 
@@ -1926,8 +1930,7 @@ L260:
 		goto L400;
 	}
 	npaf2 = npaf + 2;
-	mcrnl(qq, &ndmax, &theta[1], bb, &npaf, &nr,
-		pds, &ifin);
+	mcrnl(qq, &ndmax, &theta[1], bb, &npaf, &nr, pds, &ifin);
 	j = 0;
 	for (i = 1; i <= 8; ++i) {
 		if (afi[i - 1] == 0.0) {
@@ -2442,7 +2445,7 @@ int peekchar()
 
 int killk(int *pressedk)
 {
-	int pressed = peekchar();
+/*	int pressed = peekchar();
 	if (pressed)
 	{
 		char key = getchar();
@@ -2450,7 +2453,7 @@ int killk(int *pressedk)
 		{
 			*pressedk = 1;
 		}
-	}
+	}*/
 	return 0;
 }
 
@@ -2632,7 +2635,7 @@ void writeTotalTime(FILE *file, const time_t *begin, time_t *end)
 	snprintf(buffer, sizeof(buffer), "\n\n Total CPU time elapsed in seconds : %lf", total_time);
 	fwrite(buffer, strlen(buffer), 1, file);
 	printf("\n\nType any character to continue : \n");
-	getchar();
+	// getchar();
 }
 
 void insertHeader(FILE *file, const char *file_name, const int procs)
@@ -2984,7 +2987,7 @@ void adjustFMFF(const int ndat, const double *qo, const double *cncalc, const in
 
 int main(int argc, char *argv[])
 {
-
+	// ProfilerStart("mon.log");
 	int nsys[6], ihkl[30000], nsol[N_HKL], ll[N_HKL], lll[N_HKL], km[N_HKL];
 	char text[20];
 	double pstartb[6],delta[3],pstart[3], rp2[N_HKL];
@@ -3108,9 +3111,6 @@ C*/
 	if (ngrid == 4)
 	{
 		nblack = 1;
-	}
-	if (ngrid == 4)
-	{
 		ngrid = 3;
 	}
 	FILE *new_dat_file;
@@ -3700,7 +3700,6 @@ C*/
 			celpre[2] = celpre[0];
 			for (int i = 1; i <= 3; ++i) {
 				for (int j = 1; j <= 3; ++j) {
-		/* L105: */
 					al[i + j * 3 - 4] = 0.0;
 				}
 			}
@@ -4106,6 +4105,8 @@ L290:
 		cur += snprintf(cur, end-cur, "===============================================================================\n Rp  Trial number    a      c        V  Nind Icod\n\n");
 		fwrite(temp, strlen(temp), 1, imp_file);
 	}
+
+	//read hex.hkl or rho.hkl
 
 	if (nsys[1] == 2)
 	{
@@ -7014,7 +7015,7 @@ L700:
 	rpsmall = 1.0;
 	printf("Cubic:        Rp     a       V     Nind\n");
 
-		ifile = 1;
+	ifile = 1;
 	rmax = rmaxref;
 	rmin = rmax;
 	ntried = 0.0;
@@ -8195,7 +8196,7 @@ L1402:
 	ntriedb = 0.0;
 	if (ifin == 1) {
 		celpre[0] += spar;
-		printf("  a = %lf", celpre[0]);
+		printf("  a = %lf\n", celpre[0]);
 		if (celpre[0] > pma[0]) {
 			goto L1416;
 		}
@@ -9289,7 +9290,8 @@ L20004:
 		;
 		int nsolmax = nsol[lll[0] - 1];
 		if (nsolmax > 5) {
-			writeFormattedInFile(imp_file, "\nWARNING - WARNING - WARNING :\nSame solution found Nsol = %d times,\nyou should probably reduce the test numbers...\n\n", 1, nsolmax);
+			snprintf(temp, sizeof(temp), "\nWARNING - WARNING - WARNING :\nSame solution found Nsol = %d times,\nyou should probably reduce the test numbers...\n\n",nsolmax);
+			writeInFile(temp, imp_file);
 		}
 		fclose(general_ckm_file);
 	L2020:
@@ -9817,18 +9819,19 @@ L1808:
 			rp[j - 1] = .001f;
 		}
 		double vr = vgc[j - 1] / vgc[ll[0] - 1];
-		char *temp = doubleArrayToString(" %.4lf", cel, 0, 6);
+		char *temp_cel = doubleArrayToString(" %.4lf", cel, 0, 6);
 
-		writeFormattedInFile(imp_file, "%.3lf %.3lf %.2lf %d %d %s\n", 6, rp[j - 1], vgc[j - 1], vr, km[j - 1], nsol[j - 1], temp);
+		snprintf(temp, sizeof(temp), "%.3lf %.3lf %.2lf %d %d %s\n", rp[j - 1], vgc[j - 1], vr, km[j - 1], nsol[j - 1], temp_cel);
+		writeInFile(temp, imp_file);
 
-		free(temp);
+		free(temp_cel);
 
 	}
 L20030:
 	;
 	int nsolmax = nsol[ll[0] - 1];
 	if (nsolmax > 5) {
-		writeFormattedInFile(imp_file, "\nWARNING - WARNING - WARNING :\nSame solution found Nsol = %d times,\nyou should probably reduce the test numbers...\n\n", 1, nsolmax);
+		snprintf(temp, sizeof(temp), "\nWARNING - WARNING - WARNING :\nSame solution found Nsol = %d times,\nyou should probably reduce the test numbers...\n\n", nsolmax);
 	}
 
 /* ... Refine the "best" cell if this was not already done */
@@ -9986,11 +9989,12 @@ L5901:
 		}
 		double vr = vgc[j - 1] / vgc[ll[igc - 1] - 1];
 
-		char *temp = doubleArrayToString(" %.4lf", cel, 0, 6);
+		char *temp_cel = doubleArrayToString(" %.4lf", cel, 0, 6);
 
-		writeFormattedInFile(imp_file, "%.3lf %.3lf %.2lf %d %d %s\n", 6, rp[j - 1], vgc[j - 1], vr, km[j - 1], nsol[j - 1], temp);
+		snprintf(temp, sizeof(temp), "%.3lf %.3lf %.2lf %d %d %s\n", rp[j - 1], vgc[j - 1], vr, km[j - 1], nsol[j - 1], temp_cel);
+		writeInFile(temp, imp_file);
 
-		free(temp);
+		free(temp_cel);
 	L2004:
 		;
 	}
@@ -10025,11 +10029,12 @@ L20040:
 		}
 		double vr = vgc[j - 1] / vgc[ll[igc - 1] - 1];
 
-		char *temp = doubleArrayToString(" %.4lf", cel, 0, 6);
+		char *temp_cel = doubleArrayToString(" %.4lf", cel, 0, 6);
 
-		writeFormattedInFile(imp_file, "%.3lf %.3lf %.2lf %d %d %s\n", 6, rp[j - 1], vgc[j - 1], vr, km[j - 1], nsol[j - 1], temp);
+		snprintf(temp, sizeof(temp), "%.3lf %.3lf %.2lf %d %d %s\n", rp[j - 1], vgc[j - 1], vr, km[j - 1], nsol[j - 1], temp_cel);
+		writeInFile(temp, imp_file);
 
-		free(temp);
+		free(temp_cel);
 	L2005:
 		;
 		}
@@ -10108,9 +10113,11 @@ L2011:
 
 		char *temp_cel = doubleArrayToString(" %.4lf", cel, 0, 6);
 
-		writeFormattedInFile(imp_file, "%.3lf %.3lf %.2lf %d %d %s\n", 6, rp2[j - 1], vgc[j - 1], vr, km3[j - 1], nsol[j - 1], temp_cel);
+		snprintf(temp, sizeof(temp), "%.3lf %.3lf %.2lf %d %d %s\n", rp[j - 1], vgc[j - 1], vr, km[j - 1], nsol[j - 1], temp_cel);
+		writeInFile(temp, imp_file);
 
-		writeFormattedInFile(two_ckm_file, "%d %.2lf %.3lf %.2lf                                       %s\n", 5, km3[j - 1], x, vgc[j - 1], vr, temp_cel);
+		snprintf(temp, sizeof(temp), "%d %.2lf %.3lf %.2lf                                       %s\n", km3[j - 1], x, vgc[j - 1], vr, temp_cel);
+		writeInFile(temp, two_ckm_file);
 
 
 		j = id2[ll2[igc2 + 1 - i - 1] - 1];
@@ -10119,9 +10126,11 @@ L2011:
 		}
 		x = 1.0 / rp2[j - 1] * 5.0;
 
-		writeFormattedInFile(imp_file, "%.3lf %.3lf %.2lf %d %d %s\n", 6, rp2[j - 1], vgc[j - 1], vr, km2[j - 1], nsol[j - 1], temp_cel);
+		snprintf(temp, sizeof(temp), "%.3lf %.3lf %.2lf %d %d %s\n", rp[j - 1], vgc[j - 1], vr, km[j - 1], nsol[j - 1], temp_cel);
+		writeInFile(temp, imp_file);
 
-		writeFormattedInFile(two_ckm_file, "%d %.2lf %.3lf %.2lf                                       %s\n", 5, km2[j - 1], x, vgc[j - 1], vr, temp_cel);
+		snprintf(temp, sizeof(temp), "%d %.2lf %.3lf %.2lf                                       %s\n", km3[j - 1], x, vgc[j - 1], vr, temp_cel);
+		writeInFile(temp, two_ckm_file);
 
 		free(temp_cel);
 
@@ -10201,7 +10210,9 @@ L6000:
 				{
 					char *temp_cel = doubleArrayToString(" %.4lf", cel, 0, 6);
 
-					writeFormattedInFile(imp_file, "%d %.2lf %.3lf   %s    %c  %s\nFound %d time(s) head of the best lists\n", 7, km[j - 1], xfom[j - 1], vgc[j - 1], temp_cel, bl, getMore(ifi, j), imn[0]);
+					snprintf(temp, sizeof(temp), "%d %.2lf %.3lf   %s    %c  %s\nFound %d time(s) head of the best lists\n", km[j - 1], xfom[j - 1], vgc[j - 1], temp_cel, bl, getMore(ifi, j), imn[0]);
+
+					writeInFile(temp, imp_file);
 
 					free(temp_cel);
 				}
@@ -10215,9 +10226,16 @@ L6000:
 
 
 //==============================================================================
+
+	time(&time_end);
+
+	writeTotalTime(imp_file, &time_begin, &time_end);
+
 	free(file_name);
 	fclose(imp_file);
 	// fclose(new_dat_file);
+
+	// ProfilerStop();
 
 	return 0;
 }
