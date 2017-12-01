@@ -1262,10 +1262,7 @@ L1:
 		// TODO AQUI TA A MERDA DO ERRO
 		// printf("%lf\t%lf\t\t%lf\t%lf\t%lf\t\n", b[0], b[1], d, b[1] / d, asin(b[1] / d));
 		qq[i + npaf2 * 200 - 201] = b[0] + casin(b[1] / d);
-		if (isnan(qq[i + npaf2 * 200 - 201]))
-		{
-			// exit(0);
-		}
+
 	}
 	for (ir = 1; ir <= nr; ++ir) {
 		j = 0;
@@ -1592,14 +1589,10 @@ L260:
 	nr = *nhkl;
 
 	char *temp_afi = doubleArrayToString("%.0lf       ", afi, 0, 8);
-	temp_b = doubleArrayToString("%.4lf       ", afi, 0, 8);
+	temp_b = doubleArrayToString("%.4lf       ", b, 0, 8);
 
 	snprintf(temp, sizeof(temp), " OBSERVABLE NUMBER    : %d ITERATION NUMBER : %d REFINEMENT CONSTRAINTS : %s\n INITIAL VALUES :\n    ZERO    LAMBDA      A        B        C      ALPHA     BETA    GAMMA\n      %s\n  %s\n", nr, ifin, icle[indic - 1], temp_afi, temp_b);
 	writeInFile(temp, imp_file);
-
-	/*writeFormattedInFile(imp_file, " OBSERVABLE NUMBER    : %d ITERATION NUMBER : %d REFINEMENT CONSTRAINTS : %s\n INITIAL VALUES :\n", 3, nr, ifin, icle[indic - 1]);
-
-	writeFormattedInFile(imp_file, "    ZERO    LAMBDA      A        B        C      ALPHA     BETA    GAMMA\n      %s\n  %s\n", 2, temp_afi, temp_b);*/
 
 	free(temp_afi);
 	free(temp_b);
@@ -9136,7 +9129,7 @@ L20000:
 				cur_cel += snprintf(cur_cel, end_cel-cur_cel, " %.4lf", cel[k + j * 6 - 7]);
 			}
 
-			snprintf(temp, sizeof(temp), "%d %.2lf %.3lf%.2lf   %s    %c  %s\n", km[j - 1], ff20[j - 1], vgc[j - 1], vr, temp_cel, bl, more);
+			snprintf(temp, sizeof(temp), "%d %.2lf %.3lf %.2lf   %s    %c  %s\n", km[j - 1], ff20[j - 1], vgc[j - 1], vr, temp_cel, bl, more);
 			fwrite(temp, strlen(temp), 1, imp_file);
 		}
 
@@ -9173,7 +9166,7 @@ L20002:
 				cur_cel += snprintf(cur_cel, end_cel-cur_cel, " %.4lf", cel[k + j * 6 - 7]);
 			}
 
-			snprintf(temp, sizeof(temp), "%d %.2lf %.3lf%.2lf   %s    %c  %s\n", km[j - 1], ff20[j - 1], vgc[j - 1], vr, temp_cel, bl, more);
+			snprintf(temp, sizeof(temp), "%d %.2lf %.3lf %.2lf   %s    %c  %s\n", km[j - 1], ff20[j - 1], vgc[j - 1], vr, temp_cel, bl, more);
 			fwrite(temp, strlen(temp), 1, imp_file);
 		}
 	}
