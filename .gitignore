@@ -5,3 +5,10 @@
 McMaille
 McMaille-mine
 tests
+*.gnu
+*.html
+*.log
+profile
+testesDesempenho
+*.out*
+*.o

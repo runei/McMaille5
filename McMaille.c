@@ -94,6 +94,10 @@ typedef struct Parameters {
 	char *params[6];
 } Parameters;
 
+#ifndef __MCMAILLE__
+#define __MCMAILLE__
+
+
 int nhkl0, lhkl, ndat;
 double dmin, slabda2;
 int ihh[30000];
@@ -299,7 +303,7 @@ int calcul2(double *diff, int *ihkl, double *th3, int *ncalc, int *igc)
 	static int l2;
 	static double de[10000];
 	static int jh;
-	static double qc[10000], cr[10000];
+	static double cr[10000];//qc[10000],
 	static int jj, jjj, jhkl[30000]	/* was [3][10000] */;
 	static double perc[10000], demax, theta[10000], sinth, sum_f2;
 
@@ -336,7 +340,7 @@ int calcul2(double *diff, int *ihkl, double *th3, int *ncalc, int *igc)
 /*     This should be optimized for speed : */
 /*     working only on X, not calculating 2-theta... */
 
-	qc[jh - 1] = x;
+//	qc[jh - 1] = x;
 	sinth = slabda2 * x;
 	sinth = sqrt(sinth);
 	theta[jh - 1] = asin(sinth) * pi;
@@ -1571,7 +1575,7 @@ L3:
 int calc_(double *qq)
 {
 	/* System generated locals */
-	int i1;
+//	int i1;
 	double r1, r2, r3, r4;
 
 	/* Local variables */
@@ -1791,7 +1795,7 @@ L110:
 int mcrnl_(double *q, int *id, double *y, double *b, int *m, int *n, double *p, int *ifin)
 {
 	/* System generated locals */
-	int q_dim1, q_offset, i1, i2, i3;
+	int q_dim1, q_offset;
 
 	/* Local variables */
 	static double a[60];
@@ -2088,7 +2092,7 @@ int celref(int *indi, double *bbb, double *afin, int *
 	static double volum;
 	static int npour;
 
-	char *temp_b, *cur, *end;
+	char *temp_b;
 
 	static char temp[512] = "";
 
@@ -2475,7 +2479,7 @@ int celref_(int *indi, double *bbb, double *afin, int *nhkl, double *theta, int 
 	static double volum;
 	static int npour;
 
-	char *temp_b, *cur, *end;
+	char *temp_b;
 
 	static char temp[512] = "";
 
@@ -2797,7 +2801,7 @@ int celref2(int *indi, double *bbb, double *afin, int *nhkl, double *theta, int 
 	static int iffi, ifin, ihkl;
 	static int ndmax;
 	static double volum;
-	static int npour;
+//	static int npour;
 
 
 /* $OMP THREADPRIVATE(/TROC/,/TRUC/) */
@@ -2946,7 +2950,7 @@ L260:
 	for (i = 1; i <= 8; ++i) {
 		bbb[i] = b[i - 1];
 	}
-	npour = 0;
+//	int npour = 0;
 	i1 = nr;
 	for (i = 1; i <= i1; ++i) {
 		y1 = theta[i] * rd;
@@ -3521,7 +3525,7 @@ int espInit(FILE *file)
 	}
 	iseed = iseed / 3;
 	iseed = (iseed * 2) + 1;
-	char temp[15];
+	char temp[25];
 	snprintf(temp, sizeof(temp), " ISEED = %d", iseed);
 	// fwrite(temp, strlen(temp), 1, file);
 	return iseed;
@@ -3629,7 +3633,10 @@ char *programInit(int argc, char *argv[])
 		if (write_file_name)
 		{
 			printf("\nEntry file (no extension) ??");
-			scanf("%s", file_name);
+			if (scanf("%s", file_name) < 0)
+			{
+				printf("\nErro ao ler nome do arquivo.\n");
+			}
 			trimwhitespace(file_name);
 		}
 		else
@@ -3708,20 +3715,24 @@ void readHklFile(const char *name, const int mult_ndat, const int max_nhkl0, int
 	size_t buffsize = 0;
 
 	FILE *hkl_file = openFile(name, ".hkl", "r");
-	getline(&buffer, &buffsize, hkl_file);
-	sscanf(buffer, "%d", &nhkl0);
-	nhkl0 = ndat * mult_ndat;
-	if (nhkl0 > max_nhkl0) nhkl0 = max_nhkl0;
-	for (int i = 1; i <= nhkl0; ++i)
+	if (getline(&buffer, &buffsize, hkl_file))
 	{
-		getline(&buffer, &buffsize, hkl_file);
-		sscanf(buffer, "%d %d %d", &ihh[1 + i * 3 - 4], &ihh[2 + i * 3 - 4], &ihh[3 + i * 3 - 4]);
+		sscanf(buffer, "%d", &nhkl0);
+		nhkl0 = ndat * mult_ndat;
+		if (nhkl0 > max_nhkl0) nhkl0 = max_nhkl0;
+		for (int i = 1; i <= nhkl0; ++i)
+		{
+			if (getline(&buffer, &buffsize, hkl_file))
+			{
+				sscanf(buffer, "%d %d %d", &ihh[1 + i * 3 - 4], &ihh[2 + i * 3 - 4], &ihh[3 + i * 3 - 4]);
+			}
+		}
 	}
 	fclose(hkl_file);
 }
 
 //==============================================================================
-
+/*
 const char *getParametersString(const Parameters params)
 {
 	static char temp[50] = "";
@@ -3734,9 +3745,9 @@ const char *getParametersString(const Parameters params)
 	cur += snprintf(cur, end-cur, "V");
 	return temp;
 }
-
+*/
 //==============================================================================
-
+/*
 void saveMonteCarloSearchString(const Parameters params, const double pmax, const double vmax, const int iverb, const int nrun, const int ntimelim, FILE *imp_file)
 {
 	char temp[300] = "";
@@ -3756,7 +3767,7 @@ void saveMonteCarloSearchString(const Parameters params, const double pmax, cons
 	fwrite(temp, strlen(temp), 1, imp_file);
 	// printf("%s\n", temp);
 }
-
+*/
 //==============================================================================
 
 void printStopString(FILE *imp_file)
@@ -3802,18 +3813,19 @@ void saveIverb(const double rmax, const double ntried, const double v2, const in
 {
 	va_list valist;
 	char temp[40] = "";
-	char *cur = temp, *const end = temp - sizeof(temp);
 
 	va_start(valist, num);
 
-	cur += snprintf(cur, end-cur, "%.3lf %.0lf ", rmax, ntried);
+	snprintf(temp, sizeof(temp), "%.3lf %.0lf ", rmax, ntried);
+	writeInFile(temp, imp_file);
 
 	for (int i = 0; i < num; i++) {
-		cur += snprintf(cur, end-cur, "%.4lf ", va_arg(valist, double));
+		snprintf(temp, sizeof(temp), "%.4lf ", va_arg(valist, double));
+		writeInFile(temp, imp_file);
 	}
 
-	cur += snprintf(cur, end-cur, "%.1lf %d %d\n", v2, ipen, icode);
-	fwrite(temp, strlen(temp), 1, imp_file);
+	snprintf(temp, sizeof(temp), "%.1lf %d %d\n", v2, ipen, icode);
+	writeInFile(temp, imp_file);
 	va_end(valist);
 }
 
@@ -3965,7 +3977,7 @@ int main(int argc, char *argv[])
 	double bpar[6],cel[60000],rp[N_HKL],vgc[N_HKL],d[N_HKL];
 	int km3[100000],ll2[100000],ifi[N_HKL],ib[N_HKL], irefs[N_HKL], im[10],imn[10];
 	double afi[8],bb[8],qo[N_HKL],th3[N_HKL];
-	double pmi[6],pma[6],cncalc[N_HKL],xfom[N_HKL];
+	double pmi[6],cncalc[N_HKL],xfom[N_HKL];
 	double deltct[3],astartt[3];
 	double hw[N_HKL],hw4[N_HKL],bbb[N_HKL],fcal[N_HKL],hh[3];
 	double pos[16000],yobs[16000],ycalc[16000];
@@ -3973,21 +3985,23 @@ int main(int argc, char *argv[])
 	double nha[16000],nhb[16000],jhh[3*N_HKL];
 	double isyst[7],ql[6],km2[N_HKL];
 	double id1[100000],id2[100000];
+	double pma[6] = {0,0,0,0,0,0};
+	int imem = 0;
 
     const int procs = 1;  // 360./3.1415926
 
     int pressedk = 0;
     int nrun = 0;
-    double pndat, ddq, ddt, isee, v3, v2, a, rmax2, llhkl;
+    double pndat, ddq, ddt, isee, v3, v2, a = 0.0, rmax2 = 0.0, llhkl = 0.0;
     double diff2, diff, v1, del, rmin, interest, tmax, ttmax, ncells, iiseed, ntried, ntriedt;
-    double nout, ntriedb, vorth;
-    int ipen, icode, iseed, ncel, ncalc, c3, ibr;
+    double nout, ntriedb, vorth = 0;
+    int ipen, icode = 0, iseed, ncel, ncalc, c3, ibr;
 
-    double am, ap, adelt, vm, vp, vdelt, nglob, rglob, c, b, bdelt, bp, bm, nb, cdelt, cp, cm;
-    double betp, deld, vmon, na, nc, bet, betdelt, betm, ang, alp, gam, vtric;
-    int c2, ip, c4, c1, ip2;
+    double am, ap, adelt, vm, vp, vdelt, nglob, rglob, c = 0.0, b = 0.0, bdelt, bp, bm, nb, cdelt, cp, cm;
+    double betp, deld, vmon = 0.0, na = 0.0, nc = 0.0, bet = 0.0, betm = 0.0, ang = 0.0, alp = 0.0, gam = 0.0, vtric = 0.0;
+    int c2, ip = 0, c4, c1, ip2 = 0;
 
-    char temp[512] = "";
+    char temp[1024] = "";
 
     // const Parameters cubic_params = {"Cubic", 1, {"a"}};
 
@@ -4083,7 +4097,7 @@ C*/
 		nblack = 1;
 		ngrid = 3;
 	}
-	FILE *new_dat_file;
+	FILE *new_dat_file = NULL;
 	if (ngrid == 3)
 	{
 		char temp[100];
@@ -4246,7 +4260,7 @@ C                              or both
 */
 
 	double spar, sang;
-	int timlim, nruns, ntimelim[6];
+	int timlim, nruns, ntimelim[6] = {0,0,0,0,0,0};
 
 	if (ngrid == 3) {
 		spar = 0.02;
@@ -4517,7 +4531,7 @@ C*/
 	int igc = 0;
 	double igt = 0.0;
 	int iref = 0;
-	int igm = 10000;
+//	int igm = 10000;
 	int ihr = 0;
 	int nruns2 = 1;
 	double rpsmall = 1.0;
@@ -4584,15 +4598,12 @@ C*/
 		pstart[0] = pmin;
 	}
 
+	snprintf(temp, sizeof(temp), "\nCubic Monte Carlo search :\n Max a, V %lf %lf\n\n", pmax, vmax);
+	writeInFile(temp, imp_file);
+	if (iverb == 1)
 	{
-		char temp[300] = "";
-		char *cur = temp, *const end = temp - sizeof(temp);
-		cur += snprintf(cur, end-cur, "\nCubic Monte Carlo search :\n Max a, V %lf %lf\n\n", pmax, vmax);
-		if (iverb == 1)
-		{
-			cur += snprintf(cur, end-cur, "  Results in cubic, run, tests : %d %d\n===============================================================================\n Rp  Trial number   a        V    Nind Icod\n\n", nrun, ntimelim[0]);
-		}
-		fwrite(temp, strlen(temp), 1, imp_file);
+		snprintf(temp, sizeof(temp), "  Results in cubic, run, tests : %d %d\n===============================================================================\n Rp  Trial number   a        V    Nind Icod\n\n", nrun, ntimelim[0]);
+		writeInFile(temp, imp_file);
 	}
 	// saveMonteCarloSearchString(cubic_params, pmax, vmax, iverb, nrun, ntimelim[0], imp_file);
 
@@ -5064,16 +5075,16 @@ L290:
 	}
 // saveMonteCarloSearchString(cubic_params, pmax, vmax, iverb, nrun, ntimelim[0], imp_file);
 	if (iverb == 1) {
-		char temp[250] = "";
-		char *cur = temp, *const end = temp - sizeof(temp);
 		if (nsys[1] == 1) {
-			cur += snprintf(cur, end-cur, "  Results in hexagonal, run, tests : %d %d\n", nrun, ntimelim[1]);
+			snprintf(temp, sizeof(temp), "  Results in hexagonal, run, tests : %d %d\n", nrun, ntimelim[1]);
+			writeInFile(temp, imp_file);
 		}
 		else if (nsys[1] == 2) {
-			cur += snprintf(cur, end-cur, "  Results in rhombohedral, run, tests : %d %d\n", nrun, ntimelim[1]);
+			snprintf(temp, sizeof(temp), "  Results in rhombohedral, run, tests : %d %d\n", nrun, ntimelim[1]);
+			writeInFile(temp, imp_file);
 		}
-		cur += snprintf(cur, end-cur, "===============================================================================\n Rp  Trial number    a      c        V  Nind Icod\n\n");
-		fwrite(temp, strlen(temp), 1, imp_file);
+		snprintf(temp, sizeof(temp), "===============================================================================\n Rp  Trial number    a      c        V  Nind Icod\n\n");
+		writeInFile(temp, imp_file);
 	}
 
 	//read hex.hkl or rho.hkl
@@ -5410,7 +5421,7 @@ L290:
 					fm20[igc - 1] = qo[ndat - 1] / (cncalc[igc - 1] *
 						2.0 * ddq);
 					ff20[igc - 1] = pndat / (cncalc[igc - 1] * ddt);
-				}
+				}*/
 		/*      WRITE(20,7000)FM20(IGC) */
 		/*      WRITE(20,7001)FF20(IGC),DDT,NCALC */
 		/* 	WRITE(20,*) */
@@ -5599,15 +5610,12 @@ L300:
 		ntimelim[2] = vmax * 5.0;
 	}
 
+	snprintf(temp, sizeof(temp), "\nTetragonal Monte Carlo search :\n Max(a, c), V %lf %lf %lf\n\n", pma[0], pma[2], vmax);
+	writeInFile(temp, imp_file);
+	if (iverb == 1)
 	{
-		char temp[300] = "";
-		char *cur = temp, *const end = temp - sizeof(temp);
-		cur += snprintf(cur, end-cur, "\nTetragonal Monte Carlo search :\n Max(a, c), V %lf %lf %lf\n\n", pma[0], pma[2], vmax);
-		if (iverb == 1)
-		{
-			cur += snprintf(cur, end-cur, "  Results in tetragonal, run, tests : %d %d\n===============================================================================\n Rp  Trial number    a      c        V  Nind Icod\n\n", nrun, ntimelim[2]);
-		}
-		fwrite(temp, strlen(temp), 1, imp_file);
+		snprintf(temp, sizeof(temp), "  Results in tetragonal, run, tests : %d %d\n===============================================================================\n Rp  Trial number    a      c        V  Nind Icod\n\n", nrun, ntimelim[2]);
+		writeInFile(temp, imp_file);
 	}
 
 	/*C
@@ -6102,15 +6110,12 @@ L400:
 		}
 	}
 
+	snprintf(temp, sizeof(temp), "\nOrthorhombic Monte Carlo search :\n Max(a,b,c), V %lf %lf %lf %lf\n\n", pma[0], pma[1], pma[2], vmax);
+	writeInFile(temp, imp_file);
+	if (iverb == 1)
 	{
-		char temp[300] = "";
-		char *cur = temp, *const end = temp - sizeof(temp);
-		cur += snprintf(cur, end-cur, "\nOrthorhombic Monte Carlo search :\n Max(a,b,c), V %lf %lf %lf %lf\n\n", pma[0], pma[1], pma[2], vmax);
-		if (iverb == 1)
-		{
-			cur += snprintf(cur, end-cur, "  Results in orthorhombic, run, tests : %d %d\n===============================================================================\n Rp  Trial number    a   b   c       V  Nind icod\n\n", nrun, ntimelim[3]);
-		}
-		fwrite(temp, strlen(temp), 1, imp_file);
+		snprintf(temp, sizeof(temp), "  Results in orthorhombic, run, tests : %d %d\n===============================================================================\n Rp  Trial number    a   b   c       V  Nind icod\n\n", nrun, ntimelim[3]);
+		writeInFile(temp, imp_file);
 	}
 
 	/*C
@@ -6489,7 +6494,7 @@ C*/
 					/*const char *temp2 = saveInterestingResultString(imp_file);
 					//1115  FORMAT(14X,F5.3,F8.4,F9.1,I3)
 					printIsee(rmax, v2, ipen, 3, a, b, c);
-					printf("%s\n", temp2);
+					printf("%s\n", temp2);*/
 
 		/* ... Refine that cell */
 
@@ -6701,15 +6706,12 @@ L500:
 		}
 	}
 
+	snprintf(temp, sizeof(temp), "\nMonoclinic Monte Carlo search :\n Max(a,b,c), V %lf %lf %lf %lf\n\n", pma[0], pma[1], pma[2], vmax);
+	writeInFile(temp, imp_file);
+	if (iverb == 1)
 	{
-		char temp[300] = "";
-		char *cur = temp, *const end = temp - sizeof(temp);
-		cur += snprintf(cur, end-cur, "\nMonoclinic Monte Carlo search :\n Max(a,b,c), V %lf %lf %lf %lf\n\n", pma[0], pma[1], pma[2], vmax);
-		if (iverb == 1)
-		{
-			cur += snprintf(cur, end-cur, "  Results in monoclinic, run, tests : %d %d\n===============================================================================\n Rp  Trial number    a   b   c    bet   V  Nind Icod\n\n", nrun, ntimelim[4]);
-		}
-		fwrite(temp, strlen(temp), 1, imp_file);
+		snprintf(temp, sizeof(temp), "  Results in monoclinic, run, tests : %d %d\n===============================================================================\n Rp  Trial number    a   b   c    bet   V  Nind Icod\n\n", nrun, ntimelim[4]);
+		writeInFile(temp, imp_file);
 	}
 
 	/*C
@@ -7176,7 +7178,7 @@ L514:
 			if (cel[i__ * 6 - 5] > bp || cel[i__ * 6 - 5] < bm) {
 				goto L518;
 			}
-			betdelt = cel[igc * 6 - 2] / 500.0;
+			double betdelt = cel[igc * 6 - 2] / 500.0;
 			betp = cel[igc * 6 - 2] + betdelt;
 			betm = cel[igc * 6 - 2] - betdelt;
 			if (cel[i__ * 6 - 2] > betp || cel[i__ * 6 - 2] <
@@ -7327,14 +7329,13 @@ L600:
 		}
 	}
 
-	char *cur = temp, *const end = temp - sizeof(temp);
-	cur += snprintf(cur, end-cur, "\nTriclinic Monte Carlo search :\n Max(a,b,c), V %lf %lf %lf %lf\n\n", pma[0], pma[1], pma[2], vmax);
+	snprintf(temp, sizeof(temp), "\nTriclinic Monte Carlo search :\n Max(a,b,c), V %lf %lf %lf %lf\n\n", pma[0], pma[1], pma[2], vmax);
+	writeInFile(temp, imp_file);
 	if (iverb == 1)
 	{
-		cur += snprintf(cur, end-cur, "  Results in triclinic, run, tests : %d %d\n===============================================================================\n Rp Trial number  a  b  c  alp bet gam  V  Nind Icod\n\n", nrun, ntimelim[5]);
+		snprintf(temp, sizeof(temp), "  Results in triclinic, run, tests : %d %d\n===============================================================================\n Rp Trial number  a  b  c  alp bet gam  V  Nind Icod\n\n", nrun, ntimelim[5]);
+		writeInFile(temp, imp_file);
 	}
-	fwrite(temp, strlen(temp), 1, imp_file);
-
 /*C
 C     READ hkl Miller indices in tri.hkl
 C*/
@@ -8205,7 +8206,7 @@ L1114:
 		printSaveInterstResString(imp_file, rmax, v2, ipen, 1, a);
 		/*const char *temp2 = saveInterestingResultString(imp_file);
 		printIsee(rmax, v2, ipen, 1, a);
-		printf("%s\n", temp2);
+		printf("%s\n", temp2);*/
 	/* ... Refine that cell */
 
 		indic = 1;
@@ -9218,6 +9219,7 @@ L1402:
 L1403:
 	del = deltab * (1.0 - ntriedb / cy);
 	x = randi(&iseed);
+	i = 1;
 	if (x >= 0.0 && x < .33333f) {
 		i = 1;
 	}
@@ -9645,6 +9647,7 @@ L1503:
 	del = deltab * (1.0 - ntriedb / cy);
 	deld = deltad * (1.0 - ntriedb / cy);
 	x = randi(&iseed);
+	i = 1;
 	if (x >= 0.0 && x < .25f) {
 		i = 1;
 	}
@@ -9872,7 +9875,7 @@ L1514:
 			if (cel[i * 6 - 5] > bp || cel[i * 6 - 5] < bm) {
 				goto L1518;
 			}
-			betdelt = cel[igc * 6 - 2] / 500.0;
+			double betdelt = cel[igc * 6 - 2] / 500.0;
 			betp = cel[igc * 6 - 2] + betdelt;
 			betm = cel[igc * 6 - 2] - betdelt;
 			if (cel[i * 6 - 2] > betp || cel[i * 6 - 2] < betm) {
@@ -9968,7 +9971,7 @@ L1598:
 		goto L5000;
 	}
 
-L1600:
+//L1600:
 	if (nsys[5] == 0) {
 		goto L5000;
 	}
@@ -9980,7 +9983,6 @@ L5000:
 	if (igc == 0) {
 		goto L6000;
 	}
-	int imem = 0;
 
 /*   Prepare sorted output for CHEKCELL */
 
@@ -10060,19 +10062,12 @@ L5000:
 
 		char bl = getBL(ib, ifi, j);
 		char more[11] = "";
-		snprintf(more, sizeof(more), "%s", getMore(ifi, j));
+		strcpy(more, getMore(ifi, j));
+		// snprintf(more, sizeof(more), "%s", getMore(ifi, j));
 		double vr = vgc[j - 1] / vgc[ll[igc - 1] - 1];
 
-		char temp[256] = "", temp_cel[100] = "", temp_ql[100] = "";
-		char *cur = temp, *const end = temp - sizeof(temp);
-		char *cur_cel = temp_cel, *const end_cel = temp_cel - sizeof(temp_cel);
-		char *cur_ql = temp_ql, *const end_ql = temp_ql - sizeof(temp_ql);
-
-		for (int k = 1; k <= 6; ++k)
-		{
-			cur_cel += snprintf(cur_cel, end_cel-cur_cel, " %.4lf", cel[k + j * 6 - 7]);
-			cur_ql += snprintf(cur_ql, end_ql-cur_ql, " %.4lf", ql[k - 1]);
-		}
+		char temp_cel[512] = "", temp_ql[512] = "";
+//		char *cur = temp, *const end = temp - sizeof(temp);
 
 		struct tm *tm_info = getDate();
 		char *date;
@@ -10081,7 +10076,7 @@ L5000:
 		date = (char *)malloc(size * sizeof(char));
 		strftime(date, size, "%d %b %Y %H %M %S", tm_info);
 
-		snprintf(temp, sizeof(temp), "%d %.2lf %.3lf%.2lf                                       %s\n", km[j - 1], xfom[j - 1], vgc[j - 1], vr, temp_cel);
+		snprintf(temp, sizeof(temp), "%d %.2lf %.3lf%.2lf                                       ", km[j - 1], xfom[j - 1], vgc[j - 1], vr);
 		fwrite(temp, strlen(temp), 1, ckm_file);
 
 		snprintf(temp, sizeof(temp), "%d %.2lf %.3lf %.2lf   %s    %c  %s\n\n", km[j - 1], xfom[j - 1], vgc[j - 1], vr, temp_cel, bl,  more);
@@ -10092,9 +10087,23 @@ L5000:
 		snprintf(temp, sizeof(temp), "%d %.2lf %.3lf%.2lf %c %s %s %d %s %s\n\n", km[j - 1], xfom[j - 1], vgc[j - 1], vr, bl, indxprog, date, ipedig, temp_cel, temp_ql);
 		fwrite(temp, strlen(temp), 1, mcm_file);
 
-			//%d %.2lf %.3lf%.2lf %c %s %s %d %s %s\n\n", , , km[j - 1], xfom[j - 1], vgc[j - 1], vr, bl, indxprog, date, ipedig, temp_cel, temp_ql);
 
-		free(date);break;
+		for (int k = 1; k <= 6; ++k)
+		{
+			snprintf(temp_cel, sizeof(temp_cel), " %.4lf", cel[k + j * 6 - 7]);
+			snprintf(temp_ql, sizeof(temp_ql), " %.4lf", ql[k - 1]);
+
+			fwrite(temp_cel, strlen(temp_cel), 1, ckm_file);
+			fwrite(temp_cel, strlen(temp_cel), 1, imp_file);
+			fwrite(temp_ql, strlen(temp_ql), 1, mcm_file);
+		}
+
+		writeInFile("\n", ckm_file);
+		writeInFile("\n\n", imp_file);
+
+		free(date);
+
+		break;
 
 //		fwrite(temp, strlen(temp), 1, imp_file);
 	}
@@ -10111,28 +10120,29 @@ L20000:
 			goto L20002;
 		}
 		int j = ll[igc + 1 - i - 1];
-		int ipedig = j;
+//		int ipedig = j;
 		for (int k = 1; k <= 6; ++k) {
 			celpre[k - 1] = cel[k + j * 6 - 7];
 		}
 		dcell(celpre, al, &v1);
 		char bl = getBL(ib, ifi, j);
-		char more[11];
+		char more[30];
 		snprintf(more, sizeof(more), "%s", getMore(ifi, j));
 		double vr = vgc[j - 1] / vgc[ll[igc - 1] - 1];
 
+
+		snprintf(temp, sizeof(temp), "%d %.2lf %.3lf %.2lf   ", km[j - 1], ff20[j - 1], vgc[j - 1], vr);
+		fwrite(temp, strlen(temp), 1, imp_file);
+
+		for (int k = 1; k <= 6; ++k)
 		{
-			char temp[100] = "", temp_cel[60] = "";
-			char *cur_cel = temp_cel, *const end_cel = temp_cel - sizeof(temp_cel);
-
-			for (int k = 1; k <= 6; ++k)
-			{
-				cur_cel += snprintf(cur_cel, end_cel-cur_cel, " %.4lf", cel[k + j * 6 - 7]);
-			}
-
-			snprintf(temp, sizeof(temp), "%d %.2lf %.3lf %.2lf   %s    %c  %s\n", km[j - 1], ff20[j - 1], vgc[j - 1], vr, temp_cel, bl, more);
+			snprintf(temp, sizeof(temp), " %.4lf", cel[k + j * 6 - 7]);
 			fwrite(temp, strlen(temp), 1, imp_file);
 		}
+
+		snprintf(temp, sizeof(temp), "    %c  %s\n", bl, more);
+		fwrite(temp, strlen(temp), 1, imp_file);
+
 
 	}
 L20002:
@@ -10148,28 +10158,28 @@ L20002:
 			goto L20004;
 		}
 		int j = ll[igc + 1 - i - 1];
-		int ipedig = j;
+//		int ipedig = j;
 		for (int k = 1; k <= 6; ++k) {
 			celpre[k - 1] = cel[k + j * 6 - 7];
 		}
 		dcell(celpre, al, &v1);
 		char bl = getBL(ib, ifi, j);
-		char more[11] = "";
+		char more[30] = "";
 		snprintf(more, sizeof(more), "%s", getMore(ifi, j));
 		double vr = vgc[j - 1] / vgc[ll[igc - 1] - 1];
 
+
+		snprintf(temp, sizeof(temp), "%d %.2lf %.3lf %.2lf   ", km[j - 1], ff20[j - 1], vgc[j - 1], vr);
+		fwrite(temp, strlen(temp), 1, imp_file);
+
+		for (int k = 1; k <= 6; ++k)
 		{
-			char temp[100] = "", temp_cel[60] = "";
-			char *cur_cel = temp_cel, *const end_cel = temp_cel - sizeof(temp_cel);
-
-			for (int k = 1; k <= 6; ++k)
-			{
-				cur_cel += snprintf(cur_cel, end_cel-cur_cel, " %.4lf", cel[k + j * 6 - 7]);
-			}
-
-			snprintf(temp, sizeof(temp), "%d %.2lf %.3lf %.2lf   %s    %c  %s\n", km[j - 1], ff20[j - 1], vgc[j - 1], vr, temp_cel, bl, more);
+			snprintf(temp, sizeof(temp), " %.4lf", cel[k + j * 6 - 7]);
 			fwrite(temp, strlen(temp), 1, imp_file);
 		}
+
+		snprintf(temp, sizeof(temp), "    %c  %s\n", bl, more);
+		fwrite(temp, strlen(temp), 1, imp_file);
 	}
 L20004:
 
@@ -10215,7 +10225,7 @@ L20004:
 		if (isyst[jifi - 1] == 0) {
 			goto L2020;
 		}
-		FILE *general_ckm_file;
+		FILE *general_ckm_file = NULL;
 		switch (jifi) {
 			case 1:
 				writeInFile("\n   Cubic cells\n\n", imp_file);
@@ -10263,20 +10273,21 @@ L20004:
 			}
 			x = 1.0 / rp[j - 1] * 5.0;
 			double vr = vgc[j - 1] / vgc[lll[0] - 1];
-			char temp[80], temp_cel[60];
-			char *cur = temp_cel, *const end = temp_cel - sizeof(temp_cel);
+			char temp[80];
 
-			for (int k = 1; k <= 6; ++k) {
-				cur += snprintf(cur, end-cur, " %.4lf", cel[k + j * 6 - 7]);
-			}
-
-			snprintf(temp, sizeof(temp), "%.3lf %.3lf %.2lf %d %d%s\n", rp[j - 1], vgc[j - 1], vr, km[j - 1], nsol[j - 1], temp_cel);
-
+			snprintf(temp, sizeof(temp), "%.3lf %.3lf %.2lf %d %d", rp[j - 1], vgc[j - 1], vr, km[j - 1], nsol[j - 1]);
 			writeInFile(temp, imp_file);
 
-			snprintf(temp, sizeof(temp), "%d %.2lf %.3lf %.2lf                                       %s\n", km[j - 1], x, vgc[j - 1], vr, temp_cel);
-
+			snprintf(temp, sizeof(temp), "%d %.2lf %.3lf %.2lf                                       ", km[j - 1], x, vgc[j - 1], vr);
 			writeInFile(temp, general_ckm_file);
+
+			for (int k = 1; k <= 6; ++k) {
+				snprintf(temp, sizeof(temp), " %.4lf", cel[k + j * 6 - 7]);
+				writeInFile(temp, imp_file);
+				writeInFile(temp, general_ckm_file);
+			}
+			writeInFile("\n", imp_file);
+			writeInFile("\n", general_ckm_file);
 	L2006:
 			;
 		}
@@ -10308,7 +10319,7 @@ L20004:
 	}
 
 
-L50:
+//L50:
 
 /*      IF(IREF.EQ.1)GO TO 5900 */
 	writeInFile("\n    \"Best\" cell with largest McM20 :\n    --------------------------------\n\n", imp_file);
@@ -10599,7 +10610,7 @@ L1808:
 		ycalc[k - 1] = 0.0;
 	/*  SUM on all hkl */
 		int kpos = 0;
-		double omegt = 0.0;
+//		double omegt = 0.0;
 		for (int j = 1; j <= nhkl; ++j) {
 			double deltap = pos[k - 1] - theta[j - 1];
 			if (fabs(deltap) > hw4[j - 1]) {
@@ -10655,7 +10666,7 @@ L1808:
 		for (int k = 1; k <= n2; ++k) {
 			ycalc[k - 1] = 0.0;
 	/*  SUM on all hkl */
-			double omegt = 0.0;
+//			double omegt = 0.0;
 			for (int j = nha[k - 1]; j <= nhb[k - 1]; ++j) {
 				double deltap = pos[k - 1] - theta[j - 1];
 				if (fabs(deltap) > hw4[j - 1]) {
@@ -10704,7 +10715,7 @@ L1808:
 			goto L1824;
 		}
 	/*  SUM on all hkl */
-		double omegt = 0.0;
+//		double omegt = 0.0;
 		for (int j = nha[k - 1]; j <= nhb[k - 1]; ++j) {
 			double deltap = pos[k - 1] - theta[j - 1];
 			if (fabs(deltap) > hw4[j - 1]) {
@@ -10852,7 +10863,7 @@ L20030:
 	case 7:  readHklFile("rho", 12, 600, ihh);
 	}
 
-L1750:
+//L1750:
 
 	writeInFile("\n    \"Best\" cell with smallest volume :\n    ---------------------------------\n\n", imp_file);
 
@@ -11098,7 +11109,7 @@ L2011:
 		if (i > 1000) {
 			goto L2012;
 		}
-		double jj = ll2[igc2 + 1 - i - 1];
+//		double jj = ll2[igc2 + 1 - i - 1];
 		j = id1[ll2[igc2 + 1 - i - 1] - 1];
 		if (rp2[j - 1] < .001f) {
 			rp2[j - 1] = .001f;
@@ -11233,3 +11244,5 @@ L6000:
 
 	return 0;
 }
+
+#endif
