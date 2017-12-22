@@ -84,7 +84,7 @@
 #include <gperftools/profiler.h>
 
 #define VERSION "4.00"
-#define FILENAME_SIZE 20
+#define FILENAME_SIZE 50
 #define FILE_WITH_EXTENSION_SIZE FILENAME_SIZE + 4
 #define N_HKL 10000
 
