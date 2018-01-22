@@ -1673,17 +1673,18 @@ int calc_(double *qq)
 
 //==============================================================================
 
-int mcrnl(double *q, int *id, double *y, double *b, int *
-	m, int *n, double *p, int *ifin)
+int mcrnl(double *q, const int id, double *y, double *b, int *m, int *n, double *p, const int ifin)
 {
 	/* System generated locals */
-	int q_dim1, q_offset, i__1, i__2, i__3;
+	int q_offset, i__1, i__2, i__3;
 
 	/* Local variables */
 	static double a[60];
 	static int i__, j, l;
 	static double r__;
 	static int m1, m2, il, mm, iq, no, ier, imm;
+
+	static int new_ifin;
 
 /* .....------------------------------------------ */
 
@@ -1694,10 +1695,11 @@ int mcrnl(double *q, int *id, double *y, double *b, int *
 /* ..... N = NBRE DE DONNEES */
 /* ..... ID = DIMENSION DU TABLEAU Q(ID,M+1) */
 /* ..... A((M*(M-1)/2 + M) = ZONE DE TRAVAIL */
-
+// printf("%d\n", ifin);//exit(0);
 	/* Parameter adjustments */
-	q_dim1 = *id;
-	q_offset = 1 + q_dim1;
+
+	new_ifin = ifin;
+	q_offset = 1 + id;
 	q -= q_offset;
 	--y;
 	--b;
@@ -1708,7 +1710,7 @@ int mcrnl(double *q, int *id, double *y, double *b, int *
 	m1 = *m + 1;
 	m2 = *m + 2;
 L10:
-	--(*ifin);
+	--new_ifin;
 
 /* -----CALCUL DES DERIVEES PARTIELLES ET DES Y */
 	calc();
@@ -1716,15 +1718,16 @@ L10:
 /* -----LES Y CALCULES SONT DANS LA COLONNE M+2 */
 	i__1 = *m;
 	for (j = 1; j <= i__1; ++j) {
-	r__ = 0.0;
-	i__2 = *n;
-	for (i__ = 1; i__ <= i__2; ++i__) {
-/* L20: */
-		r__ += (y[i__] - q[i__ + m2 * q_dim1]) * q[i__ + j * q_dim1] * p[
-			i__];
-	}
-/* L30: */
-	q[j + m1 * q_dim1] = r__;
+		r__ = 0.0;
+		i__2 = *n;
+		for (i__ = 1; i__ <= i__2; ++i__) {
+			/*printf("y = %lf\n", y[i__]);
+			printf("qcl1 = %lf\n", q[i__ + m2 * id]);
+			printf("q2 = %lf\n", q[i__ + j * id]);
+			printf("p = %lf\n", p[i__]);*/
+			r__ += (y[i__] - q[i__ + m2 * id]) * q[i__ + j * id] * p[i__];
+		}
+		q[j + m1 * id] = r__;
 	}
 
 /* -----CONSTRUCTION DE LA MATRICE SYMETRIQUE A=Q*QT */
@@ -1738,7 +1741,7 @@ L10:
 		i__3 = *n;
 		for (i__ = 1; i__ <= i__3; ++i__) {
 /* L40: */
-		r__ += q[i__ + iq * q_dim1] * q[i__ + il * q_dim1] * p[i__];
+		r__ += q[i__ + iq * id] * q[i__ + il * id] * p[i__];
 		}
 /* L50: */
 		a[no - 1] = r__;
@@ -1747,35 +1750,35 @@ L10:
 
 /* -----INVERSION DE LA MATRICE A */
 	matinv(a, m, &ier);
-	if (*ifin <= 0) {
-	goto L110;
+	if (new_ifin <= 0) {
+		goto L110;
 	} else {
-	goto L60;
+		goto L60;
 	}
 
 /* -----CALCUL DES NOUVEAUX PARAMETRES */
 L60:
 	i__2 = *m;
 	for (i__ = 1; i__ <= i__2; ++i__) {
-	r__ = 0.0;
-	imm = (i__ - 1) * (mm - i__) / 2;
-	i__1 = *m;
-	for (j = 1; j <= i__1; ++j) {
-		if (j - i__ >= 0) {
-		goto L70;
-		} else {
-		goto L80;
+		r__ = 0.0;
+		imm = (i__ - 1) * (mm - i__) / 2;
+		i__1 = *m;
+		for (j = 1; j <= i__1; ++j) {
+			if (j - i__ >= 0) {
+				goto L70;
+			} else {
+				goto L80;
+			}
+	L70:
+			l = imm + j;
+			goto L90;
+	L80:
+			l = (j - 1) * (mm - j) / 2 + i__;
+	L90:
+			r__ += a[l - 1] * q[j + m1 * id];
 		}
-L70:
-		l = imm + j;
-		goto L90;
-L80:
-		l = (j - 1) * (mm - j) / 2 + i__;
-L90:
-		r__ += a[l - 1] * q[j + m1 * q_dim1];
-	}
-/* L100: */
-	b[i__] += r__;
+	/* L100: */
+		b[i__] += r__;
 	}
 	goto L10;
 
@@ -1785,107 +1788,10 @@ L110:
 	for (i__ = 1; i__ <= i__2; ++i__) {
 	l = (i__ - 1) * (mm - i__) / 2 + i__;
 /* L120: */
-	q[i__ + i__ * q_dim1] = a[l - 1];
+	q[i__ + i__ * id] = a[l - 1];
 	}
 	return 0;
 } /* mcrnl_ */
-
-//==============================================================================
-
-int mcrnl_(double *q, int *id, double *y, double *b, int *m, int *n, double *p, int *ifin)
-{
-	/* System generated locals */
-	int q_dim1, q_offset;
-
-	/* Local variables */
-	static double a[60];
-	static int i, j, l;
-	static double r;
-	static int m1, m2, il, mm, iq, no, ier, imm;
-
-/* .....------------------------------------------ */
-
-/* .....PROGRAMME DE MOINDRES CARRES NON LINEAIRE */
-/* .....UTILISANT L'INVERSION DE MATRICE TABLEAU A UNE DIMENSION */
-/* .....LIMITE A 15 PARAMETRES */
-/* ..... M = NBRE DE PARAMETRES */
-/* ..... N = NBRE DE DONNEES */
-/* ..... ID = DIMENSION DU TABLEAU Q(ID,M+1) */
-/* ..... A((M*(M-1)/2 + M) = ZONE DE TRAVAIL */
-
-	/* Parameter adjustments */
-	q_dim1 = *id;
-	q_offset = 1 + q_dim1;
-	q -= q_offset;
-	--y;
-	--b;
-	--p;
-
-	/* Function Body */
-	mm = *m << 1;
-	m1 = *m + 1;
-	m2 = *m + 2;
-L10:
-	--(*ifin);
-
-/* -----CALCUL DES DERIVEES PARTIELLES ET DES Y */
-	calc_(q);
-
-/* -----LES Y CALCULES SONT DANS LA COLONNE M+2 */
-	for (j = 1; j <= *m; ++j) {
-		r = 0.0;
-		for (i = 1; i <= *n; ++i) {
-			r += (y[i] - q[i + m2 * q_dim1]) * q[i + j * q_dim1] * p[i];
-		}
-		q[j + m1 * q_dim1] = r;
-	}
-
-/* -----CONSTRUCTION DE LA MATRICE SYMETRIQUE A=Q*QT */
-	no = 0;
-	for (iq = 1; iq <= *m; ++iq) {
-		for (il = iq; il <= *m; ++il) {
-			++no;
-			r = 0.0;
-			for (i = 1; i <= *n; ++i) {
-				r += q[i + iq * q_dim1] * q[i + il * q_dim1] * p[i];
-			}
-			a[no - 1] = r;
-		}
-	}
-
-/* -----INVERSION DE LA MATRICE A */
-	matinv(a, m, &ier);
-	if (*ifin <= 0) {
-		goto L110;
-	} else {
-		goto L60;
-	}
-
-/* -----CALCUL DES NOUVEAUX PARAMETRES */
-L60:
-	for (i = 1; i <= *m; ++i) {
-		r = 0.0;
-		imm = (i - 1) * (mm - i) / 2;
-		for (j = 1; j <= *m; ++j) {
-			if (j - i >= 0) {
-				l = imm + j;
-			} else {
-				l = (j - 1) * (mm - j) / 2 + i;
-			}
-			r += a[l - 1] * q[j + m1 * q_dim1];
-		}
-		b[i] += r;
-	}
-	goto L10;
-
-/* -----REMISE DES ELEMENTS DIAGONAUX DANS Q(I,I),APRES LE DERNIER CYCLE */
-L110:
-	for (i = 1; i <= *m; ++i) {
-		l = (i - 1) * (mm - i) / 2 + i;
-		q[i + i * q_dim1] = a[l - 1];
-	}
-	return 0;
-}
 
 //==============================================================================
 
@@ -2087,8 +1993,8 @@ int celref(int *indi, double *bbb, double *afin, int *
 	static int ik, jj;
 	static double rd, qc, qo, rr, dum[3];
 	static char icle[3][5] = { "A=B=C", "A=B  ", "NO   "};
-	static int iffi, ifin, ihkl;
-	static int nrep, ndmax;
+	static int iffi, ihkl;
+	static int nrep;
 	static double volum;
 	static int npour;
 
@@ -2107,7 +2013,7 @@ int celref(int *indi, double *bbb, double *afin, int *
 	/* Function Body */
 
 /* ----- A MODIFIER EN CAS DE CHANGEMENT DES DIMENSIONS */
-	ndmax = 200;
+	const static int ndmax = 200;
 /* ----- */
 	rd = 180.0 / acos(-1.0);
 /* ..... */
@@ -2122,7 +2028,9 @@ int celref(int *indi, double *bbb, double *afin, int *
 	indic = *indi;
 	*ddt = 0.0;
 	*ddq = 0.0;
-	ifin = 10;
+
+	const static int ifin = 10;
+
 	if (indic == 0 || indic > 3) {
 	indic = 3;
 	}
@@ -2240,8 +2148,8 @@ L290:
 	}
 	npaf2 = npaf + 2;
 /*   ......AFFINEMENT   (PDS() : POIDS (NON-UTILISE POUR CETTE VERSION)) */
-	mcrnl(qq, &ndmax, &theta[1], bb, &npaf, &nr,
-		pds, &ifin);
+//	printf("%d\n", ifin);
+	mcrnl(qq, ndmax, &theta[1], bb, &npaf, &nr,	pds, ifin);
 /*   ...... */
 
 /* .....NOUVELLES VALEURS DES PARAMETRES */
@@ -2401,7 +2309,7 @@ L370:
 /*      GOTO 240 */
 L380:
 	;
-	char temp_180[41];
+	char temp_180[50];
 	snprintf(temp_180, sizeof(temp_180), " ##### DATA NUMBER GREATER THAN %d #####\n", ndmax);
 	fwrite(temp_180, strlen(temp_180), 1, imp_file);
 	goto L400;
@@ -2412,374 +2320,6 @@ L390:
 L400:
 	return 0;
 } /* celref_ */
-
-//==============================================================================
-
-int celref_(int *indi, double *bbb, double *afin, int *nhkl, double *theta, int *jhkl, double *ddt, double *ddq, FILE *imp_file)
-{
-
-
-/* .....****************************************************************** */
-/* ..... */
-/* .....     PROGRAMME *** CELREF ***                         7/10/78 */
-/* ..... */
-/* .....     AUTEURS : JEAN LAUGIER & ALAIN FILHOL    20/10/78 */
-/* ..... */
-/* .....     AFFINEMENT LES PARAMETRES DE MAILLE */
-/* .....                DU DECALAGE DE ZERO */
-/* .....                DE LA LONGUEUR D'ONDE */
-/* .....     A PARTIR DES ANGLES THETA DE BRAGG OBSERVES */
-/* ..... */
-/* .....     METHODE : MOINDRES CARRES NON LINEAIRES */
-/* ..... */
-/* .....     DONNEES : */
-/* .....        1- CARTE COMMENTAIRE          FORMAT(16A5) */
-/* .....        2- INDIC,IFIN                 FORMAT(2I) */
-/* .....           INDIC  : CONTRAINTE D'AFFINEMENT */
-/* .....                    0/1/2 POUR (A,B,C INDEPENDANTS)/(A=B=C)/(A=B) */
-/* .....           IFIN   : NOMBRE MAXIMUM DE CYCLES D'AFFINEMENT */
-/* ..... */
-/* .....        3- B(2),B(1)                       FORMAT(2F) */
-/* .....           B(2)   : LONGUEUR D'ONDE */
-/* .....           B(1)   : DECALAGE SYSTEMATIQUE DE ZERO */
-/* ..... */
-/* .....        4- AFI(2),AFI(1)                   FORMAT(2F) */
-/* .....           AFI(2) : 0/1 AFFINER (NON)/(OUI) LA LONGUEUR D'ONDE */
-/* .....           AFI(1) :  "    "         "       LE DECALAGE DE ZERO */
-/* ..... */
-/* .....        5- B(3 A 8)                        FORMAT(6F) */
-/* .....           B(3)   : PARAMETRE A */
-/* .....           B(4)   : PARAMETRE B */
-/* .....           B(5)   : PARAMETRE C */
-/* .....           B(6)   : ANGLE ALPHA */
-/* .....           B(7)   : ANGLE BETA */
-/* .....           B(8)   : ANGLE GAMMA */
-/* ..... */
-/* .....        6- AFI(3 A 8)                      FORMAT(6F) */
-/* .....           AFI(3 A 8) : 0/1 POUR AFFINER (NON)/(OUI) */
-/* .....                        LES PARAMETRES DE MAILLE */
-/* ..... */
-/* .....        7 A 7+NR- H,K,L,THETA              FORMAT(3I,F) */
-/* .....          ("NR" NOMBRE D'OBSERVATIONS) */
-/* .....          (DERNIERE CARTE : H,K,L=0 0 0) */
-/* .....           H,K,L  : INDICES DE MILLER */
-/* .....           THETA  : ANGLE DE BRAGG OBSERVE */
-/* ..... */
-/* .....***************************************************************** */
-
-	static double sig[8] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-
-	static int i, j;
-	static double r, y0, y1, y2, y3, y4;
-	static int ik, jj;
-	static double rd, qc, qo, rr, dum[3];
-	static char icle[3][5] = { "A=B=C", "A=B  ", "NO   "};
-	static int iffi, ifin, ihkl;
-	static int nrep, ndmax;
-	static double volum;
-	static int npour;
-
-	char *temp_b;
-
-	static char temp[512] = "";
-
-/* $OMP THREADPRIVATE(/TROC/,/TRUC/) */
-/*      DATA IWR/20/,ICLE/'A=B=C','A=B  ','NO   '/ */
-
-	iwr = 20;
-
-	/* Parameter adjustments */
-	jhkl -= 4;
-	--theta;
-	--afin;
-	--bbb;
-
-	/* Function Body */
-
-/* ----- A MODIFIER EN CAS DE CHANGEMENT DES DIMENSIONS */
-	ndmax = 200;
-/* ----- */
-	rd = div_number(180.0, acos(-1.0));
-/* ..... */
-/* .....ENTREE DES DONNEES */
-
-	static char temp_10[] = " PROGRAM *** CELREF ***  (J.LAUGIER & A.FILHOL 10/78)\n\n";
-	fwrite(temp_10, strlen(temp_10), 1, imp_file);
-
-/*      READ(IRID,20)ITITR */
-/*      READ(IRID,*)INDIC,IFIN */
-	indic = *indi;
-	*ddt = 0.0;
-	*ddq = 0.0;
-	ifin = 10;
-	if (indic == 0 || indic > 3) {
-		indic = 3;
-	}
-/*      READ(IRID,*)B(2),B(1) */
-	b[0] = 0.0;
-/*      READ(IRID,*)AFI(2),AFI(1) */
-	for (int i = 1; i <= 8; ++i) {
-		afi[i - 1] = afin[i];
-		b[i - 1] = bbb[i];
-	}
-/*      READ(IRID,*)(B(I),I=3,8),(AFI(I),I=3,8) */
-	iffi = (int) (afi[2] + afi[3] + afi[4] + .1f);
-	if (iffi == 0 || indic == 3) {
-		goto L230;
-	}
-	ik = 3 - indic;
-	for (i = 1; i <= ik; ++i) {
-		if (indic - 2 >= 0) {
-			goto L210;
-		} else {
-			goto L200;
-		}
-	L200:
-		afi[indic + 2 + i - 1] = 0.0;
-		goto L220;
-	L210:
-		afi[indic + 1 + i - 1] = 0.0;
-	L220:
-		;
-	}
-	afi[2] = 1.0;
-
-L230:
-	nr = 0;
-	for (nr = 1; nr <= *nhkl; ++nr) {
-		if (nr > ndmax) {
-			goto L380;
-		}
-		h[nr - 1] = jhkl[nr * 3 + 1];
-		k[nr - 1] = jhkl[nr * 3 + 2];
-		l[nr - 1] = jhkl[nr * 3 + 3];
-		ihkl = abs(h[nr - 1]) + abs(k[nr - 1]) + abs(l[nr - 1]);
-		if (ihkl == 0) {
-			goto L260;
-		}
-		if (theta[nr] <= 0.0) {
-			goto L370;
-		}
-		pds[nr - 1] = 1.0;
-		theta[nr] = div_number(theta[nr], rd) / 2.0;
-	}
-/* ..... */
-/* !!!! 2*THETA EN THETA */
-L260:
-	nr = *nhkl;
-
-	char *temp_afi = doubleArrayToString("%.0lf       ", afi, 0, 8);
-	temp_b = doubleArrayToString("%.4lf       ", b, 0, 8);
-
-	snprintf(temp, sizeof(temp), " OBSERVABLE NUMBER    : %d ITERATION NUMBER : %d REFINEMENT CONSTRAINTS : %s\n INITIAL VALUES :\n    ZERO    LAMBDA      A        B        C      ALPHA     BETA    GAMMA\n      %s\n  %s\n", nr, ifin, icle[indic - 1], temp_afi, temp_b);
-	writeInFile(temp, imp_file);
-
-	free(temp_afi);
-	free(temp_b);
-
-	b[0] /= rd;
-	b[1] *= 0.5;
-	for (int i = 6; i <= 8; ++i) {
-		b[i - 1] /= rd;
-	}
-/*   ...... CALCUL DES PARAMETRES MAILLE RECIPROQUE */
-	int c0 = 0;
-	inver(b, dum, &volum, &c0);
-/*   ...... */
-	for (int i = 1; i <= 3; ++i) {
-		dum[i - 1] = b[i + 4] * rd;
-	}
-
-	temp_b = doubleArrayToString("  %.5lf", b, 2, 5);
-
-	snprintf(temp, sizeof(temp), " RECIPROCAL CELL : %s  %.5lf  %.5lf  %.5lf\n VOLUME (A**3)   : %.3lf\n", temp_b, dum[0], dum[0], dum[0], volum);
-	writeInFile(temp, imp_file);
-
-	free(temp_b);
-
-/* ....."NPAF" : NOMBRE DE PARAMETRES A AFFINER */
-/* ....."BB()" : TABLEAU DES PARAMETRES A AFFINER */
-	j = 0;
-	for (int i = 0; i < 8; ++i) {
-		if (afi[i] != 0.0) {
-			bb[j] = b[i];
-			++j;
-		}
-	}
-	npaf = j;
-
-	snprintf(temp, sizeof(temp), " NUMBER OF INDEPENDENT PARAMETERS : %d\n", npaf);
-	writeInFile(temp, imp_file);
-
-	if (npaf == 8) {
-		goto L390;
-	}
-	npaf2 = npaf + 2;
-/*   ......AFFINEMENT   (PDS() : POIDS (NON-UTILISE POUR CETTE VERSION)) */
-	mcrnl(qq, &ndmax, &theta[1], bb, &npaf, &nr, pds, &ifin);
-/*   ...... */
-
-/* .....NOUVELLES VALEURS DES PARAMETRES */
-	j = 0;
-	for (i = 0; i < 8; ++i) {
-		if (afi[i] != 0.0) {
-			b[i] = bb[j];
-			++j;
-		}
-	}
-/*   ......VALEURS DES ANGLES THETA CALCULES */
-	fonc(&theta[1], &r, &rr);
-/*   ...... */
-
-/* .....CALCUL DES ECARTS TYPE */
-/* ....."SIG()" LES ECARTS TYPE DES PARAMETRES DE MAILLE QU'IL */
-/* .....        CONTIENT SONT CEUX DES PARAMETRES RECIPROQUES. */
-	jj = 0;
-	for (i = 1; i <= 8; ++i) {
-		if (afi[i - 1] != 0.0) {
-			goto L320;
-		} else {
-			goto L310;
-		}
-	L310:
-		sig[i - 1] = 0.0;
-		goto L330;
-	L320:
-		++jj;
-		sig[i - 1] = sqrt(qq[jj + jj * 200 - 201] * r);
-	L330:
-		;
-	}
-	if (indic == 1 || indic == 2) {
-		sig[3] = sig[2];
-	}
-	if (indic == 1) {
-		sig[4] = sig[2];
-	}
-	for (i = 1; i <= 3; ++i) {
-		bb[i - 1] = b[i + 1];
-		bb[i + 2] = b[i + 4] * rd;
-	}
-
-/*   ......RETOUR A LA MAILLE DIRECTE (ET ECARTS TYPE CORRESPONDANTS) */
-	int c1 = 1;
-	inver(b, sig, &volum, &c1);
-/*   ...... */
-	sig[0] *= rd;
-	sig[1] *= 2.0;
-
-/* .....SORTIE DES RESULTATS */
-	volum = 1.0 / volum;
-
-/*  Zeropoint in 2-theta to be added (same sense as TREOR, ITO, etc) */
-
-	b[0] = -b[0] * rd * 2.0;
-	sig[0] *= 2.0;
-
-	b[1] *= 2.0;
-	for (int i = 5; i < 8; ++i) {
-		sig[i] *= rd;
-		b[i] *= rd;
-	}
-
-	temp_b = doubleArrayToString("%.4lf    ", b, 0, 8);
-	char *temp_sig = doubleArrayToString("%.4lf    ", sig, 0, 8);
-	char *temp_bb = doubleArrayToString("%.5lf    ", bb, 0, 5);
-
-	snprintf(temp, sizeof(temp), " FINAL VALUES   : (STANDARD DEVIATIONS : 2nd LINE)\n\n    ZERO    LAMBDA      A        B        C      ALPHA     BETA    GAMMA\n%s\n%s\n   RECIPROCAL CELL : %s  %.5lf\n    H     K     L  TH(OBS)    TH-ZERO    TH(CALC)     DIFF.\n", temp_b, temp_sig, temp_bb, volum);
-	writeInFile(temp, imp_file);
-
-	free(temp_b);
-	free(temp_sig);
-	free(temp_bb);
-
-	for (i = 1; i <= 8; ++i) {
-		bbb[i] = b[i - 1];
-	}
-	npour = 0;
-	for (int i = 0; i <= nr; ++i) {
-		y1 = theta[i] * rd;
-		y2 = y1 + b[0] / 2.0;
-		y3 = qq[i + npaf2 * 200 - 201] * rd + b[0] / 2.0;
-		y4 = y2 - y3;
-		y1 *= 2.0;
-		y2 *= 2.0;
-		y3 *= 2.0;
-		y4 *= 2.0;
-		if (i <= 20) {
-			*ddt += fabs(y4);
-	/* Computing 2nd power */
-			double r1 = div_number(sin(y2 / 2.0 * 3.141593f / 180.0) * 2.0, bbb[2]);
-			qo = r1 * r1;
-	/* Computing 2nd power */
-			r1 = div_number(sin(y3 / 2.0 * 3.141593f / 180.0) * 2.0, bbb[2]);
-			qc = r1 * r1;
-			*ddq += (r1 = qo - qc, fabs(r1));
-		}
-
-		char temp_150[100];
-		snprintf(temp_150, sizeof(temp_150), "    %d     %d     %d     %.3lf      %.3lf      %.3lf     %.3lf\n", h[i], k[i], l[i], y1, y2, y3, y4);
-		writeInFile(temp_150, imp_file);
-	}
-	static char temp_enter[] = "\n";
-	fwrite(temp_enter, strlen(temp_enter), 1, imp_file);
-
-	*ddt /= 20.0;
-	*ddq /= 20.0;
-	r = sqrt(r) * 1e3f;
-/*      WRITE(IWR,160)R,RR */
-	if (npour > 0) {
-		goto L400;
-	}
-/*      print 365 */
-/* L365: */
-/*      READ(5,*)NREP */
-	nrep = 1;
-	if (nrep == 1) {
-		goto L400;
-	}
-
-	static char temp_366[] = "   H     K     L     D(OBS)    (D(CALC)\n\n";
-	fwrite(temp_366, strlen(temp_366), 1, imp_file);
-
-	for (int i = 1; i <= nr; ++i) {
-		y0 = b[1] / 2.0;
-		y1 = div_number(y0, sin(theta[i] - div_number(b[0], rd)));
-		y2 = div_number(y0, sin(qq[i + npaf2 * 200 - 201] - div_number(b[0], rd)));
-
-		char temp[33];
-		snprintf(temp, sizeof(temp), "  %d   %d   %d   %.4lf     %.4lf\n", h[i - 1], k[i - 1], l[i - 1], y1, y2);
-		fwrite(temp, strlen(temp), 1, imp_file);
-	}
-/*      print 369 */
-	goto L400;
-
-/* .....MESSAGES D'ERREUR */
-	/*170 FORMAT(' ##### ERROR REFLEXION : ',3I4,F8.3)
-  180 FORMAT(' ##### DATA NUMBER GREATER THAN ',I4,' #####')
-  190 FORMAT(' ##### IMPOSSIBLE TO REFINE ALL PARAMETERS TOGETHER'
-     1 '##### THINK, PLEASE ! #####')*/
-L370:
-	;
-	char temp_170[38];
-	snprintf(temp_170, sizeof(temp_170), " ##### ERROR REFLEXION : %d %d %d %.3lf\n", h[nr - 1], k[nr - 1], l[nr - 1], theta[nr]);
-	fwrite(temp_170, strlen(temp_170), 1, imp_file);
-	--nr;
-/*      GOTO 240 */
-L380:
-	;
-	char temp_180[41];
-	snprintf(temp_180, sizeof(temp_180), " ##### DATA NUMBER GREATER THAN %d #####\n", ndmax);
-	fwrite(temp_180, strlen(temp_180), 1, imp_file);
-	goto L400;
-L390:
-	;
-	char temp_190[] = " ##### IMPOSSIBLE TO REFINE ALL PARAMETERS TOGETHER##### THINK, PLEASE ! #####\n";
-	fwrite(temp_190, strlen(temp_190), 1, imp_file);
-L400:
-	return 0;
-} /* celref_ */
-
 
 //==============================================================================
 
@@ -2798,8 +2338,7 @@ int celref2(int *indi, double *bbb, double *afin, int *nhkl, double *theta, int 
 	static double r, y1, y2, y3, y4;
 	static int ik, jj;
 	static double rd, qc, qo, rr, dum[3], pip;
-	static int iffi, ifin, ihkl;
-	static int ndmax;
+	static int iffi, ihkl;
 	static double volum;
 //	static int npour;
 
@@ -2812,13 +2351,13 @@ int celref2(int *indi, double *bbb, double *afin, int *nhkl, double *theta, int 
 	--bbb;
 
 	/* Function Body */
-	ndmax = 200;
+	const static int ndmax = 200;
 	rd = 180.0 / acos(-1.0);
 	pip = .0087266472222222221f;
 	indic = *indi;
 	*ddt = 0.0;
 	*ddq = 0.0;
-	ifin = 10;
+	const static int ifin = 10;
 	if (indic == 0 || indic > 3) {
 		indic = 3;
 	}
@@ -2848,7 +2387,6 @@ int celref2(int *indi, double *bbb, double *afin, int *nhkl, double *theta, int 
 	;
 	}
 	afi[2] = 1.0;
-
 L230:
 	nr = 0;
 	i1 = *nhkl;
@@ -2900,7 +2438,7 @@ L260:
 		goto L400;
 	}
 	npaf2 = npaf + 2;
-	mcrnl(qq, &ndmax, &theta[1], bb, &npaf, &nr, pds, &ifin);
+	mcrnl(qq, ndmax, &theta[1], bb, &npaf, &nr, pds, ifin);
 	j = 0;
 	for (i = 1; i <= 8; ++i) {
 		if (afi[i - 1] == 0.0) {
@@ -3971,7 +3509,7 @@ int main(int argc, char *argv[])
 {
 	// ProfilerStart("mon.log");
 	int nsys[6], ihkl[30000], nsol[N_HKL], ll[N_HKL], lll[N_HKL], km[N_HKL];
-	char text[20];
+	char text[40];
 	double pstartb[6],delta[3],pstart[3], rp2[N_HKL];
 	double celpre[6],celold[6],w1[N_HKL],fm20[N_HKL],ff20[N_HKL];
 	double bpar[6],cel[60000],rp[N_HKL],vgc[N_HKL],d[N_HKL];
@@ -4888,6 +4426,7 @@ C*/
 				goto L197;
 			} else {
 
+			// printf("1\n");
 	/*  Anyway, calculate the M20 and F20 values */
 
 				dcell(celpre, al, &v1);
@@ -6860,8 +6399,7 @@ L502:
 			ip = 5;
 		}
 		if (ip != 5) {
-			celpre[ip - 1] = pstart[ip - 1] + delta[ip - 1] * 2.0 *
-				randi(&iseed);
+			celpre[ip - 1] = pstart[ip - 1] + delta[ip - 1] * 2.0 *	randi(&iseed);
 		} else {
 			celpre[ip - 1] = astart + deltc * 2.0 * randi(&iseed);
 		}
@@ -6888,15 +6426,13 @@ L503:
 			celpre[i__ - 1] = pstartb[i__ - 1] + del * (randi(&iseed)
 				 - .5f) * 2.0;
 		} else {
-			celpre[i__ - 1] = pstartb[i__ - 1] + deld * (randi(&
-				iseed) - .5f) * 2.0;
+			celpre[i__ - 1] = pstartb[i__ - 1] + deld * (randi(&iseed) - .5f) * 2.0;
 		}
 		ntriedb += 1.0;
 L504:
 		for (i__ = 1; i__ <= 3; ++i__) {
 			for (int j = 1; j <= 3; ++j) {
-/* L505: */
-			al[i__ + j * 3 - 4] = 0.0;
+				al[i__ + j * 3 - 4] = 0.0;
 			}
 		}
 		dcell(celpre, al, &v1);
@@ -6911,8 +6447,8 @@ L504:
 			ntried += -1.0;
 			ntriedt += 1.0;
 			if (ntriedt > ttmax) {
-			++nout;
-			goto L596;
+				++nout;
+				goto L596;
 			}
 			goto L502;
 		}
@@ -6966,7 +6502,7 @@ L514:
 			bpar[2] = c;
 			bpar[4] = bet;
 			v3 = v1;
-			}
+		}
 
 /* ... "Refine" that cell (by Monte Carlo too...) */
 
@@ -7013,12 +6549,12 @@ L514:
 		igt += 1.0;
 		if (nr == 1) {
 			if (igt > 50.0) {
-			if (ntried / igt < 1e5f) {
-				if (rmax0[4] > .2f) {
-				rmax0[4] -= rmax0[4] * .05f;
-				printRmaxReducedString(rmax0[4], imp_file);
-			}
-			}
+				if (ntried / igt < 1e5f) {
+					if (rmax0[4] > .2f) {
+						rmax0[4] -= rmax0[4] * .05f;
+						printRmaxReducedString(rmax0[4], imp_file);
+					}
+				}
 			}
 		}
 
@@ -10061,7 +9597,7 @@ L5000:
 		ql[5] = al[3] * 1e4f;
 
 		char bl = getBL(ib, ifi, j);
-		char more[11] = "";
+		char more[12] = "";
 		strcpy(more, getMore(ifi, j));
 		// snprintf(more, sizeof(more), "%s", getMore(ifi, j));
 		double vr = vgc[j - 1] / vgc[ll[igc - 1] - 1];
