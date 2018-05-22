@@ -81,18 +81,15 @@
 #include <unistd.h>
 #include <math.h>
 #include <stdarg.h>
+#include <omp.h>
 #include <gperftools/profiler.h>
 
 #define VERSION "4.00"
 #define FILENAME_SIZE 50
 #define FILE_WITH_EXTENSION_SIZE FILENAME_SIZE + 4
 #define N_HKL 10000
-
-typedef struct Parameters {
-	char *system_name;
-	int n_par;
-	char *params[6];
-} Parameters;
+#define N_THREADS 3
+#define LKP_SIZE 32768
 
 #ifndef __MCMAILLE__
 #define __MCMAILLE__
@@ -121,6 +118,35 @@ int npaf2;
 
 //troc
 int iwr, irid;
+
+double table_asin[LKP_SIZE];
+
+#pragma omp threadprivate(nhkl0, lhkl, ndat, dmin, slabda2, ihh, al, pi, cri, difp, difm, th2, fobs, sum_f, nind, w2, nmx, ndat10, nhkl, ind, iwr, irid, qq, bb, b, h, k, l, npaf, afi, nr, indic, pds, npaf2)
+
+//==============================================================================
+
+void createLkpAsin()
+{
+	const static double max = LKP_SIZE;// / 2.0;
+	const static double m = 1.0 / max * 0.25;
+	const static int last = LKP_SIZE - 1;
+
+	for (int i = 0; i <= max; ++i)
+	{
+		table_asin[i & last] = asin(i * m); // calculate values between 0 and 0.25
+	}
+}
+
+//==============================================================================
+
+double asinLkp(double val)
+{
+	const static double max = LKP_SIZE;// / 2.0;
+	const static int last = LKP_SIZE - 1;
+
+	if (val > 0.25 || val < 0) return asin(val);
+	return table_asin[(int) (val * max / 0.25) & last];
+}
 
 //==============================================================================
 
@@ -190,74 +216,86 @@ double div_number(const double a, const double b)
 int calcul1(double *diff, double *diff2)
 {
 	/* System generated locals */
-	int i1, i2;
 	double r1;
 
 	/* Local variables */
-	static int i, j, k, l;
-	static double x, de[10000];
-	static int jh;
-	static double cr[10000], perc[10000], diff1, demax, theta[10000], sinth,
+	int i, j, k, l = 0;
+	double x, de[10000];
+	// static int jh[N_THREADS];
+	int jh;
+	// static int part, id, begin, end;
+	double cr[10000], perc[10000], diff1, demax, theta[10000], sinth,
 		sum_f2;
+
+		// static double max_sinth = 0.0;
 
 /* $OMP THREADPRIVATE(/cal/) */
 
 /* ...  Keep only the hkl for d > dmin */
+// #pragma omp critical(c1)
+		{
 
 	jh = 0;
-	i1 = nhkl0;
-	for (i = 1; i <= i1; ++i) {
-		x = 0.0;
-		for (j = 1; j <= 3; ++j) {
-			for (k = j; k <= 3; ++k) {
-				x = al[j + k * 3 - 4] * ihh[j + i * 3 - 4] * ihh[k + i * 3 - 4] + x;
+
+	// printf("%d\t%d\n", nhkl0, ndat);
+
+	// #pragma omp parallel private (part, id, begin, end, x, sinth, i, j, k) shared (jh, theta, cr)
+	{
+
+		// part = nhkl0 / omp_get_num_threads();
+		// id = omp_get_thread_num();
+
+		// begin = part * id;
+		// end = begin + part;
+
+		for (i = 0; i < nhkl0; ++i) {
+			x = 0.0;
+			for (j = 0; j < 3; ++j) {
+				for (k = j; k < 3; ++k) {
+					x = al[j + k * 3] * ihh[j + i * 3] * ihh[k + i * 3] + x;
+				}
+			}
+			if (x <= dmin) {
+
+				sinth = slabda2 * x;
+				sinth = sqrt(sinth);
+				// if (sinth > max_sinth){ max_sinth = sinth; printf("%lf\n", max_sinth); }
+				sinth = asinLkp(sinth) * pi;
+
+				// #pragma omp critical
+				{
+				theta[jh] = sinth;
+				cr[jh] = 0.0;
+				++jh;
+				}
 			}
 		}
-		if (x > dmin) {
-			goto L109;
-		}
-		++jh;
-	/*     X IS 1/D(hkl)**2 FOR REFLECTION IHH */
 
-	/*     This should be optimized for speed : */
-	/*     working only on X, not calculating 2-theta... */
-	/*     - in fact, tests show that only 10-15% is gained - */
-
-		sinth = slabda2 * x;
-		sinth = sqrt(sinth);
-		theta[jh - 1] = asin(sinth) * pi;
-		cr[jh - 1] = 0.0;
-	L109:
-		;
 	}
+
+// printf("%d\n", jh);exit(0);
 	nhkl = jh;
-	if (nhkl > ndat10) {
-		return 0;
-	}
+	if (nhkl <= ndat10) {
 
 /* ...  Comparison with the data */
 
 	lhkl = 0;
-	i1 = ndat;
-	for (j = 1; j <= i1; ++j) {
-		cri[j - 1] = 0.0;
-		perc[j - 1] = 0.0;
-		demax = w2[j - 1];
-		i2 = nhkl;
-		for (k = 1; k <= i2; ++k) {
-			if (cr[k - 1] == 1.0) {
-				goto L111;
-			}
-			if (theta[k - 1] <= difp[j - 1] && theta[k - 1] >= difm[j - 1]) {
-				de[k - 1] = (r1 = theta[k - 1] - th2[j - 1], fabs(r1));
-				if (de[k - 1] <= demax) {
-					l = k;
-					demax = de[k - 1];
-					cri[j - 1] = 1.0;
+	for (j = 0; j < ndat; ++j) {
+		cri[j] = 0.0;
+		perc[j] = 0.0;
+		demax = w2[j];
+		for (k = 0; k < nhkl; ++k) {
+			if (cr[k] != 1.0) {
+				if (theta[k] <= difp[j] && theta[k] >= difm[j]) {
+					r1 = theta[k] - th2[j];
+					de[k] = fabs(r1);
+					if (de[k] <= demax) {
+						l = k;
+						demax = de[k];
+						cri[j] = 1.0;
+					}
 				}
 			}
-	L111:
-			;
 		}
 
 	/*  PERC = percentage of columnar overlap for that peak */
@@ -266,10 +304,10 @@ int calcul1(double *diff, double *diff2)
 	/*  overlapping the most closely with the column is */
 	/*  included (if CRI =1)... */
 
-		if (cri[j - 1] == 1.0) {
-			perc[j - 1] = 1.0 - div_number(de[l - 1], w2[j - 1]);
+		if (cri[j] == 1.0) {
+			perc[j] = 1.0 - div_number(de[l], w2[j]);
 			++lhkl;
-			cr[l - 1] = 1.0;
+			cr[l] = 1.0;
 		}
 /* L113: */
 	}
@@ -278,14 +316,14 @@ int calcul1(double *diff, double *diff2)
 
 	diff1 = 0.0;
 	sum_f2 = 0.0;
-	i1 = ndat;
-	for (k = 1; k <= i1; ++k) {
-		sum_f2 += fobs[k - 1] * cri[k - 1];
-	/* L1122: */
-		diff1 += cri[k - 1] * fobs[k - 1] * perc[k - 1];
+	for (k = 0; k < ndat; ++k) {
+		sum_f2 += fobs[k] * cri[k];
+		diff1 += cri[k] * fobs[k] * perc[k];
 	}
 	*diff = 1.0 - div_number(diff1, sum_f);
 	*diff2 = 1.0 - div_number(diff1, sum_f2);
+}
+}
 	return 0;
 } /* calcul1_ */
 
@@ -298,14 +336,14 @@ int calcul2(double *diff, int *ihkl, double *th3, int *ncalc, int *igc)
 	double r1;
 
 	/* Local variables */
-	static int i, j, k, l;
-	static double x;
-	static int l2;
-	static double de[10000];
-	static int jh;
-	static double cr[10000];//qc[10000],
-	static int jj, jjj, jhkl[30000]	/* was [3][10000] */;
-	static double perc[10000], demax, theta[10000], sinth, sum_f2;
+	int i, j, k, l = 0;
+	double x;
+	int l2;
+	double de[10000];
+	int jh;
+	double cr[10000];//qc[10000],
+	int jj, jjj = 0, jhkl[30000]	/* was [3][10000] */;
+	double perc[10000], demax, theta[10000], sinth, sum_f2;
 
 /* $OMP THREADPRIVATE(/cal/,/cal2/) */
 
@@ -438,7 +476,7 @@ int sort3(int *n, int *na, int *l)
 
 	int i1;
 	/* Local variables */
-	static int i, j, k, m, li, lj, lk, ip, iq, lq, ix, nt, ilt[10], itt, iut[10];
+	int i, j, k, m, li, lj, lk, ip, iq, lq, ix, nt, ilt[10], itt, iut[10];
 
 /*     ******************************************************** */
 /*     THE SUBROUTINE SORT APPLIES TO THE ARRAY A WITH J ELEMENTS. */
@@ -565,7 +603,7 @@ int sort2(int *n, double *na, int *l)
 {
 
 	/* Local variables */
-	static int i, j, k, m, li, lj, lk, ip, iq, lq, ix, nt, ilt[10], itt,
+	int i, j, k, m, li, lj, lk, ip, iq, lq, ix, nt, ilt[10], itt,
 		 iut[10];
 
 /*     ******************************************************** */
@@ -691,9 +729,9 @@ int sort(int *n, double *a, int *l)
 {
 
 	/* Local variables */
-	static int i, j, k, m;
-	static double t;
-	static int li, lj, lk, ip, iq, lq, ix, ilt[10], itt, iut[10];
+	int i, j, k, m;
+	double t;
+	int li, lj, lk, ip, iq, lq, ix, ilt[10], itt, iut[10];
 
 /*     ******************************************************** */
 /*     THE SUBROUTINE SORT APPLIES TO THE ARRAY A WITH J ELEMENTS. */
@@ -821,7 +859,7 @@ int brav(int *n, int *ihkl, int *ibr)
 	int i1;
 
 	/* Local variables */
-	static int h, i, j, k, l, jj, hsum;
+	int h, i, j, k, l, jj, hsum;
 
 	/* Parameter adjustments */
 	ihkl -= 4;
@@ -948,7 +986,7 @@ int sigma(double *d__, double *db, double *r__)
 	double r__1;
 
 	/* Local variables */
-	static int i__;
+	int i__;
 
 /* ..... */
 	/* Parameter adjustments */
@@ -968,40 +1006,14 @@ int sigma(double *d__, double *db, double *r__)
 
 //==============================================================================
 
-int sigma_(double *d, double *db, double *r)
-{
-	/* System generated locals */
-	double r1;
-
-	/* Local variables */
-	static int i;
-
-/* ..... */
-	/* Parameter adjustments */
-	--db;
-	--d;
-
-	/* Function Body */
-	*r = 0.0;
-	for (i = 1; i <= 6; ++i) {
-/* L10: */
-/* Computing 2nd power */
-	r1 = d[i] * db[i + 2];
-	*r += r1 * r1;
-	}
-	return 0;
-} /* sigma_ */
-
-//==============================================================================
-
 int inver(double *b, double *db, double *volum, int *iv)
 {
 	/* Local variables */
-	static double d__[6];
-	static int i__, j, k;
-	static double q, r__, q2, ad[6], cc[3];
-	static int jj;
-	static double sp[3], ss[3], dqd[3], sig[6], cosp[3], sinp[3], cabc2;
+	double d__[6];
+	int i__, j, k;
+	double q, r__, q2, ad[6], cc[3];
+	int jj;
+	double sp[3], ss[3], dqd[3], sig[6], cosp[3], sinp[3], cabc2;
 
 /* ..... */
 /* .....  1-CALCUL LES PARAMETRES MAILLE INVERSE */
@@ -1085,106 +1097,15 @@ L70:
 
 //==============================================================================
 
-int inver_(double *b, double *db, double *volum, int *iv)
-{
-
-	/* Local variables */
-	static double d[6];
-	static int i, j, k;
-	static double q, r, q2, ad[6], cc[3];
-	static int jj;
-	static double sp[3], ss[3], dqd[3], sig[6], cosp[3], sinp[3], cabc2;
-
-/* ..... */
-/* .....  1-CALCUL LES PARAMETRES MAILLE INVERSE */
-/* .....  2-CALCULE LES ECARTS TYPE DES PARAMETRES */
-/* .....   IV=0 OPTION 1  IV=1 OPTIONS 1 & 2 */
-/* ..... */
-
-	/* Parameter adjustments */
-	--db;
-	--b;
-
-	/* Function Body */
-	cabc2 = 0.0;
-	for (i = 1; i <= 3; ++i) {
-	ad[i - 1] = b[i + 2];
-	cosp[i - 1] = cos(b[i + 5]);
-	sinp[i - 1] = sin(b[i + 5]);
-/* L10: */
-	}
-	for (i = 1; i <= 3; ++i) {
-		j = i % 3 + 1;
-		k = (i + 1) % 3 + 1;
-		dqd[i - 1] = cosp[i - 1] - cosp[j - 1] * cosp[k - 1];
-		ss[i - 1] = sinp[j - 1] * sinp[k - 1];
-		cc[i - 1] = div_number(-dqd[i - 1], ss[i - 1]);
-		cabc2 += cosp[i - 1] * cosp[i - 1];
-	}
-
-	q2 = 1.0 - cabc2 + cosp[0] * 2.0 * cosp[1] * cosp[2];
-	if (q2 < 0) q2 = 0;
-	q = sqrt(q2);
-	*volum = ad[0] * ad[1] * ad[2] * q;
-
-	for (i = 1; i <= 3; ++i) {
-	b[i + 2] = div_number(sinp[i - 1], (ad[i - 1] * q));
-	b[i + 5] = acos(cc[i - 1]);
-	sp[i - 1] = sin(b[i + 5]);
-/* L20: */
-	}
-
-	if (*iv == 0) {
-	goto L70;
-	}
-
-/* .....DERIVEES DES PARAMETRES A , B , C */
-	for (i = 1; i <= 3; ++i) {
-		j = i % 3 + 1;
-		k = (i + 1) % 3 + 1;
-		d[i - 1] = div_number(-sinp[i - 1], ad[i - 1]);
-		d[j - 1] = 0.0;
-		d[k - 1] = 0.0;
-		d[i + 2] = cosp[i - 1] - div_number(sinp[i - 1] * sinp[i - 1] * dqd[i - 1], (q * q));
-		d[j + 2] = div_number(-ss[k - 1] * dqd[j - 1], q2);
-		d[k + 2] = div_number(-ss[j - 1] * dqd[k - 1], q2);
-		sigma(d, &db[1], &r);
-		sig[i - 1] = div_number(sqrt(r), (q * ad[i - 1]));
-	}
-
-/* .....DERIVEES DES ANGLES DE LA MAILLE */
-	for (i = 1; i <= 3; ++i) {
-		for (jj = 1; jj <= 3; ++jj) {
-			d[jj - 1] = 0.0;
-		}
-		j = i % 3 + 1;
-		k = (i + 1) % 3 + 1;
-		d[i + 2] = div_number(sinp[i - 1], ss[i - 1]);
-		d[j + 2] = div_number(cosp[k - 1], sinp[k - 1]) + div_number(cosp[j - 1] * cc[i - 1],			sinp[j - 1]);
-		d[k + 2] = div_number(cosp[j - 1], sinp[j - 1]) + div_number(cosp[k - 1] * cc[i - 1], sinp[k - 1]);
-		sigma(d, &db[1], &r);
-		sig[i + 2] = div_number(sqrt(r), sp[i - 1]);
-	}
-
-	for (i = 1; i <= 6; ++i) {
-		db[i + 2] = sig[i - 1];
-	}
-
-L70:
-	return 0;
-} /* inver */
-
-//==============================================================================
-
 int matinv(double *am, int *n, int *nfail)
 {
 	/* System generated locals */
 	int i__1, i__2, i__3;
 
 	/* Local variables */
-	static int i__, j, k, l, m, ii, kdm, kli, kmi, imax;
-	static double suma;
-	static double term, denom;
+	int i__, j, k, l, m, ii, kdm, kli, kmi, imax;
+	double suma;
+	double term, denom = 1;
 
 /* .....----------------------------- */
 /*     ********** SEGMENT 1 OF CHOLESKI INVERSION ********** */
@@ -1334,149 +1255,6 @@ L210:
 
 //==============================================================================
 
-int matinv_(double *am, int *n, int *nfail)
-{
-	/* System generated locals */
-	int i1, i2, i3;
-
-	/* Local variables */
-	static int i, j, k, l, m, ii, kdm, kli, kmi, imax;
-	static double suma;
-	static double term, denom;
-
-/* .....----------------------------- */
-/*     ********** SEGMENT 1 OF CHOLESKI INVERSION ********** */
-/*     ***** FACTOR MATRIX INTO LOWER TRIANGLE X TRANSPOSE ***** */
-	/* Parameter adjustments */
-	--am;
-
-	/* Function Body */
-	k = 1;
-	if ((i1 = *n - 1) < 0) {
-		goto L8;
-	} else if (i1 == 0) {
-		goto L10;
-	} else {
-		goto L20;
-	}
-L8:
-	*nfail = k;
-	goto L210;
-L10:
-	am[1] = div_number(1.0, am[1]);
-	goto L200;
-/*     ***** LOOP M OF A(L,M) ***** */
-L20:
-	for (m = 1; m <= *n; ++m) {
-		imax = m - 1;
-	/*     ***** LOOP L OF A(L,M) ***** */
-		for (l = m; l <= *n; ++l) {
-			suma = 0.0;
-			kli = l;
-			kmi = m;
-			if (imax <= 0) {
-				goto L50;
-			} else {
-				goto L30;
-			}
-	/*     *****SUM OVER I=1,M-1 A(L,I)*A(M,I) ***** */
-	L30:
-			for (i = 1; i <= imax; ++i) {
-				suma += am[kli] * am[kmi];
-				j = *n - i;
-				kli += j;
-				kmi += j;
-			}
-	/*     *****TERM=C(L,M)-SUM ***** */
-	L50:
-			term = am[k] - suma;
-			if (l - m <= 0) {
-				goto L60;
-			} else {
-				goto L90;
-			}
-	L60:
-			if (term <= 0.0) {
-				goto L80;
-			} else {
-				goto L70;
-			}
-	/*     ***** A(M,M)=SQRT(TERM) ***** */
-	L70:
-			if (term < 0) term = 0;
-			denom = sqrt(term);
-			am[k] = denom;
-			goto L100;
-	L80:
-			*nfail = k;
-			goto L210;
-	/*     ***** A(L,M)=TERM/A(M,M) ***** */
-	L90:
-			am[k] = div_number(term, denom);
-	L100:
-			++k;
-		}
-	}
-/*     ********** SEGMENT 2 OF CHOLESKI INVERSION ********** */
-/*     *****INVERSION OF TRIANGULAR MATRIX***** */
-/* L120: */
-	am[1] = div_number(1.0, am[1]);
-	kdm = 1;
-/*     ***** STEP L OF B(L,M) ***** */
-	i1 = *n;
-	for (l = 2; l <= i1; ++l) {
-		kdm = kdm + *n - l + 2;
-	/*     ***** RECIPROCAL OF DIAGONAL TERM ***** */
-		term = div_number(1.0, am[kdm]);
-		am[kdm] = term;
-		kmi = 0;
-		kli = l;
-		imax = l - 1;
-	/*     ***** STEP M OF B(L,M) ***** */
-		i2 = imax;
-		for (m = 1; m <= i2; ++m) {
-			k = kli;
-	/*     ***** SUM TERMS ***** */
-			suma = 0.0;
-			i3 = imax;
-			for (i = m; i <= i3; ++i) {
-				ii = kmi + i;
-				suma -= am[kli] * am[ii];
-				kli = kli + *n - i;
-			}
-	/*     ***** MULT SUM * RECIP OF DIAGONAL ***** */
-			am[k] = suma * term;
-			j = *n - m;
-			kli = k + j;
-			kmi += j;
-		}
-/* L150: */
-	}
-/*     ********** SEGMENT 3 OF CHOLESKI INVERSION ********** */
-/*     *****PREMULTIPLY LOWER TRIANGLE BY TRANSPOSE***** */
-/* L160: */
-	k = 1;
-	for (m = 1; m <= *n; ++m) {
-		kli = k;
-		for (l = m; l <= *n; ++l) {
-			kmi = k;
-			imax = *n - l + 1;
-			suma = 0.0;
-			for (i = 1; i <= imax; ++i) {
-				suma += am[kli] * am[kmi];
-				++kli;
-				++kmi;
-			}
-			am[k] = suma;
-			++k;
-		}
-	}
-L200:
-	*nfail = 0;
-L210:
-	return 0;
-} /* matinv_ */
-
 //==============================================================================
 
 int calc(void)
@@ -1486,11 +1264,11 @@ int calc(void)
 	double r__1, r__2, r__3;
 
 	/* Local variables */
-	static double d__, f;
-	static int i__, j;
-	static double q[2000]	/* was [200][10] */, ae, be, ce, dd;
-	static int ir;
-	static double cae, cbe, cce, rad;
+	double d__, f;
+	int i__, j;
+	double q[2000]	/* was [200][10] */, ae, be, ce, dd;
+	int ir;
+	double cae, cbe, cce, rad;
 
 /* .....-------------- */
 /* $OMP THREADPRIVATE(/TROC/,/TRUC/) */
@@ -1572,111 +1350,10 @@ L3:
 
 //==============================================================================
 
-int calc_(double *qq)
-{
-	/* System generated locals */
-//	int i1;
-	double r1, r2, r3, r4;
-
-	/* Local variables */
-	static double d, f;
-	static int i, j;
-	static double q[2000]	/* was [200][10] */;
-	static int ir;
-	static double cae, cbe, cce, ae, be, ce, dd;
-	static double rad;
-
-/* .....-------------- */
-/* $OMP THREADPRIVATE(/TROC/,/TRUC/) */
-	j = 0;
-	for (i = 1; i <= 8; ++i) {
-		if (afi[i - 1] == 0.0) {
-			goto L1;
-		}
-		++j;
-		b[i - 1] = bb[j - 1];
-	L1:
-		;
-	}
-	if (indic == 1 || indic == 2) {
-		b[3] = b[2];
-	}
-	if (indic == 1) {
-		b[4] = b[2];
-	}
-	ae = b[2];
-	be = b[3];
-	ce = b[4];
-	cae = cos(b[5]);
-	cbe = cos(b[6]);
-	cce = cos(b[7]);
-
-	for (i = 1; i <= nr; ++i) {
-	/* Computing 2nd power */
-		r1 = ae * h[i - 1];
-	/* Computing 2nd power */
-		r2 = be * k[i - 1];
-	/* Computing 2nd power */
-		r3 = ce * l[i - 1];
-		dd = r1 * r1 + r2 * r2 + r3 * r3 + (h[i - 1] * k[i - 1] * ae * be * cce + k[i - 1] * l[i - 1] * be * ce * cae + l[i - 1] * h[i - 1] * ce * ae * cbe) * 2.0;
-
-		if (dd < 0.0)	{
-			dd = 0.0;
-		}
-		d = div_number(1.0, sqrt(dd));
-	/* Computing 2nd power */
-		r1 = b[1];
-
-		r4 = 1.0 - r1 * r1 * dd;
-		if (r4 < 0.0) {
-			r4 = 0.0;
-		}
-		rad = sqrt(r4);
-		f = div_number(b[1] * d, rad);
-		q[i - 1] = 1.0;
-		q[i + 199] = div_number(1.0, (d * rad));
-		q[i + 399] = f * h[i - 1] * (h[i - 1] * ae + k[i - 1] * be * cce + l[i - 1] * ce * cbe);
-		q[i + 599] = f * k[i - 1] * (k[i - 1] * be + l[i - 1] * ce * cae + h[i - 1] * ae * cce);
-		q[i + 799] = f * l[i - 1] * (l[i - 1] * ce + h[i - 1] * ae * cbe + k[i - 1] * be * cae);
-		q[i + 999] = -f * k[i - 1] * l[i - 1] * be * ce * sin(b[5]);
-		q[i + 1199] = -f * l[i - 1] * h[i - 1] * ce * ae * sin(b[6]);
-		q[i + 1399] = -f * h[i - 1] * k[i - 1] * ae * be * sin(b[7]);
-		// TODO AQUI TA A MERDA DO ERRO
-		r4 = div_number(b[1], d);
-		if (r4 > 1)	r4 = 1.0;
-		else if (r4 < -1) r4 = -1.0;
-
-		qq[i + npaf2 * 200 - 201] = b[0] + asin(r4);
-		// printf("calc: %lf\t%lf\t\t%lf\t%lf\t%lf\t\n", b[0], b[1], d, r4, asin(r4));
-		// if (isnan(qq[i + npaf2 * 200 - 201]))
-		// {
-			// exit(0);
-			// qq[i + npaf2 * 200 - 201] = 0.0;
-		// }
-	}
-	for (ir = 1; ir <= nr; ++ir) {
-		j = 0;
-		for (i = 1; i <= 8; ++i) {
-			if (afi[i - 1] == 0.0) {
-				goto L3;
-			}
-			++j;
-			qq[ir + j * 200 - 201] = q[ir + i * 200 - 201];
-	L3:
-			;
-		}
-	}
-/*      WRITE(IWR,5)(BB(I),I=1,NPAF) */
-/* L5: */
-	return 0;
-} /* calc_ */
-
-//==============================================================================
-
 int mcrnl(double *q, const int id, double *y, double *b, int *m, int *n, double *p, const int ifin)
 {
 	/* System generated locals */
-	int q_offset, i__1, i__2, i__3;
+	static int q_offset, i__1, i__2, i__3;
 
 	/* Local variables */
 	static double a[60];
@@ -1802,9 +1479,9 @@ int fonc(double *theta, double *r__, double *rr)
 	double r__1, r__2, r__3;
 
 	/* Local variables */
-	static double d__;
-	static int i__;
-	static double r1, r2, ae, be, ce, dd, yc, cae, cbe, cce;
+	double d__;
+	int i__;
+	double r1, r2, ae, be, ce, dd, yc, cae, cbe, cce;
 
 /* .....----------------------- */
 /* $OMP THREADPRIVATE(/TRUC/) */
@@ -1854,82 +1531,6 @@ int fonc(double *theta, double *r__, double *rr)
 	*rr = sqrt(t1);
 	return 0;
 } /* fonc_ */
-
-
-//==============================================================================
-
-int fonc_(double *theta, double *r, double *rr)
-{
-	/* System generated locals */
-	int i1;
-	double r1l, r2l, r3l, r4l;
-
-	/* Local variables */
-	static double d;
-	static int i;
-	static double r1, r2, ae, be, ce, dd, yc, cae, cbe, cce;
-
-/* .....----------------------- */
-/* $OMP THREADPRIVATE(/TRUC/) */
-	/* Parameter adjustments */
-	--theta;
-
-	/* Function Body */
-	r1 = 0.0;
-	r2 = 0.0;
-	ae = b[2];
-	be = b[3];
-	ce = b[4];
-	cae = cos(b[5]);
-	cbe = cos(b[6]);
-	cce = cos(b[7]);
-	i1 = nr;
-	for (i = 1; i <= i1; ++i) {
-	/* Computing 2nd power */
-		r1l = ae * h[i - 1];
-	/* Computing 2nd power */
-		r2l = be * k[i - 1];
-	/* Computing 2nd power */
-		r3l = ce * l[i - 1];
-		dd = r1l * r1l + r2l * r2l + r3l * r3l + (h[i - 1] *
-			k[i - 1] * ae * be * cce + k[i - 1] *
-			l[i - 1] * be * ce * cae + l[i - 1] *
-			h[i - 1] * ce * ae * cbe) * 2.0;
-
-		if (dd < 0)
-		{
-			dd = 0;
-		}
-		d = div_number(1.0, sqrt(dd));
-
-		r4l = div_number(b[1], d);
-		if (r4l > 1) {
-			r4l = 1;
-		} else if (r4l < -1) {
-			r4l = -1;
-		}
-		yc = b[0] + asin(r4l);
-
-		// printf("fonc: %lf\t%lf\t%lf\t%lf\n", dd, d, r4l, yc);
-
-	/* Computing 2nd power */
-		r1l = yc - theta[i];
-		r1 += r1l * r1l;
-	/* Computing 2nd power */
-		r1l = theta[i];
-		r2 += r1l * r1l;
-	/* L2: */
-		qq[i + npaf2 * 200 - 201] = yc;
-	}
-	*r = div_number(r1, (nr - npaf));
-	r4l = div_number(r1, r2);
-	if (r4l < 0)
-	{
-		r4l = 0;
-	}
-	*rr = sqrt(r4l);
-	return 0;
-} /* fonc */
 
 //==============================================================================
 
@@ -2553,9 +2154,9 @@ int trcl(double *celln, double *rcelln, double *v)
 	double r1;
 
 	/* Local variables */
-	static int i, j, k, l;
-	static double abc, sina[3];
-	static double prod;
+	int i, j, k, l;
+	double abc, sina[3];
+	double prod;
 
 /*     TRANSFORMS double CELL TO RECIPROCAL OR VICE VERSA */
 /*     INPUT CELL IS IN ARRAY CELL AS LENGTHS AND COSINES */
@@ -2602,9 +2203,9 @@ int supcel(int *n, int *ihkl, double *cel, int *l, double *vgc, int *js)
 	int i1, i2;
 
 	/* Local variables */
-	static int i, j, k, ii;
-	static double xx;
-	static int id2[3], id3[3], id4[3], id5[3], id6[3], ihh, iab2, iab3,
+	int i, j, k, ii;
+	double xx;
+	int id2[3], id3[3], id4[3], id5[3], id6[3], ihh, iab2, iab3,
 		iab4, iab5, iab6, ihmax[3];
 
 
@@ -2887,9 +2488,9 @@ L20:
 int dcell(double *celln, double *al, double *v)
 {
 	/* Local variables */
-	static int i, j, k, l;
-	static double cell[6];
-	static double degrad, rcelln[6];
+	int i, j, k, l;
+	double cell[6];
+	double degrad, rcelln[6];
 
 	/* Parameter adjustments */
 	al -= 4;
@@ -2973,9 +2574,9 @@ double randi(int *ix)
 	double ret_val;
 
 	/* Local variables */
-	static int k;
-	static double x;
-	static int xhi, xlo, xahi, xalo, leftlo;
+	int k;
+	double x;
+	int xhi, xlo, xahi, xalo, leftlo;
 
 
 /*     A random number generator using the recursion IX=IX*A MOD P */
@@ -3407,7 +3008,7 @@ void saveFMFF20(const double fm20, const double ff20, const double ddt, const in
 
 void saveGridResultsInString(const char *str, FILE *imp_file)
 {
-	char temp[200];
+	char temp[250];
 	snprintf(temp, sizeof(temp), "\n===============================================================================\nGrid search :\n   Results in %s :\n===============================================================================\n", str);
 	fwrite(temp, strlen(temp), 1, imp_file);
 }
@@ -3507,9 +3108,18 @@ void adjustFMFF(const int ndat, const double *qo, const double *cncalc, const in
 
 int main(int argc, char *argv[])
 {
-	// ProfilerStart("mon.log");
+	// ProfilerStart("prof.log");
+
+	 omp_set_num_threads(1);
+	// omp_set_nested(1);
+
+	// #pragma omp parallel
+	{
+		// #pragma omp single
+		{
+
 	int nsys[6], ihkl[30000], nsol[N_HKL], ll[N_HKL], lll[N_HKL], km[N_HKL];
-	char text[40];
+	char text[100];
 	double pstartb[6],delta[3],pstart[3], rp2[N_HKL];
 	double celpre[6],celold[6],w1[N_HKL],fm20[N_HKL],ff20[N_HKL];
 	double bpar[6],cel[60000],rp[N_HKL],vgc[N_HKL],d[N_HKL];
@@ -3530,16 +3140,30 @@ int main(int argc, char *argv[])
 
     int pressedk = 0;
     int nrun = 0;
-    double pndat, ddq, ddt, isee, v3, v2, a = 0.0, rmax2 = 0.0, llhkl = 0.0;
-    double diff2, diff, v1, del, rmin, interest, tmax, ttmax, ncells, iiseed, ntried, ntriedt;
-    double nout, ntriedb, vorth = 0;
-    int ipen, icode = 0, iseed, ncel, ncalc, c3, ibr;
+    double pndat, ddq, ddt, isee = 0.0, v3, v2 = 0.0, a = 0.0, rmax2 = 0.0, llhkl = 0.0;
+    double diff2, diff, v1, del = 0.0, rmin, interest, tmax, ttmax, ncells, iiseed, ntried, ntriedt;
+    double nout, ntriedb = 0.0, vorth = 0;
+    int ipen = 0, icode = 0, iseed, ncel = 0, ncalc, c3, ibr;
 
     double am, ap, adelt, vm, vp, vdelt, nglob, rglob, c = 0.0, b = 0.0, bdelt, bp, bm, nb, cdelt, cp, cm;
-    double betp, deld, vmon = 0.0, na = 0.0, nc = 0.0, bet = 0.0, betm = 0.0, ang = 0.0, alp = 0.0, gam = 0.0, vtric = 0.0;
+    double betp = 0.0, deld = 0.0, vmon = 0.0, na = 0.0, nc = 0.0, bet = 0.0, betm = 0.0, ang = 0.0, alp = 0.0, gam = 0.0, vtric = 0.0;
     int c2, ip = 0, c4, c1, ip2 = 0;
 
+    int part, id;
+
+    double begin, end;
+
     char temp[1024] = "";
+
+    createLkpAsin();
+
+/*    srand(time(NULL));
+    for (int i = 0; i < 10; ++i)
+    {
+    	double n = (double) rand() / (RAND_MAX);
+    	printf("%lf\t%lf\t%lf\n", n, asin(n), asinLkp(n));
+    }
+exit(0);*/
 
     // const Parameters cubic_params = {"Cubic", 1, {"a"}};
 
@@ -3963,7 +3587,7 @@ C*/
 	if (ngrid == 3) {
 		fclose(new_dat_file);
 	}
-	int nhkl = ndat;
+	nhkl = ndat;
 
 /* ... NDAT10 is the max limit for the number of calculated */
 /*           peak positions = 10 times the number of */
@@ -5780,7 +5404,33 @@ C*/
 	/* $OMP& celpre,celold,rglob,nglob,rmin,rmax,bb,afi) */
 	/* $OMP DO */
 
-			for (int ncel = 1; ncel <= ncells; ++ncel) {
+			#pragma omp parallel default(shared) copyin(nhkl0, lhkl, ndat, dmin, slabda2, ihh, al, pi, cri, difp, difm, th2, fobs, sum_f, nind, w2, nmx, ndat10, ind, nhkl) private (part, id, begin, end) firstprivate (ncel,ntriedb, del, v1, icode, llhkl, ihkl, th3, ncalc, rmax2, a, b, c, v2, bpar, v3, pstartb, ipen, isee,  ip, x, diff, diff2, ddt, ddq, iseed, iiseed, rmax0, ntried, ntriedt, nout, celpre, celold, rglob, nglob, rmin, rmax, bb, afi)
+			{
+
+			part = ncells / (omp_get_num_threads() - 1);
+			int part2 = ncells / omp_get_num_threads();
+			id = omp_get_thread_num();
+
+			if (id == 0)
+			{
+				begin = 0;
+			}
+			else
+			{
+				begin = part2 * id + 1;//- (part - part2) + 1;
+			}
+
+			if (id == omp_get_num_threads() - 1)
+			{
+				end = ncells;
+			}
+			else
+			{
+				end = begin + part;
+			}
+				// end = ncells;
+
+			for (int ncel = begin; ncel <= end; ++ncel) {
 				if (nout >= 1) {
 					goto L496;
 				}
@@ -5832,6 +5482,7 @@ C*/
 					}
 				}
 				dcell(celpre, al, &v1);
+
 				if (ntried > tmax) {
 					++nout;
 					goto L496;
@@ -5850,7 +5501,10 @@ C*/
 				}
 
 		L406:
+			// #pragma omp critical(crit5)
+			{
 				calcul1(&diff, &diff2);
+			}
 				if (nmx > ndat10) {
 					ntried += -1;
 					goto L402;
@@ -5932,6 +5586,8 @@ C*/
 
 	/* $OMP CRITICAL(STORE1) */
 
+				#pragma omp critical(crit1)
+				{
 				++igc;
 
 		/*  Test if too much proposals, if yes decrease Rmax by 5% */
@@ -5960,6 +5616,7 @@ C*/
 				cel[igc * 6 - 2] = 90.0;
 				cel[igc * 6 - 1] = 90.0;
 
+				}
 		/* $OMP END CRITICAL(STORE1) */
 
 		/* ... Check for supercell */
@@ -5975,6 +5632,9 @@ C*/
 				dcell(celpre, al, &v1);
 
 		/* $OMP CRITICAL(STORE2) */
+
+				#pragma omp critical(crit2)
+				{
 
 				calcul2(&diff, ihkl, th3, &ncalc, &igc);
 				km[igc - 1] = llhkl;
@@ -5998,6 +5658,7 @@ C*/
 				c = cel[igc * 6 - 4];
 				v2 = vgc[igc - 1];
 
+				}
 		/* $OMP END CRITICAL(STORE2) */
 
 		/* ... Check for interesting result */
@@ -6027,6 +5688,8 @@ C*/
 
 	/* $OMP CRITICAL(FOUND) */
 
+				#pragma omp critical(found)
+				{
 				if (rp[igc - 1] < rmi) {
 					++interest;
 					printSaveInterstResString(imp_file, rmax, v2, ipen, 3, a, b, c);
@@ -6156,7 +5819,8 @@ C*/
 				}
 			}
 	L497:
-
+			;
+		}
 	/* $OMP END CRITICAL(FOUND) */
 
 	L417:
@@ -6170,7 +5834,7 @@ C*/
 			L496:
 				;
 			}
-
+		}
 	/* $OMP END DO NOWAIT */
 	/* $OMP END PARALLEL */
 
@@ -6359,6 +6023,24 @@ C*/
 		celold[4] = celpre[4];
 		rglob = 1.0;
 		nglob = 0;
+
+		// #pragma omp parallel default(shared) private (part, id, begin, end) firstprivate (ncel, ntriedb, del, deld, v1, icode, llhkl, ihkl, th3, rmax2, a, b, c, bet, v2, bpar, v3, pstartb, ipen, isee, indic, ip, x, diff, diff2, ncalc, ddt, ddq, iseed, iiseed, rmax0, ntried, ntriedt, nout,  celpre, celold, rglob, rmin, rmax, bb, afi)
+		{
+
+		part = ncells / omp_get_num_threads();
+		id = omp_get_thread_num();
+
+		begin = part * id + 1;
+
+		if (id == omp_get_num_threads() - 1)
+		{
+			end = ncells;
+		}
+		else
+		{
+			end = begin + part;
+		}
+
 /* $OMP PARALLEL DEFAULT(SHARED) COPYIN(/CAL/,/CAL2/) */
 /* $OMP& PRIVATE(NCEL,NTRIEDB,DEL,DELD,V1,ICODE,LLHKL,IHKL,TH3, */
 /* $OMP& RMAX2,A,B,C,BET,V2,BPAR,V3,PSTARTB,IPEN,ISEE,INDIC,IP,X, */
@@ -6367,8 +6049,9 @@ C*/
 /* $OMP& celpre,celold,rglob,nold,rmin,rmax,bb,afi) */
 /* $OMP DO */
 
-		int i__4 = ncells;
-		for (ncel = 1; ncel <= i__4; ++ncel) {
+		// #pragma omp parallel for schedule(dynamic) firstprivate (ncel, ntriedb, del, deld, v1, icode, llhkl, ihkl, th3, rmax2, a, b, c, bet, v2, bpar, v3, pstartb, ipen, isee, indic, ip, x, diff, diff2, ncalc, ddt, ddq, iseed, iiseed, rmax0, ntried, ntriedt, nout,  celpre, celold, rglob, rmin, rmax, bb, afi)
+		for (ncel = begin; ncel <= end; ++ncel)
+		{
 		if (nout >= 1) {
 			goto L596;
 		}
@@ -6540,7 +6223,8 @@ L514:
 			goto L517;
 		}
 
-/* $OMP CRITICAL(STORE1) */
+		#pragma omp critical(crit1)
+		{
 
 		++igc;
 
@@ -6571,6 +6255,8 @@ L514:
 		cel[igc * 6 - 2] = bet;
 		cel[igc * 6 - 1] = 90.0;
 
+	// }
+
 /* $OMP END CRITICAL(STORE1) */
 
 /* ... Check for supercell */
@@ -6586,6 +6272,9 @@ L514:
 			}
 		}
 		dcell(celpre, al, &v1);
+
+	// #pragma omp critical(crit2)
+	{
 
 /* $OMP CRITICAL(STORE2) */
 
@@ -6611,6 +6300,8 @@ L514:
 		b = cel[igc * 6 - 5];
 		c = cel[igc * 6 - 4];
 		v2 = vgc[igc - 1];
+
+	}
 
 /* $OMP END CRITICAL(STORE2) */
 
@@ -6640,6 +6331,9 @@ L514:
 			al[i__ + j * 3 - 4] = 0.0;
 			}
 		}
+
+	// #pragma omp critical(found)
+	// {
 
 /* $OMP CRITICAL(FOUND) */
 
@@ -6777,7 +6471,8 @@ L519:
 			}
 		}
 L597:
-
+;
+	}
 /* $OMP END CRITICAL(FOUND) */
 
 L517:
@@ -6791,6 +6486,8 @@ L517:
 L596:
 		;
 		}
+
+	}
 
 /* $OMP END DO NOWAIT */
 /* $OMP END PARALLEL */
@@ -7016,8 +6713,16 @@ C*/
 /* $OMP& celpre,celold,rglob,nglob,rmin,rmax,bb,afi) */
 /* $OMP DO */
 
-		int i__4 = ncells;
-		for (ncel = 1; ncel <= i__4; ++ncel) {
+		// #pragma omp parallel default(shared) private (part, id, begin, end) firstprivate (ncel, ntriedb, del, deld, v1, icode, llhkl, ihkl, th3, rmax2, a, b, c, alp, bet, gam, v2, bpar, v3, pstartb, ipen, isee, indic, ip, x, diff, diff2, ip2, ang, ncalc, ddt, ddq, iseed, iiseed, rmax0, ntried, ntriedt, nout,  celpre, celold, rglob, nglob, rmin, rmax, bb, afi)
+		{
+
+		part = ncells / omp_get_num_threads();
+		id = omp_get_thread_num();
+
+		begin = part * id + 1;
+		end = begin + part;
+
+		for (ncel = begin; ncel <= end; ++ncel) {
 		if (nout >= 1) {
 			goto L696;
 		}
@@ -7226,6 +6931,8 @@ L614:
 		}
 
 /* $OMP CRITICAL(STORE1) */
+	#pragma omp critical(store1)
+	{
 
 		++igc;
 
@@ -7255,6 +6962,7 @@ L614:
 		cel[igc * 6 - 3] = alp;
 		cel[igc * 6 - 2] = bet;
 		cel[igc * 6 - 1] = gam;
+	}
 
 /* $OMP END CRITICAL(STORE1) */
 
@@ -7275,6 +6983,9 @@ L614:
 		dcell(celpre, al, &v1);
 
 /* $OMP CRITICAL(STORE2) */
+
+	#pragma omp critical(store2)
+	{
 
 		calcul2(&diff, ihkl, th3, &ncalc, &igc);
 		km[igc - 1] = llhkl;
@@ -7298,6 +7009,7 @@ L614:
 		b = cel[igc * 6 - 5];
 		c = cel[igc * 6 - 4];
 		v2 = vgc[igc - 1];
+	}
 
 /* $OMP END CRITICAL(STORE2) */
 
@@ -7331,6 +7043,8 @@ L614:
 		}
 
 /* $OMP CRITICAL(FOUND) */
+	#pragma omp critical(found)
+	{
 
 		if (rp[igc - 1] < rmi) {
 			++interest;
@@ -7478,7 +7192,8 @@ L619:
 			}
 		}
 L697:
-
+		;
+	}
 /* $OMP END CRITICAL(FOUND) */
 
 L617:
@@ -7492,7 +7207,7 @@ L617:
 L696:
 		;
 		}
-
+} //end parallel
 /* $OMP END DO NOWAIT */
 /* $OMP END PARALLEL */
 
@@ -9068,6 +8783,9 @@ L1500:
 
 	/*    Monoclinic case - would be too long in grid search, but... */
 
+	if (nsys[4] == 0) {
+		goto L5000;
+	}
 
 	rpsmall = 1.0;
 	printf("Monoclinic:   Rp     a       b       c       bet     V     Nind\n");
@@ -9128,8 +8846,40 @@ L1500:
 	readHklFile("mon", 20, 1000, ihh);
 
 /* ...  here starts the loop */
+	int end_parallel = 0;
 
-	celpre[0] = pmi[0] - spar;
+	// #pragma omp parallel default(shared) private (part, id, begin, end) firstprivate (ncel, ntriedb, del, deld, v1, icode, llhkl, ihkl, th3, rmax2, a, b, c, alp, bet, gam, v2, bpar, v3, pstartb, ipen, isee, indic, ip, x, diff, diff2, ip2, ang, ncalc, ddt, ddq, iseed, iiseed, rmax0, ntried, ntriedt, nout,  celpre, celold, rglob, nglob, rmin, rmax, bb, afi)
+	{
+
+		double part2 = pma[0] - pmi[0];
+		double t_spar = spar;
+		int t = 0;
+		while (ceil(t_spar) != t_spar)
+		{
+			t++;
+			t_spar *=  10;
+			part2 *= 10;
+		}
+
+		part = part2 / omp_get_num_threads();
+		//part = (pma[0] - pmi[0]) / omp_get_num_threads();
+		part2 = part / pow(10, t);
+		id = omp_get_thread_num();
+
+		begin = pmi[0] + (part2 * id);
+// printf("%d", end);
+
+		if (id == omp_get_num_threads() - 1)
+		{
+			end = pma[0];
+		} else {
+			end = begin + part2;
+		}
+
+		// printf("%f\t%f\n", begin, end);
+		// goto L1599;
+
+	celpre[0] = begin - spar;
 	celpre[1] = pmi[1] - spar;
 	celpre[2] = pmi[2] - spar;
 	celpre[4] = pmi[4] - sang;
@@ -9141,12 +8891,19 @@ L1502:
 
 /*     Which parameter to vary ? a or b or c or bet ? */
 
+	if (end_parallel == 1)
+	{
+		goto L1599;
+	}
+
 	ntriedb = 0.0;
 	if (ifin1 == 1) {
 		celpre[0] += spar;
 		printf("  a = %lf\n", celpre[0]);
-		if (celpre[0] > pma[0]) {
-			goto L1516;
+		if (celpre[0] > end) {
+			// end_parallel = 1;
+			goto L1599;
+			// goto L1516;
 		}
 		ifin1 = 0;
 		ntried += 1.0;
@@ -9209,8 +8966,10 @@ L1504:
 		}
 	}
 	dcell(celpre, al, &v1);
-	if (celpre[0] > pma[0] && ntriedb == 0.0) {
-		goto L1516;
+	if (celpre[0] > end && ntriedb == 0.0) {
+		// end_parallel = 1;
+		goto L1599;
+		// goto L1516;
 	}
 	if (ntriedb != 0.0) {
 		goto L1506;
@@ -9291,6 +9050,9 @@ L1514:
 	if (ipen > nind) {
 		goto L1517;
 	}
+	#pragma omp critical(crit1)
+	{
+
 	++igc;
 
 /*  Test if too much proposals, if yes decrease Rmax by 5% */
@@ -9308,17 +9070,26 @@ L1514:
 	}
 
 	if (igc > 10000) {
+		end_parallel = 1;
 		printStopString(imp_file);
 		--igc;
-		goto L5000;
+		// goto L5000;
+		// goto L1520;
+	} else {
+		cel[igc * 6 - 6] = a;
+		cel[igc * 6 - 5] = b;
+		cel[igc * 6 - 4] = c;
+		cel[igc * 6 - 3] = 90.0;
+		cel[igc * 6 - 2] = bet;
+		cel[igc * 6 - 1] = 90.0;
 	}
-	cel[igc * 6 - 6] = a;
-	cel[igc * 6 - 5] = b;
-	cel[igc * 6 - 4] = c;
-	cel[igc * 6 - 3] = 90.0;
-	cel[igc * 6 - 2] = bet;
-	cel[igc * 6 - 1] = 90.0;
 
+	// }
+
+	/*if (end_parallel == 1)
+	{
+		goto L1599;
+	}*/
 /* ... Check for supercell */
 
 	celpre[0] = a;
@@ -9331,6 +9102,10 @@ L1514:
 		}
 	}
 	dcell(celpre, al, &v1);
+
+	// #pragma omp critical(crit2)
+	// {
+
 	calcul2(&diff, ihkl, th3, &ncalc, &igc);
 	km[igc - 1] = llhkl;
 	km2[igc - 1] = lhkl;
@@ -9390,7 +9165,9 @@ L1514:
 			saveFMFF20(fm20[igc - 1], ff20[igc - 1], ddt, ncalc, imp_file);
 		}
 		iref = 1;
-		goto L5000;
+		end_parallel = 1;
+		// goto L5000;
+		goto L1520;
 	}
 
 /* Test if cell already found */
@@ -9469,6 +9246,14 @@ L1514:
 		}
 	}
 
+L1520:
+	;
+	}
+
+	if (end_parallel == 1)
+	{
+		goto L1599;
+	}
 
 L1517:
 	rmax = rmaxref;
@@ -9480,18 +9265,26 @@ L1517:
 /* ... Stop if max limit of grid tests outpassed */
 /*         or if K is pressed (tested every 30000 MC event) */
 
-	if (celpre[0] > pma[0]) {
+	/*if (celpre[0] > end) {
 		goto L1516;
+	}*/
+	if (celpre[0] < end)
+	{
+		goto L1502;
 	}
-	tkill = (int) ntried % 30000;
+L1599:
+	;
+	#pragma omp barrier
+}
+	/*tkill = (int) ntried % 30000;
 	if (tkill >= 0.0) {
 		killk(&pressedk);
 		if (pressedk) {
 			goto L1516;
 		}
 	}
-	goto L1502;
-L1516:
+	goto L1502;*/
+// L1516:
 	if (rmin == rmax) {
 		goto L1598;
 	}
@@ -9519,6 +9312,7 @@ L5000:
 	if (igc == 0) {
 		goto L6000;
 	}
+
 
 /*   Prepare sorted output for CHEKCELL */
 
@@ -10776,8 +10570,11 @@ L6000:
 	fclose(imp_file);
 	// fclose(new_dat_file);
 
-	// ProfilerStop();
 
+	}
+	}//closes omp pragma
+
+	// ProfilerStop();
 	return 0;
 }
 

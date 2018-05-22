@@ -206,11 +206,11 @@ int calcul1(double *diff, double *diff2)
 
 	jh = 0;
 	i1 = nhkl0;
-	for (i = 1; i <= i1; ++i) {
+	for (i = 0; i < i1; ++i) {
 		x = 0.0;
-		for (j = 1; j <= 3; ++j) {
-			for (k = j; k <= 3; ++k) {
-				x = al[j + k * 3 - 4] * ihh[j + i * 3 - 4] * ihh[k + i * 3 - 4] + x;
+		for (j = 0; j < 3; ++j) {
+			for (k = j; k < 3; ++k) {
+				x = al[j + k * 3] * ihh[j + i * 3] * ihh[k + i * 3] + x;
 			}
 		}
 		if (x > dmin) {

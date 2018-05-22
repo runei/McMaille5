@@ -2,4 +2,4 @@
 
 compilar
 
-gcc -o -O2 McMaille McMaille.c -lf2c -lm 
+gcc -Wall -no-pie -O3 -o McMaille-paralelo McMaille-paralelo.c -lm -fopenmp -pg
