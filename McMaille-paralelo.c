@@ -3142,7 +3142,7 @@ int main(int argc, char *argv[])
     int pressedk = 0;
     int nrun = 0;
     double pndat, ddq, ddt, isee = 0.0, v3 = 0.0, v2 = 0.0, a = 0.0, rmax2 = 0.0, llhkl = 0.0;
-    double diff2, diff, v1, del = 0.0, rmin, interest, tmax, ttmax, ncells, iiseed, ntried, ntriedt;
+    double diff2 = 0.0, diff, v1, del = 0.0, rmin, interest, tmax, ttmax, ncells, iiseed, ntried, ntriedt;
     double nout, ntriedb = 0.0, vorth = 0;
     int ipen = 0, icode = 0, iseed, ncel = 0, ncalc, c3, ibr;
 
@@ -4360,7 +4360,7 @@ L290:
 			part = ncells / omp_get_num_threads();
 			// int part2 = ncells / omp_get_num_threads();
 			id = omp_get_thread_num();
-
+// printf("%d\n", omp_get_num_threads());
 
 			begin = part * id + 1;//- (part - part2) + 1;
 
@@ -7386,10 +7386,33 @@ C*/
 
 	/* ...  here starts the loop */
 
-	celpre[0] = pmi[0] - spar;
+	int end_parallel = 0;
+	#pragma omp parallel default(shared) copyin(nhkl0, lhkl, ndat, dmin, slabda2, ihh, al, pi, cri, difp, difm, th2, fobs, sum_f, nind, w2, nmx, ndat10, ind, nhkl, indic) firstprivate (ncel,ntriedb, del, deld, v1, icode, llhkl, ihkl, th3, rmax2, a, v2, bpar, v3, pstartb, ipen, isee,  ip, x, diff, diff2, ncalc, ddt, ddq, iseed, iiseed, rmax0, ntried, ntriedt, nout, celpre, celold, rglob, nglob, rmin, rmax, bb, afi)
+	{
+
+		double part2 = pma[0] - pmi[0];
+		double part = part2 / omp_get_num_threads();
+		//part = (pma[0] - pmi[0]) / omp_get_num_threads();
+		// part2 = part / pow(10, t);
+		int id = omp_get_thread_num();
+
+		double begin = pmi[0] + (part * id);
+// printf("%d", end);
+
+		double end;
+		if (id == omp_get_num_threads() - 1)
+		{
+			end = pma[0];
+		} else {
+			end = begin + part;
+		}
+
+
+	celpre[0] = begin - spar;
 L1102:
 	ntriedb = 0.0;
 	celpre[0] += spar;
+	// printf("  a = %lf\n", celpre[0]);
 	ntried += 1.0;
 	goto L1104;
 L1103:
@@ -7405,8 +7428,9 @@ L1104:
 		}
 	}
 	dcell(celpre, al, &v1);
-	if (celpre[0] > pma[0] && ntriedb == 0.0) {
-		goto L1116;
+	if (celpre[0] > end && ntriedb == 0.0) {
+		// goto L1116;
+		goto L1199;
 	}
 	if (ntriedb != 0.0) {
 		goto L1106;
@@ -7475,6 +7499,9 @@ L1114:
 	if (ipen > nind) {
 		goto L1117;
 	}
+
+	#pragma omp critical(c1)
+	{
 	++igc;
 
 /*  Test if too much proposals, if yes decrease Rmax by 5% */
@@ -7492,9 +7519,10 @@ L1114:
 	}
 
 	if (igc > 10000) {
+		end_parallel = 1;
 		printStopString(imp_file);
 		--igc;
-		goto L5000;
+		// goto L5000;
 	}
 	cel[igc * 6 - 6] = a;
 	cel[igc * 6 - 5] = a;
@@ -7503,7 +7531,13 @@ L1114:
 	cel[igc * 6 - 2] = 90.0;
 	cel[igc * 6 - 1] = 90.0;
 
+	}
 /* ... Check for supercell */
+
+	if (end_parallel == 1)
+	{
+		goto L1199;
+	}
 
 	celpre[0] = a;
 	celpre[1] = a;
@@ -7514,6 +7548,9 @@ L1114:
 			}
 	}
 	dcell(celpre, al, &v1);
+
+	#pragma omp critical(c2)
+	{
 	calcul2(&diff, ihkl, th3, &ncalc, &igc);
 	km[igc - 1] = llhkl;
 	km2[igc - 1] = lhkl;
@@ -7579,7 +7616,9 @@ L1114:
 			saveFMFF20(fm20[igc - 1], ff20[igc - 1], ddt, ncalc, imp_file);
 		}
 		iref = 1;
-		goto L5000;
+		end_parallel = 1;
+		// goto L5000;
+		goto L1120;
 	}
 
 /* Test if cell already found */
@@ -7629,6 +7668,14 @@ L1114:
 		}
 	}
 
+L1120:
+	;
+	}
+
+	if (end_parallel == 1)
+	{
+		goto L1199;
+	}
 
 
 L1117:
@@ -7638,18 +7685,28 @@ L1117:
 /* ... Stop if max limit of grid tests outpassed */
 /*         or if K is pressed (tested every 30000 MC event) */
 
-	if (celpre[0] > pma[0]) {
+	/*if (celpre[0] > end) {
 		goto L1116;
+	}*/
+
+	if (celpre[0] < end) {
+		goto L1102;
 	}
+
+	L1199:
+	;
+
+	// #pragma omp barrier
+}
 	// tkill = d_mod(&ntried, &c_b1413);
-	if ((int) ntried % 30000 == 0) {
+/*	if ((int) ntried % 30000 == 0) {
 		killk(&pressedk);
 		if (pressedk) {
 			goto L1116;
 		}
 	}
 	goto L1102;
-L1116:
+L1116:*/
 	if (rmin == rmax) {
 		goto L1198;
 	}
@@ -7759,7 +7816,30 @@ L1290:
 
 /* ...  here starts the loop */
 
-	celpre[0] = pmi[0] - spar;
+	end_parallel = 0;
+
+	#pragma omp parallel default(shared) copyin(nhkl0, lhkl, ndat, dmin, slabda2, ihh, al, pi, cri, difp, difm, th2, fobs, sum_f, nind, w2, nmx, ndat10, ind, nhkl, indic)  firstprivate (ncel,ntriedb, del, deld, v1, icode, llhkl, ihkl, th3, rmax2, a, c, v2, bpar, v3, pstartb, ipen, isee,  ip, x, diff, diff2, ncalc, ddt, ddq, iseed, iiseed, rmax0, ntried, ntriedt, nout, celpre, celold, rglob, nglob, rmin, rmax, bb, afi)
+	{
+
+		double part2 = pma[0] - pmi[0];
+		double part = part2 / omp_get_num_threads();
+		//part = (pma[0] - pmi[0]) / omp_get_num_threads();
+		// part2 = part / pow(10, t);
+		int id = omp_get_thread_num();
+
+		double begin = pmi[0] + (part * id);
+// printf("%d", end);
+
+		double end;
+		if (id == omp_get_num_threads() - 1)
+		{
+			end = pma[0];
+		} else {
+			end = begin + part;
+		}
+
+
+	celpre[0] = begin - spar;
 	celpre[1] = celpre[0];
 	celpre[2] = pmi[2] - spar;
 	int ifin = 1;
@@ -7771,8 +7851,9 @@ L1202:
 	ntriedb = 0.0;
 	if (ifin == 1) {
 		celpre[0] += spar;
-		if (celpre[0] > pma[0]) {
-			goto L1216;
+		if (celpre[0] > end) {
+			// goto L1216;
+			goto L1299;
 		}
 		ifin = 0;
 		ntried += 1.0;
@@ -7801,8 +7882,9 @@ L1204:
 		}
 	}
 	dcell(celpre, al, &v1);
-	if (celpre[0] > pma[0] && ntriedb == 0.0) {
-		goto L1216;
+	if (celpre[0] > end && ntriedb == 0.0) {
+		// goto L1216;
+		goto L1299;
 	}
 	if (ntriedb != 0.0) {
 		goto L1206;
@@ -7875,6 +7957,9 @@ L1214:
 	if (ipen > nind) {
 		goto L1217;
 	}
+
+	#pragma omp critical(c1)
+	{
 	++igc;
 
 /*  Test if too much proposals, if yes decrease Rmax by 5% */
@@ -7892,16 +7977,26 @@ L1214:
 	}
 
 	if (igc > 10000) {
+		end_parallel = 1;
 		printStopString(imp_file);
 		--igc;
-		goto L5000;
-	}
+		// goto L5000;
+	} else {
 	cel[igc * 6 - 6] = a;
 	cel[igc * 6 - 5] = a;
 	cel[igc * 6 - 4] = c;
 	cel[igc * 6 - 3] = 90.0;
 	cel[igc * 6 - 2] = 90.0;
 	cel[igc * 6 - 1] = 120.0;
+
+	}
+
+}
+
+	if (end_parallel == 1)
+	{
+		goto L1299;
+	}
 
 /* ... Check for supercell */
 
@@ -7914,6 +8009,9 @@ L1214:
 		}
 	}
 	dcell(celpre, al, &v1);
+
+	#pragma omp critical(c2)
+	{
 	calcul2(&diff, ihkl, th3, &ncalc, &igc);
 	km[igc - 1] = llhkl;
 	km2[igc - 1] = lhkl;
@@ -7973,7 +8071,9 @@ L1214:
 			saveFMFF20(fm20[igc - 1], ff20[igc - 1], ddt, ncalc, imp_file);
 		}
 		iref = 1;
-		goto L5000;
+		// goto L5000;
+		end_parallel = 1;
+		goto L1220;
 	}
 
 /* Test if cell already found */
@@ -8029,6 +8129,14 @@ L1214:
 		}
 	}
 
+L1220:
+	;
+	}
+
+	if (end_parallel == 1)
+	{
+		goto L1299;
+	}
 
 L1217:
 	rmax = rmaxref;
@@ -8038,10 +8146,16 @@ L1217:
 /* ... Stop if max limit of grid Carlo tests outpassed */
 /*         or if K is pressed (tested every 30000 MC event) */
 
-	if (celpre[0] > pma[0]) {
+	/*if (celpre[0] > pma[0]) {
 		goto L1216;
+	}*/
+
+	if (celpre[0] < end)
+	{
+		goto L1202;
 	}
-	int tkill = (int) ntried % 30000;
+
+	/*int tkill = (int) ntried % 30000;
 	if (tkill >= 0.0) {
 		killk(&pressedk);
 		if (pressedk) {
@@ -8049,7 +8163,11 @@ L1217:
 		}
 	}
 	goto L1202;
-L1216:
+L1216:*/
+
+L1299:
+	;
+}
 	if (rmin == rmax) {
 	goto L1298;
 	}
@@ -8135,10 +8253,32 @@ L1300:
 
 /* ...  here starts the loop */
 
-	celpre[0] = pmi[0] - spar;
+	end_parallel = 0;
+
+	#pragma omp parallel default(shared) copyin(nhkl0, lhkl, ndat, dmin, slabda2, ihh, al, pi, cri, difp, difm, th2, fobs, sum_f, nind, w2, nmx, ndat10, ind, nhkl, indic) firstprivate (ncel,ntriedb, del, deld, v1, icode, llhkl, ihkl, th3, rmax2, a, c, v2, bpar, v3, pstartb, ipen, isee,  ip, x, diff, diff2, ncalc, ddt, ddq, iseed, iiseed, rmax0, ntried, ntriedt, nout, celpre, celold, rglob, nglob, rmin, rmax, bb, afi)
+	{
+
+		double part2 = pma[0] - pmi[0];
+		double part = part2 / omp_get_num_threads();
+		//part = (pma[0] - pmi[0]) / omp_get_num_threads();
+		// part2 = part / pow(10, t);
+		int id = omp_get_thread_num();
+
+		double begin = pmi[0] + (part * id);
+// printf("%d", end);
+
+		double end;
+		if (id == omp_get_num_threads() - 1)
+		{
+			end = pma[0];
+		} else {
+			end = begin + part;
+		}
+
+	celpre[0] = begin - spar;
 	celpre[1] = celpre[0];
 	celpre[2] = pmi[2] - spar;
-	ifin = 1;
+	int ifin = 1;
 
 L1302:
 
@@ -8147,8 +8287,9 @@ L1302:
 	ntriedb = 0.0;
 	if (ifin == 1) {
 		celpre[0] += spar;
-		if (celpre[0] > pma[0]) {
-			goto L1316;
+		if (celpre[0] > end) {
+			// goto L1316;
+			goto L1399;
 		}
 		ifin = 0;
 		ntried += 1.0;
@@ -8163,7 +8304,7 @@ L1302:
 	goto L1304;
 L1303:
 	del = deltab * (1.0 - ntriedb / cy);
-	i = 3;
+	int i = 3;
 	if (randi(&iseed) > .5f) {
 		i = 1;
 	}
@@ -8177,8 +8318,9 @@ L1304:
 		}
 	}
 	dcell(celpre, al, &v1);
-	if (celpre[0] > pma[0] && ntriedb == 0.0) {
-		goto L1316;
+	if (celpre[0] > end && ntriedb == 0.0) {
+		// goto L1316;
+		goto L1399;
 	}
 	if (ntriedb != 0.0) {
 		goto L1306;
@@ -8251,6 +8393,8 @@ L1314:
 	if (ipen > nind) {
 		goto L1317;
 	}
+	#pragma omp critical(c1)
+	{
 	++igc;
 
 /*  Test if too much proposals, if yes decrease Rmax by 5% */
@@ -8268,17 +8412,25 @@ L1314:
 	}
 
 	if (igc > 10000) {
+		end_parallel = 1;
 		printStopString(imp_file);
 		--igc;
-		goto L5000;
+		// goto L5000;
+	} else {
+		cel[igc * 6 - 6] = a;
+		cel[igc * 6 - 5] = a;
+		cel[igc * 6 - 4] = c;
+		cel[igc * 6 - 3] = 90.0;
+		cel[igc * 6 - 2] = 90.0;
+		cel[igc * 6 - 1] = 90.0;
 	}
-	cel[igc * 6 - 6] = a;
-	cel[igc * 6 - 5] = a;
-	cel[igc * 6 - 4] = c;
-	cel[igc * 6 - 3] = 90.0;
-	cel[igc * 6 - 2] = 90.0;
-	cel[igc * 6 - 1] = 90.0;
 
+	}
+
+	if (end_parallel == 1)
+	{
+		goto L1399;
+	}
 /* ... Check for supercell */
 
 	celpre[0] = a;
@@ -8290,6 +8442,8 @@ L1314:
 		}
 	}
 	dcell(celpre, al, &v1);
+	#pragma omp critical(c2)
+	{
 	calcul2(&diff, ihkl, th3, &ncalc, &igc);
 	km[igc - 1] = llhkl;
 	km2[igc - 1] = lhkl;
@@ -8350,7 +8504,9 @@ L1314:
 			saveFMFF20(fm20[igc - 1], ff20[igc - 1], ddt, ncalc, imp_file);
 		}
 		iref = 1;
-		goto L5000;
+		end_parallel = 1;
+		// goto L5000;
+		goto L1320;
 	}
 
 /* Test if cell already found */
@@ -8406,6 +8562,15 @@ L1314:
 		}
 	}
 
+L1320:
+	;
+	}
+
+	if (end_parallel == 1)
+	{
+		goto L1399;
+	}
+
 
 L1317:
 	rmax = rmaxref;
@@ -8415,10 +8580,19 @@ L1317:
 /* ... Stop if max limit of grid tests outpassed */
 /*         or if K is pressed (tested every 30000 MC event) */
 
-	if (celpre[0] > pma[0]) {
+	/*if (celpre[0] > pma[0]) {
 		goto L1316;
+	}*/
+
+	if (celpre[0] < end)
+	{
+		goto L1302;
 	}
-	tkill = (int) ntried % 30000;
+L1399:
+	;
+	// #pragma omp barrier
+}
+	/*int tkill = (int) ntried % 30000;
 	if (tkill >= 0.0) {
 		killk(&pressedk);
 		if (pressedk) {
@@ -8426,7 +8600,7 @@ L1317:
 		}
 	}
 	goto L1302;
-L1316:
+L1316:*/
 	if (rmin == rmax) {
 	goto L1398;
 	}
@@ -8514,10 +8688,30 @@ L1400:
 
 /* ...  here starts the loop */
 
-	celpre[0] = pmi[0] - spar;
+	#pragma omp parallel default(shared) copyin(nhkl0, lhkl, ndat, dmin, slabda2, ihh, al, pi, cri, difp, difm, th2, fobs, sum_f, nind, w2, nmx, ndat10, ind, nhkl, indic) firstprivate (ncel,ntriedb, del, deld, v1, icode, llhkl, ihkl, th3, rmax2, a, b, c, v2, bpar, v3, pstartb, ipen, isee,  ip, x, diff, diff2, ncalc, ddt, ddq, iseed, iiseed, rmax0, ntried, ntriedt, nout, celpre, celold, rglob, nglob, rmin, rmax, bb, afi)
+	{
+
+		double part2 = pma[0] - pmi[0];
+		double part = part2 / omp_get_num_threads();
+		//part = (pma[0] - pmi[0]) / omp_get_num_threads();
+		// part2 = part / pow(10, t);
+		int id = omp_get_thread_num();
+
+		double begin = pmi[0] + (part * id);
+// printf("%d", end);
+
+		double end;
+		if (id == omp_get_num_threads() - 1)
+		{
+			end = pma[0];
+		} else {
+			end = begin + part;
+		}
+
+	celpre[0] = begin - spar;
 	celpre[1] = pmi[1] - spar;
 	celpre[2] = pmi[2] - spar;
-	ifin = 1;
+	int ifin = 1;
 	int ifin2 = 1;
 
 L1402:
@@ -8528,8 +8722,9 @@ L1402:
 	if (ifin == 1) {
 		celpre[0] += spar;
 		printf("  a = %lf\n", celpre[0]);
-		if (celpre[0] > pma[0]) {
-			goto L1416;
+		if (celpre[0] > end) {
+			// goto L1416;
+			goto L1499;
 		}
 		ifin = 0;
 		ntried += 1.0;
@@ -8555,7 +8750,7 @@ L1402:
 L1403:
 	del = deltab * (1.0 - ntriedb / cy);
 	x = randi(&iseed);
-	i = 1;
+	int i = 1;
 	if (x >= 0.0 && x < .33333f) {
 		i = 1;
 	}
@@ -8574,8 +8769,9 @@ L1404:
 		}
 	}
 	dcell(celpre, al, &v1);
-	if (celpre[0] > pma[0] && ntriedb == 0.0) {
-		goto L1416;
+	if (celpre[0] > end && ntriedb == 0.0) {
+		// goto L1416;
+		goto L1499;
 	}
 	if (ntriedb != 0.0) {
 		goto L1406;
@@ -8652,6 +8848,9 @@ L1414:
 	if (ipen > nind) {
 		goto L1417;
 	}
+
+	#pragma omp critical(c1)
+	{
 	++igc;
 
 /*  Test if too much proposals, if yes decrease Rmax by 5% */
@@ -8669,17 +8868,26 @@ L1414:
 	}
 
 	if (igc > 10000) {
+		end_parallel = 1;
 		printStopString(imp_file);
 		--igc;
-		goto L5000;
-	}
-	cel[igc * 6 - 6] = a;
-	cel[igc * 6 - 5] = b;
-	cel[igc * 6 - 4] = c;
-	cel[igc * 6 - 3] = 90.0;
-	cel[igc * 6 - 2] = 90.0;
-	cel[igc * 6 - 1] = 90.0;
+		// goto L5000;
+	} else {
+		cel[igc * 6 - 6] = a;
+		cel[igc * 6 - 5] = b;
+		cel[igc * 6 - 4] = c;
+		cel[igc * 6 - 3] = 90.0;
+		cel[igc * 6 - 2] = 90.0;
+		cel[igc * 6 - 1] = 90.0;
 
+	}
+
+	}
+
+	if (end_parallel == 1)
+	{
+		goto L1499;
+	}
 /* ... Check for supercell */
 
 	celpre[0] = a;
@@ -8691,6 +8899,9 @@ L1414:
 		}
 	}
 	dcell(celpre, al, &v1);
+
+	#pragma omp critical(c2)
+	{
 	calcul2(&diff, ihkl, th3, &ncalc, &igc);
 	km[igc - 1] = llhkl;
 	km2[igc - 1] = lhkl;
@@ -8752,8 +8963,10 @@ L1414:
 			saveFMFF20(fm20[igc - 1], ff20[igc - 1], ddt, ncalc, imp_file);
 		}
 		iref = 1;
-		goto L5000;
-		}
+		end_parallel = 1;
+		// goto L5000;
+		goto L1420;
+	}
 
 /* Test if cell already found */
 
@@ -8826,6 +9039,15 @@ L1414:
 		}
 	}
 
+L1420:
+	;
+	}
+
+	if (end_parallel == 1)
+	{
+		goto L1499;
+	}
+
 
 L1417:
 	rmax = rmaxref;
@@ -8836,10 +9058,19 @@ L1417:
 /* ... Stop if max limit of grid tests outpassed */
 /*         or if K is pressed (tested every 30000 MC event) */
 
-	if (celpre[0] > pma[0]) {
+	/*if (celpre[0] > pma[0]) {
 		goto L1416;
+	}*/
+
+	if (celpre[0] < end)
+	{
+		goto L1402;
 	}
-	tkill = (int) ntried % 30000;
+L1499:
+	;
+	// #pragma omp barrier
+}
+	/*int tkill = (int) ntried % 30000;
 	if (tkill >= 0.0) {
 		killk(&pressedk);
 		if (pressedk) {
@@ -8847,7 +9078,7 @@ L1417:
 		}
 	}
 	goto L1402;
-L1416:
+L1416:*/
 	if (rmin == rmax) {
 		goto L1498;
 	}
@@ -8931,34 +9162,26 @@ L1500:
 	readHklFile("mon", 20, 1000, ihh);
 
 /* ...  here starts the loop */
-	int end_parallel = 0;
+	end_parallel = 0;
 
-	#pragma omp parallel default(shared) copyin(nhkl0, lhkl, ndat, dmin, slabda2, ihh, al, pi, cri, difp, difm, th2, fobs, sum_f, nind, w2, nmx, ndat10, ind, nhkl, indic) private (part, id, begin, end) firstprivate (ncel,ntriedb, del, deld, v1, icode, llhkl, ihkl, th3, rmax2, a, b, c, bet, v2, bpar, v3, pstartb, ipen, isee,  ip, x, diff, diff2, ncalc, ddt, ddq, iseed, iiseed, rmax0, ntried, ntriedt, nout, celpre, celold, rglob, nglob, rmin, rmax, bb, afi)
+	#pragma omp parallel default(shared) copyin(nhkl0, lhkl, ndat, dmin, slabda2, ihh, al, pi, cri, difp, difm, th2, fobs, sum_f, nind, w2, nmx, ndat10, ind, nhkl, indic) firstprivate (ncel,ntriedb, del, deld, v1, icode, llhkl, ihkl, th3, rmax2, a, b, c, bet, v2, bpar, v3, pstartb, ipen, isee,  ip, x, diff, diff2, ncalc, ddt, ddq, iseed, iiseed, rmax0, ntried, ntriedt, nout, celpre, celold, rglob, nglob, rmin, rmax, bb, afi)
 	{
 
 		double part2 = pma[0] - pmi[0];
-		double t_spar = spar;
-		int t = 0;
-		while (ceil(t_spar) != t_spar)
-		{
-			t++;
-			t_spar *=  10;
-			part2 *= 10;
-		}
-
-		part = part2 / omp_get_num_threads();
+		double part = part2 / omp_get_num_threads();
 		//part = (pma[0] - pmi[0]) / omp_get_num_threads();
-		part2 = part / pow(10, t);
-		id = omp_get_thread_num();
+		// part2 = part / pow(10, t);
+		int id = omp_get_thread_num();
 
-		begin = pmi[0] + (part2 * id);
+		double begin = pmi[0] + (part * id);
 // printf("%d", end);
 
+		double end;
 		if (id == omp_get_num_threads() - 1)
 		{
 			end = pma[0];
 		} else {
-			end = begin + part2;
+			end = begin + part;
 		}
 
 		// printf("%f\t%f\n", begin, end);
@@ -8969,7 +9192,7 @@ L1500:
 	celpre[2] = pmi[2] - spar;
 	celpre[4] = pmi[4] - sang;
 	int ifin1 = 1;
-	ifin2 = 1;
+	int ifin2 = 1;
 	int ifin3 = 1;
 
 L1502:
@@ -9025,7 +9248,7 @@ L1503:
 	del = deltab * (1.0 - ntriedb / cy);
 	deld = deltad * (1.0 - ntriedb / cy);
 	x = randi(&iseed);
-	i = 1;
+	int i = 1;
 	if (x >= 0.0 && x < .25f) {
 		i = 1;
 	}
@@ -9135,7 +9358,7 @@ L1514:
 	if (ipen > nind) {
 		goto L1517;
 	}
-	// #pragma omp critical(crit1)
+	#pragma omp critical(crit1)
 	{
 
 	++igc;
@@ -9171,10 +9394,10 @@ L1514:
 
 	}
 
-	/*if (end_parallel == 1)
+	if (end_parallel == 1)
 	{
 		goto L1599;
-	}*/
+	}
 /* ... Check for supercell */
 
 	celpre[0] = a;
@@ -9568,7 +9791,7 @@ L20002:
 	sort(&igc, fm20, ll);
 	++imem;
 	im[imem - 1] = ll[igc - 1];
-		for (i = 1; i <= igc; ++i) {
+		for (int i = 1; i <= igc; ++i) {
 		if (i > 20) {
 			goto L20004;
 		}
@@ -9906,7 +10129,8 @@ L20004:
 	step = astep / 1e3f;
 	pos[0] = step;
 	double po = step;
-	for (int i = 2; i <= 16000; ++i) {
+	int i;
+	for (i = 2; i <= 16000; ++i) {
 		po += step;
 		if (po > 160.0) {
 			goto L1804;

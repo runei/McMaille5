@@ -9068,6 +9068,9 @@ L1500:
 
 	/*    Monoclinic case - would be too long in grid search, but... */
 
+	if (nsys[4] == 0) {
+		goto L5000;
+	}
 
 	rpsmall = 1.0;
 	printf("Monoclinic:   Rp     a       b       c       bet     V     Nind\n");
